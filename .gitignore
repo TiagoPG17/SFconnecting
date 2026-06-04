@@ -1,0 +1,53 @@
+*.log
+.DS_Store
+Thumbs.db
+
+# Variables de entorno — NUNCA subir
+.env
+.env.*
+!.env.example
+
+# Dependencias
+/vendor
+/node_modules
+
+# Build
+/public/build
+/public/hot
+/public/storage
+
+# Storage
+/storage/*.key
+/storage/pail
+/storage/logs/
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/framework/views/
+
+# Base de datos local
+/database/database.sqlite
+/database/*.sqlite
+
+# Claude Code (configuración local del editor)
+/.claude/settings.local.json
+
+# IDE
+/.idea
+/.vscode
+/.fleet
+/.nova
+/.zed
+/.phpactor.json
+
+# Laravel
+.phpunit.result.cache
+/.phpunit.cache
+/auth.json
+
+# Homestead
+Homestead.json
+Homestead.yaml
+
+# npm
+npm-debug.log
+yarn-error.log

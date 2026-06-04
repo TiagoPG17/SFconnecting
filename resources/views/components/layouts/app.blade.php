@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    @auth
+    <meta name="api-token" content="{{ session('api_token', '') }}">
+    @endauth
+    <title>{{ $title ?? 'SFconnecting CRM' }}</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- Anti-flash: aplica preferencias guardadas antes de que cargue Alpine --}}
+    <script>
+        try {
+            var p = JSON.parse(localStorage.getItem('sfcrm_a11y') || '{}');
+            var sz = { sm:'13px', lg:'18px', xl:'20px' };
+            if (p.zoom && p.zoom !== 'normal') document.documentElement.style.fontSize = sz[p.zoom];
+            if (p.contrast)  document.documentElement.classList.add('a11y-contrast');
+            if (p.noMotion)  document.documentElement.classList.add('a11y-no-motion');
+            if (p.focusMode) document.documentElement.classList.add('a11y-focus');
+        } catch(e) {}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="h-full font-sans antialiased" x-data="{ sidebarOpen: false }">
+
+{{-- Overlay móvil --}}
+<div
+    x-show="sidebarOpen"
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    @click="sidebarOpen = false"
+    class="fixed inset-0 z-30 bg-black/50 lg:hidden"
+    x-cloak
+></div>
+
+<div class="flex h-full">
+
+    {{-- Sidebar --}}
+    <aside
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+        class="fixed inset-y-0 left-0 z-40 flex flex-col w-64 bg-slate-900 transition-transform duration-200 ease-in-out lg:translate-x-0"
+    >
+        {{-- Logo --}}
+        <div class="flex h-16 items-center gap-3 px-6 border-b border-slate-800 shrink-0">
+            <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+            </div>
+            <span class="text-white font-semibold text-sm tracking-wide">SFconnecting</span>
+            {{-- Cerrar en móvil --}}
+            <button @click="sidebarOpen = false" class="ml-auto text-slate-400 hover:text-white lg:hidden">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- Nav --}}
+        <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+            <x-ui.nav-item href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')" icon="home">
+                Dashboard
+            </x-ui.nav-item>
+            @role('comercial')
+            <x-ui.nav-item href="{{ route('dash.vendedor') }}" :active="request()->routeIs('dash.vendedor')" icon="trending-up">
+                Mi desempeño
+            </x-ui.nav-item>
+            @endrole
+            @role('admin|gerente')
+            <x-ui.nav-item href="{{ route('dash.gerencial') }}" :active="request()->routeIs('dash.gerencial')" icon="bar-chart">
+                Visión gerencial
+            </x-ui.nav-item>
+            @endrole
+
+            <div class="pt-4 pb-1 px-3">
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Comercial</p>
+            </div>
+
+            <x-ui.nav-item href="{{ route('prospectos.index') }}" :active="request()->routeIs('prospectos.*')" icon="user-plus">
+                Prospectos
+            </x-ui.nav-item>
+            <x-ui.nav-item href="{{ route('negocios.index') }}" :active="request()->routeIs('negocios.*') && !request()->routeIs('negocios.kanban') && !request()->routeIs('forecast.*')" icon="briefcase">
+                Negocios
+            </x-ui.nav-item>
+            <x-ui.nav-item href="{{ route('negocios.kanban') }}" :active="request()->routeIs('negocios.kanban')" icon="layout">
+                Pipeline Kanban
+            </x-ui.nav-item>
+            <x-ui.nav-item href="{{ route('forecast.index') }}" :active="request()->routeIs('forecast.*')" icon="trending-up">
+                Forecast
+            </x-ui.nav-item>
+
+            <div class="pt-4 pb-1 px-3">
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Clientes</p>
+            </div>
+
+            <x-ui.nav-item href="{{ route('clientes.index') }}" :active="request()->routeIs('clientes.*')" icon="users">
+                Clientes
+            </x-ui.nav-item>
+            <x-ui.nav-item href="{{ route('seguimientos.index') }}" :active="request()->routeIs('seguimientos.*')" icon="clock">
+                Seguimientos
+            </x-ui.nav-item>
+
+            @role('admin|gerente')
+            <div class="pt-4 pb-1 px-3">
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Configuración</p>
+            </div>
+            <x-ui.nav-item href="{{ route('presupuestos.index') }}" :active="request()->routeIs('presupuestos.*')" icon="trending-up">
+                Presupuestos
+            </x-ui.nav-item>
+            <x-ui.nav-item href="{{ route('reportes.index') }}" :active="request()->routeIs('reportes.*')" icon="bar-chart">
+                Reportes
+            </x-ui.nav-item>
+            @endrole
+
+            @role('admin')
+            <x-ui.nav-item href="{{ route('mapeo-vendedores.index') }}" :active="request()->routeIs('mapeo-vendedores.*')" icon="users">
+                Mapeo vendedores
+            </x-ui.nav-item>
+            <x-ui.nav-item href="{{ route('maestros.index') }}" :active="request()->routeIs('maestros.*')" icon="settings">
+                Maestros CRM
+            </x-ui.nav-item>
+            @endrole
+
+            @role('admin')
+            <x-ui.nav-item href="{{ route('usuarios.index') }}" :active="request()->routeIs('usuarios.*')" icon="users">
+                Usuarios
+            </x-ui.nav-item>
+            @endrole
+        </nav>
+
+        {{-- User footer --}}
+        <div class="px-3 py-4 border-t border-slate-800 shrink-0">
+            <div class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name ?? '' }}</p>
+                    <p class="text-xs text-slate-400 truncate">{{ auth()->user()->getRoleNames()->first() ?? '' }}</p>
+                </div>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="text-slate-400 hover:text-white transition-colors">
+                        <x-ui.icon name="log-out" class="w-4 h-4"/>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </aside>
+
+    {{-- Main --}}
+    <div class="flex-1 lg:pl-64 flex flex-col min-h-screen">
+
+        {{-- Topbar --}}
+        <header class="sticky top-0 z-20 flex h-16 items-center gap-3 bg-white border-b border-slate-200 px-4 sm:px-6">
+            {{-- Hamburger móvil --}}
+            <button
+                @click="sidebarOpen = true"
+                class="lg:hidden text-slate-500 hover:text-slate-700 transition-colors p-1 -ml-1 rounded-lg hover:bg-slate-100"
+                aria-label="Abrir menú"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+
+            <h1 class="text-sm font-semibold text-slate-900 truncate">{{ $title ?? 'SFconnecting' }}</h1>
+            <div class="flex-1"></div>
+            <div class="flex items-center gap-2">
+                {{ $actions ?? '' }}
+                {{-- Botón de accesibilidad --}}
+                <button
+                    @click="$store.ui.a11yOpen = true"
+                    title="Opciones de accesibilidad (Alt+A)"
+                    class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                >
+                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a1 1 0 100 2 1 1 0 000-2zM12 5v4m0 0l-3 3m3-3l3 3M9 12v5a3 3 0 006 0v-5"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        {{-- Content --}}
+        <main class="flex-1 p-4 sm:p-6">
+            {{ $slot }}
+        </main>
+    </div>
+</div>
+
+{{-- Toast Container --}}
+<div
+    x-data
+    class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 w-80"
+    aria-live="polite"
+>
+    <template x-for="toast in $store.toast.items" :key="toast.id">
+        <div
+            x-show="true"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-2"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            :class="{
+                'bg-emerald-50 border-emerald-200 text-emerald-800': toast.type === 'success',
+                'bg-red-50 border-red-200 text-red-800': toast.type === 'error',
+                'bg-amber-50 border-amber-200 text-amber-800': toast.type === 'warning',
+            }"
+            class="flex items-start gap-3 rounded-xl border px-4 py-3 shadow-lg text-sm"
+        >
+            <span class="flex-1" x-text="toast.message"></span>
+            <button @click="$store.toast.remove(toast.id)" class="opacity-60 hover:opacity-100 text-lg leading-none">×</button>
+        </div>
+    </template>
+</div>
+
+@stack('scripts')
+
+{{-- ══════════════════════════════════════════
+     PANEL DE ACCESIBILIDAD
+══════════════════════════════════════════ --}}
+<div
+    x-data
+    x-init="
+        document.addEventListener('keydown', e => {
+            if (e.altKey && e.key.toLowerCase() === 'a') {
+                $store.ui.a11yOpen = !$store.ui.a11yOpen;
+                e.preventDefault();
+            }
+            if (e.key === 'Escape') $store.ui.a11yOpen = false;
+        });
+    "
+>
+    {{-- Overlay --}}
+    <div
+        x-show="$store.ui.a11yOpen"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @click="$store.ui.a11yOpen = false"
+        class="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+        x-cloak
+    ></div>
+
+    {{-- Panel --}}
+    <div
+        x-show="$store.ui.a11yOpen"
+        x-transition:enter="transition ease-out duration-250"
+        x-transition:enter-start="opacity-0 translate-x-8"
+        x-transition:enter-end="opacity-100 translate-x-0"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 translate-x-0"
+        x-transition:leave-end="opacity-0 translate-x-8"
+        class="fixed right-0 top-0 bottom-0 z-50 w-80 bg-white shadow-2xl flex flex-col"
+        x-cloak
+    >
+        {{-- Header del panel --}}
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
+                    <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a1 1 0 100 2 1 1 0 000-2zM12 5v4m0 0l-3 3m3-3l3 3M9 12v5a3 3 0 006 0v-5"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-slate-900">Accesibilidad</p>
+                    <p class="text-xs text-slate-400">Personaliza tu experiencia</p>
+                </div>
+            </div>
+            <button @click="$store.ui.a11yOpen = false" class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- Contenido scrollable --}}
+        <div class="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+
+            {{-- Tamaño de pantalla --}}
+            <div>
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tamaño de pantalla</p>
+                <p class="text-xs text-slate-400 mb-3">Ajusta el zoom de toda la interfaz</p>
+                <div class="grid grid-cols-4 gap-1.5">
+                    @foreach([
+                        ['val' => 'sm',     'label' => 'Compacto', 'sub' => '13px'],
+                        ['val' => 'normal', 'label' => 'Normal',   'sub' => '16px'],
+                        ['val' => 'lg',     'label' => 'Grande',   'sub' => '18px'],
+                        ['val' => 'xl',     'label' => 'Máximo',   'sub' => '20px'],
+                    ] as $opt)
+                    <button
+                        @click="$store.a11y.setZoom('{{ $opt['val'] }}')"
+                        :class="$store.a11y.zoom === '{{ $opt['val'] }}' ? 'bg-blue-600 text-white shadow-sm shadow-blue-200 ring-2 ring-blue-400 ring-offset-1' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                        class="flex flex-col items-center gap-0.5 py-2.5 px-1 rounded-xl text-xs font-semibold transition-all"
+                    >
+                        <span class="text-base font-black leading-none">{{ $opt['sub'] }}</span>
+                        <span class="text-xs opacity-80">{{ $opt['label'] }}</span>
+                    </button>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="h-px bg-slate-100"></div>
+
+            {{-- Alto contraste --}}
+            <div>
+                <div class="flex items-start justify-between">
+                    <div class="flex-1 pr-4">
+                        <p class="text-sm font-semibold text-slate-800">Alto contraste</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Texto secundario más oscuro y bordes más visibles</p>
+                    </div>
+                    <button
+                        @click="$store.a11y.toggleContrast()"
+                        :class="$store.a11y.contrast ? 'bg-blue-600' : 'bg-slate-200'"
+                        class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+                        role="switch"
+                        :aria-checked="$store.a11y.contrast.toString()"
+                    >
+                        <span
+                            :class="$store.a11y.contrast ? 'translate-x-5' : 'translate-x-0.5'"
+                            class="pointer-events-none inline-block h-5 w-5 mt-0.5 transform rounded-full bg-white shadow-md transition-transform duration-200"
+                        ></span>
+                    </button>
+                </div>
+                <div x-show="$store.a11y.contrast" class="mt-2 flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 rounded-lg px-2.5 py-1.5">
+                    <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+                    Contraste elevado activo
+                </div>
+            </div>
+
+            <div class="h-px bg-slate-100"></div>
+
+            {{-- Reducir movimiento --}}
+            <div>
+                <div class="flex items-start justify-between">
+                    <div class="flex-1 pr-4">
+                        <p class="text-sm font-semibold text-slate-800">Reducir movimiento</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Desactiva animaciones y transiciones</p>
+                    </div>
+                    <button
+                        @click="$store.a11y.toggleMotion()"
+                        :class="$store.a11y.noMotion ? 'bg-blue-600' : 'bg-slate-200'"
+                        class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200"
+                        role="switch"
+                        :aria-checked="$store.a11y.noMotion.toString()"
+                    >
+                        <span
+                            :class="$store.a11y.noMotion ? 'translate-x-5' : 'translate-x-0.5'"
+                            class="pointer-events-none inline-block h-5 w-5 mt-0.5 transform rounded-full bg-white shadow-md transition-transform duration-200"
+                        ></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="h-px bg-slate-100"></div>
+
+            {{-- Foco de teclado --}}
+            <div>
+                <div class="flex items-start justify-between">
+                    <div class="flex-1 pr-4">
+                        <p class="text-sm font-semibold text-slate-800">Navegación por teclado</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Resalta el elemento enfocado al navegar con Tab</p>
+                    </div>
+                    <button
+                        @click="$store.a11y.toggleFocus()"
+                        :class="$store.a11y.focusMode ? 'bg-blue-600' : 'bg-slate-200'"
+                        class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200"
+                        role="switch"
+                        :aria-checked="$store.a11y.focusMode.toString()"
+                    >
+                        <span
+                            :class="$store.a11y.focusMode ? 'translate-x-5' : 'translate-x-0.5'"
+                            class="pointer-events-none inline-block h-5 w-5 mt-0.5 transform rounded-full bg-white shadow-md transition-transform duration-200"
+                        ></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="h-px bg-slate-100"></div>
+
+            {{-- Atajo de teclado --}}
+            <div class="rounded-xl bg-slate-50 border border-slate-100 p-3.5">
+                <p class="text-xs font-semibold text-slate-600 mb-2">Atajos de teclado</p>
+                <div class="flex items-center justify-between">
+                    <p class="text-xs text-slate-500">Abrir / cerrar este panel</p>
+                    <div class="flex items-center gap-1">
+                        <kbd class="text-xs bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-mono shadow-sm">Alt</kbd>
+                        <span class="text-slate-300 text-xs">+</span>
+                        <kbd class="text-xs bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-mono shadow-sm">A</kbd>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        {{-- Footer --}}
+        <div class="px-5 py-4 border-t border-slate-100 shrink-0">
+            <button
+                @click="$store.a11y.reset()"
+                class="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors border border-slate-200"
+            >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Restaurar valores por defecto
+            </button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
