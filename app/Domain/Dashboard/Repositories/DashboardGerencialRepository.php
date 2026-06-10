@@ -29,12 +29,15 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->get(['asesor_id', 'cod_vendedor_siesa']);
     }
 
-    public function logradoVendedoresYtd(int $compania, int $anio): Collection
+    public function logradoVendedoresYtd(int $compania, array $meses): Collection
     {
+        [$anio, $mesesNum] = $this->parsearMeses($meses);
+
         return DB::connection('erp_contiflex')
             ->table('vw_CRM_Ventas_Vendedor_Periodo')
             ->where('COMPANIA', $compania)
             ->where('ANIO', $anio)
+            ->whereIn('MES', $mesesNum)
             ->select(DB::raw('LTRIM(RTRIM(COD_VENDEDOR)) AS COD_VENDEDOR'), DB::raw('SUM(VLR_NETO_FACTURADO) AS logrado'))
             ->groupBy(DB::raw('LTRIM(RTRIM(COD_VENDEDOR))'))
             ->get();
@@ -55,13 +58,16 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->get();
     }
 
-    public function cicloDeVenta(int $anio): Collection
+    public function cicloDeVenta(array $meses): Collection
     {
+        [$anio, $mesesNum] = $this->parsearMeses($meses);
+
         return Negocio::join('sf_pipeline_estados as pe', 'pe.id', '=', 'sf_negocios.pipeline_estado_id')
             ->join('users as u', 'u.id', '=', 'sf_negocios.asesor_id')
             ->where('pe.es_ganado', true)
             ->whereNotNull('fecha_cierre_real')
             ->whereYear('fecha_cierre_real', $anio)
+            ->whereIn(DB::raw('MONTH(fecha_cierre_real)'), $mesesNum)
             ->groupBy('u.id', 'u.name')
             ->select(
                 'u.name as vendedor',
@@ -70,12 +76,15 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->get();
     }
 
-    public function motivosDePerdida(int $anio): Collection
+    public function motivosDePerdida(array $meses): Collection
     {
+        [$anio, $mesesNum] = $this->parsearMeses($meses);
+
         return Negocio::join('sf_pipeline_estados as pe', 'pe.id', '=', 'sf_negocios.pipeline_estado_id')
             ->leftJoin('sf_maestros_comerciales as m', 'm.id', '=', 'sf_negocios.motivo_perdida_id')
             ->where('pe.es_perdido', true)
             ->whereYear('fecha_cierre_real', $anio)
+            ->whereIn(DB::raw('MONTH(fecha_cierre_real)'), $mesesNum)
             ->groupBy('m.nombre', 'm.color')
             ->select(
                 'm.nombre as motivo',
@@ -109,10 +118,13 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->get();
     }
 
-    public function actividadEquipo(int $anio): Collection
+    public function actividadEquipo(array $meses): Collection
     {
+        [$anio, $mesesNum] = $this->parsearMeses($meses);
+
         return Seguimiento::join('users as u', 'u.id', '=', 'seguimientos.user_id')
             ->whereYear('fecha_seguimiento', $anio)
+            ->whereIn(DB::raw('MONTH(fecha_seguimiento)'), $mesesNum)
             ->groupBy('u.id', 'u.name', 'seguimientos.tipo')
             ->select(
                 'u.name as vendedor',
@@ -122,5 +134,13 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             )
             ->orderBy('u.name')
             ->get();
+    }
+
+    private function parsearMeses(array $meses): array
+    {
+        $anio     = (int) substr($meses[0], 0, 4);
+        $mesesNum = array_map(fn ($m) => (int) substr($m, 5, 2), $meses);
+
+        return [$anio, $mesesNum];
     }
 }

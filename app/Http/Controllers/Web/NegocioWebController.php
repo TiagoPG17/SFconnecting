@@ -80,19 +80,4 @@ class NegocioWebController extends Controller
         return view('negocios.kanban', compact('columnas'));
     }
 
-    public function forecast(Request $request): View
-    {
-        $this->authorize('viewAny', Negocio::class);
-
-        $filtros = $request->only(['asesor_id', 'mes', 'anio']);
-
-        if (auth()->user()->hasRole('comercial')) {
-            $filtros['asesor_id'] = auth()->id();
-        }
-
-        $forecast = $this->repo->forecast($filtros);
-        $estados  = $this->maestros->pipelineEstadosPorTipo('negocio');
-
-        return view('negocios.forecast', compact('forecast', 'estados'));
-    }
 }

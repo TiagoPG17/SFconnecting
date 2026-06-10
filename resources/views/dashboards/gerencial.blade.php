@@ -16,16 +16,21 @@
   <div class="flex items-end justify-between mb-7">
     <div>
       <p class="text-xs uppercase tracking-widest text-slate-400">Dashboard gerencial</p>
-      <h1 class="text-2xl font-bold text-slate-900 mt-1">Visión ejecutiva {{ $anio }}</h1>
+      <h1 class="text-2xl font-bold text-slate-900 mt-1">
+        Visión ejecutiva {{ $anio }}
+        @if($periodo !== 'anio')
+          · {{ $periodo === 'mes' ? 'Mes actual' : 'Trimestre actual' }}
+        @endif
+      </h1>
     </div>
     <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200">
-      <template x-for="p in periodos" :key="p">
-        <button @click="periodo=p"
-                class="px-3 py-1.5 text-sm rounded-lg transition"
-                :class="periodo===p ? 'text-white':''"
-                :style="periodo===p ? 'background:var(--accent)':'color:var(--muted)'"
-                x-text="p"></button>
-      </template>
+      @foreach(['mes' => 'Mes', 'trimestre' => 'Trimestre', 'anio' => 'Año'] as $key => $label)
+        <a href="{{ route('dash.gerencial', ['periodo' => $key, 'anio' => $anio]) }}"
+           class="px-3 py-1.5 text-sm rounded-lg transition {{ $periodo === $key ? 'text-white' : '' }}"
+           style="{{ $periodo === $key ? 'background:var(--accent)' : 'color:var(--muted)' }}">
+          {{ $label }}
+        </a>
+      @endforeach
     </div>
   </div>
 
@@ -36,7 +41,7 @@
       <p class="text-2xl font-bold mt-1 tnum text-slate-900" x-text="moneyShort(totales.presupuesto)"></p>
     </div>
     <div class="dash-card p-4">
-      <p class="text-xs text-slate-500">Logrado YTD</p>
+      <p class="text-xs text-slate-500">{{ $periodo === 'mes' ? 'Logrado mes' : ($periodo === 'trimestre' ? 'Logrado trimestre' : 'Logrado YTD') }}</p>
       <p class="text-2xl font-bold mt-1 tnum text-slate-900" x-text="moneyShort(totales.logrado)"></p>
     </div>
     <div class="dash-card p-4">
@@ -153,9 +158,6 @@
 <script>
 function dashGerencial(){
   return {
-    periodos: ['Mes','Trimestre','Año'],
-    periodo:  'Año',
-
     vendedores: @json($vendedores),
     churn:      @json($churn),
     motivos:    @json($motivos),

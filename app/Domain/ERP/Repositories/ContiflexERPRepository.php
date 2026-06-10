@@ -14,10 +14,12 @@ class ContiflexERPRepository implements ERPRepositoryInterface
     public function clientePorNit(string $nit): ?array
     {
         try {
-            return DB::connection('erp_contiflex')
+            $row = DB::connection('erp_contiflex')
                 ->table('clientes')
-                ->where('nit', $nit)
-                ->first()?->toArray();
+                ->where('NIT', $nit)
+                ->first();
+
+            return $row ? (array) $row : null;
         } catch (Throwable $e) {
             throw ERPConnectionException::queryFailed($e->getMessage());
         }
@@ -64,12 +66,13 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
-    public function clientesAtencionInmediata(int $limite = 20): array
+    public function clientesAtencionInmediata(int $limite = 20, ?string $filtroVendedor = null): array
     {
         try {
             return DB::connection('erp_contiflex')
                 ->table('dbo.vw_CRM_Clientes_Prioritarios')
                 ->where('HORIZONTE_PRESUPUESTO', 'P1 - PRESUPUESTO ACTIVO')
+                ->when($filtroVendedor, fn ($q) => $q->where('NOMBRE_VENDEDOR', $filtroVendedor))
                 ->orderByDesc('FACTURADO_ANIO_ACTUAL')
                 ->limit($limite)
                 ->get([
@@ -86,7 +89,7 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
-    public function clientesRescate(int $limite = 20): array
+    public function clientesRescate(int $limite = 20, ?string $filtroVendedor = null): array
     {
         try {
             return DB::connection('erp_contiflex')
@@ -95,6 +98,7 @@ class ContiflexERPRepository implements ERPRepositoryInterface
                     'P2 - PRESUPUESTO EN RIESGO',
                     'P3 - PRESUPUESTO PASADO (RECUPERAR)',
                 ])
+                ->when($filtroVendedor, fn ($q) => $q->where('NOMBRE_VENDEDOR', $filtroVendedor))
                 ->orderByDesc('FACTURADO_ANIO_ACTUAL')
                 ->limit($limite)
                 ->get([
@@ -210,13 +214,14 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
-    public function clientesEnFuga(int $limite = 50): array
+    public function clientesEnFuga(int $limite = 50, ?string $filtroVendedor = null): array
     {
         try {
             return DB::connection('erp_contiflex')
                 ->table('dbo.CRM_Consolidado_Ventas_cliente')
                 ->whereBetween('DIAS_DESDE_ULTIMA_COMPRA', [90, 180])
                 ->where('VLR_NETO_FACTURADO', '>', 100_000_000)
+                ->when($filtroVendedor, fn ($q) => $q->where('NOMBRE_VENDEDOR', $filtroVendedor))
                 ->orderByDesc('VLR_NETO_FACTURADO')
                 ->limit($limite)
                 ->get(['NIT', 'RAZON_SOCIAL', 'NOMBRE_VENDEDOR',
@@ -229,12 +234,13 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
-    public function clientesExpansion(int $limite = 50): array
+    public function clientesExpansion(int $limite = 50, ?string $filtroVendedor = null): array
     {
         try {
             return DB::connection('erp_contiflex')
                 ->table('dbo.CRM_Consolidado_Ventas_cliente')
                 ->where('DIAS_DESDE_ULTIMA_COMPRA', '<=', 30)
+                ->when($filtroVendedor, fn ($q) => $q->where('NOMBRE_VENDEDOR', $filtroVendedor))
                 ->orderByDesc('VLR_NETO_FACTURADO')
                 ->limit($limite)
                 ->get(['NIT', 'RAZON_SOCIAL', 'NOMBRE_VENDEDOR',
@@ -247,12 +253,13 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
-    public function clientesPresupuestoActivo(int $limite = 30): array
+    public function clientesPresupuestoActivo(int $limite = 30, ?string $filtroVendedor = null): array
     {
         try {
             return DB::connection('erp_contiflex')
                 ->table('dbo.vw_CRM_Clientes_Prioritarios')
                 ->where('HORIZONTE_PRESUPUESTO', 'P1 - PRESUPUESTO ACTIVO')
+                ->when($filtroVendedor, fn ($q) => $q->where('NOMBRE_VENDEDOR', $filtroVendedor))
                 ->orderByDesc('FACTURADO_ANIO_ACTUAL')
                 ->limit($limite)
                 ->get([
@@ -269,12 +276,13 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
-    public function clientesPresupuestoEnRiesgo(int $limite = 30): array
+    public function clientesPresupuestoEnRiesgo(int $limite = 30, ?string $filtroVendedor = null): array
     {
         try {
             return DB::connection('erp_contiflex')
                 ->table('dbo.vw_CRM_Clientes_Prioritarios')
                 ->where('HORIZONTE_PRESUPUESTO', 'P2 - PRESUPUESTO EN RIESGO')
+                ->when($filtroVendedor, fn ($q) => $q->where('NOMBRE_VENDEDOR', $filtroVendedor))
                 ->orderByDesc('FACTURADO_ANIO_ACTUAL')
                 ->limit($limite)
                 ->get([
@@ -290,12 +298,13 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
-    public function clientesPresupuestoRecuperar(int $limite = 30): array
+    public function clientesPresupuestoRecuperar(int $limite = 30, ?string $filtroVendedor = null): array
     {
         try {
             return DB::connection('erp_contiflex')
                 ->table('dbo.vw_CRM_Clientes_Prioritarios')
                 ->where('HORIZONTE_PRESUPUESTO', 'P3 - PRESUPUESTO PASADO (RECUPERAR)')
+                ->when($filtroVendedor, fn ($q) => $q->where('NOMBRE_VENDEDOR', $filtroVendedor))
                 ->orderByDesc('FACTURADO_ANIO_ANTERIOR')
                 ->limit($limite)
                 ->get([
@@ -311,12 +320,13 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
-    public function clientesLargoPlazo(int $limite = 30): array
+    public function clientesLargoPlazo(int $limite = 30, ?string $filtroVendedor = null): array
     {
         try {
             return DB::connection('erp_contiflex')
                 ->table('dbo.vw_CRM_Clientes_Prioritarios')
                 ->where('HORIZONTE_PRESUPUESTO', 'P4 - FUERA DE PRESUPUESTO')
+                ->when($filtroVendedor, fn ($q) => $q->where('NOMBRE_VENDEDOR', $filtroVendedor))
                 ->orderByDesc('VLR_NETO_FACTURADO')
                 ->limit($limite)
                 ->get([
@@ -371,6 +381,139 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         } catch (Throwable $e) {
             throw ERPConnectionException::queryFailed($e->getMessage());
         }
+    }
+
+    public function clientesHuerfanos(int $compania, array $nitsExcluir = [], int $limite = 100): array
+    {
+        try {
+            return DB::connection('erp_contiflex')
+                ->table('dbo.CRM_Consolidado_Ventas_cliente')
+                ->where('COMPANIA', $compania)
+                ->where(fn ($q) => $q
+                    ->whereNull('NOMBRE_VENDEDOR')
+                    ->orWhereRaw("LTRIM(RTRIM(NOMBRE_VENDEDOR)) = ''")
+                    ->orWhere('NOMBRE_VENDEDOR', 'like', '%VACANTE%')
+                )
+                ->when($nitsExcluir, fn ($q) => $q->whereNotIn('NIT', $nitsExcluir))
+                ->orderByDesc('VLR_NETO_FACTURADO')
+                ->limit($limite)
+                ->get(['NIT', 'RAZON_SOCIAL', 'CIUDAD', 'VLR_NETO_FACTURADO', 'DIAS_DESDE_ULTIMA_COMPRA', 'ULTIMA_FACTURA'])
+                ->map(fn ($r) => (array) $r)
+                ->toArray();
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
+    public function clientesPorVendedor(
+        string $nombreVendedor,
+        ?string $buscar = null,
+        int $pagina = 1,
+        int $porPagina = 20
+    ): array {
+        try {
+            $base = DB::connection('erp_contiflex')
+                ->table('dbo.vw_CRM_Clientes_Prioritarios')
+                ->where('NOMBRE_VENDEDOR', $nombreVendedor)
+                ->when($buscar, fn ($q) => $q->where(function ($q2) use ($buscar) {
+                    $q2->where('RAZON_SOCIAL', 'like', "%{$buscar}%")
+                       ->orWhere('NIT', 'like', "%{$buscar}%");
+                }));
+
+            $total = (clone $base)->count();
+
+            $data = $base
+                ->orderBy('RAZON_SOCIAL')
+                ->skip(($pagina - 1) * $porPagina)
+                ->take($porPagina)
+                ->get([
+                    'NIT', 'RAZON_SOCIAL', 'CIUDAD',
+                    'FACTURADO_ANIO_ACTUAL', 'DIAS_DESDE_ULTIMA_COMPRA',
+                    'HORIZONTE_PRESUPUESTO', 'ACCION_PRESUPUESTAL',
+                ])
+                ->map(fn ($r) => (array) $r)
+                ->toArray();
+
+            return compact('data', 'total', 'pagina', 'porPagina');
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
+    public function todosClientesPorVendedor(string $nombreVendedor): array
+    {
+        try {
+            return DB::connection('erp_contiflex')
+                ->table('dbo.vw_CRM_Clientes_Prioritarios')
+                ->where('NOMBRE_VENDEDOR', $nombreVendedor)
+                ->orderBy('RAZON_SOCIAL')
+                ->get(['NIT', 'RAZON_SOCIAL', 'CIUDAD'])
+                ->unique('NIT')
+                ->values()
+                ->map(fn ($r) => (array) $r)
+                ->toArray();
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
+    public function ventasMensualesPorNit(string $nit): array
+    {
+        try {
+            $rows = DB::connection('erp_contiflex')
+                ->table('dbo.vw_CRM_Ventas_Mensuales_cliente')
+                ->where('NIT', $nit)
+                ->whereRaw('ANIO >= YEAR(GETDATE()) - 4')
+                ->select([
+                    'ANIO', 'MES', 'ANIO_MES', 'TRIMESTRE', 'ANIO_TRIMESTRE',
+                    DB::raw('SUM(CAST(VLR_NETO_FACTURADO AS float)) AS total'),
+                ])
+                ->groupBy('ANIO', 'MES', 'ANIO_MES', 'TRIMESTRE', 'ANIO_TRIMESTRE')
+                ->orderBy('ANIO')
+                ->orderBy('MES')
+                ->get();
+
+            return $this->construirDatasetsSiesa($rows);
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
+    private function construirDatasetsSiesa(\Illuminate\Support\Collection $rows): array
+    {
+        $mensual = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $fecha     = now()->subMonths($i);
+            $anioMes   = $fecha->format('Y-m');
+            $row       = $rows->firstWhere('ANIO_MES', $anioMes);
+            $mensual[] = [
+                'label' => ucfirst($fecha->locale('es')->isoFormat('MMM YY')),
+                'total' => $row ? (float) $row->total : 0.0,
+            ];
+        }
+
+        $trimestral = [];
+        for ($i = 7; $i >= 0; $i--) {
+            $fecha        = now()->subQuarters($i);
+            $y            = $fecha->year;
+            $q            = (int) ceil($fecha->month / 3);
+            $key          = "{$y}-Q{$q}";
+            $total        = $rows
+                ->filter(fn ($r) => $r->ANIO_TRIMESTRE === $key)
+                ->sum(fn ($r) => (float) $r->total);
+            $trimestral[] = ['label' => "Q{$q} {$y}", 'total' => $total];
+        }
+
+        $anual = [];
+        for ($i = 4; $i >= 0; $i--) {
+            $year    = now()->year - $i;
+            $total   = $rows
+                ->filter(fn ($r) => (int) $r->ANIO === $year)
+                ->sum(fn ($r) => (float) $r->total);
+            $anual[] = ['label' => (string) $year, 'total' => $total];
+        }
+
+        return compact('mensual', 'trimestral', 'anual');
     }
 
     public function isAvailable(): bool

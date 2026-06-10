@@ -60,7 +60,7 @@ class VendedorEquivalenciaRepository implements VendedorEquivalenciaRepositoryIn
                     WHERE NOMBRE_VENDEDOR IS NOT NULL
                       AND LTRIM(RTRIM(NOMBRE_VENDEDOR)) <> ''
                       AND LTRIM(RTRIM(ID_VENDEDOR)) <> ''
-                    ORDER BY NOMBRE_VENDEDOR
+                    ORDER BY nombre
                 ");
         } catch (\Throwable) {
             return [];

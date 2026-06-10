@@ -8,6 +8,10 @@ use Illuminate\Support\Collection;
 
 interface DashboardVendedorRepositoryInterface
 {
+    public function companiasDelAsesor(int $asesorId): array;
+
+    public function nombreVendedorSiesa(int $asesorId): ?string;
+
     public function presupuestoVendedor(int $asesorId, int $compania, int $anio): ?object;
 
     public function codVendedorSiesa(int $asesorId, int $compania): ?string;

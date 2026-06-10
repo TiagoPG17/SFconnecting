@@ -1,5 +1,10 @@
 # SFconnecting CRM
 
+[![CI](https://github.com/TiagoPG17/SFconnecting/actions/workflows/ci.yml/badge.svg)](https://github.com/TiagoPG17/SFconnecting/actions/workflows/ci.yml)
+[![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white)](https://www.php.net)
+[![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
+[![License](https://img.shields.io/badge/licencia-MIT-green)](LICENSE)
+
 CRM comercial empresarial desarrollado con **Laravel 12** e integrado con el ERP **Contiflex (SIESA)** vía SQL Server. Permite gestionar el ciclo de ventas completo y visualizar datos reales del ERP en dashboards interactivos.
 
 ---
@@ -58,7 +63,7 @@ app/Http/
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/tu-usuario/sfconnecting.git
+git clone https://github.com/TiagoPG17/SFconnecting.git
 cd sfconnecting
 
 # 2. Instalar dependencias

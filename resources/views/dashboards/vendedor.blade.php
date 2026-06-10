@@ -24,14 +24,27 @@
         @endif
       </h1>
     </div>
-    <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200">
-      @foreach([['anio','Año'],['trimestre','Trimestre'],['mes','Mes']] as [$val,$label])
-        <a href="{{ request()->fullUrlWithQuery(['periodo' => $val]) }}"
-           class="px-3 py-1.5 text-sm rounded-lg transition {{ $periodo === $val ? 'text-white' : 'text-slate-500 hover:bg-slate-100' }}"
-           style="{{ $periodo === $val ? 'background:var(--accent)' : '' }}">
-          {{ $label }}
-        </a>
-      @endforeach
+    <div class="flex items-center gap-2">
+      @if(count($companias) > 1)
+      <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200">
+        @foreach($companias as $cia)
+          <a href="{{ request()->fullUrlWithQuery(['compania' => $cia]) }}"
+             class="px-3 py-1.5 text-sm rounded-lg transition {{ $compania === $cia ? 'text-white' : 'text-slate-500 hover:bg-slate-100' }}"
+             style="{{ $compania === $cia ? 'background:#7c3aed' : '' }}">
+            CIA {{ $cia }}
+          </a>
+        @endforeach
+      </div>
+      @endif
+      <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200">
+        @foreach([['anio','Año'],['trimestre','Trimestre'],['mes','Mes']] as [$val,$label])
+          <a href="{{ request()->fullUrlWithQuery(['periodo' => $val]) }}"
+             class="px-3 py-1.5 text-sm rounded-lg transition {{ $periodo === $val ? 'text-white' : 'text-slate-500 hover:bg-slate-100' }}"
+             style="{{ $periodo === $val ? 'background:var(--accent)' : '' }}">
+            {{ $label }}
+          </a>
+        @endforeach
+      </div>
     </div>
   </div>
 

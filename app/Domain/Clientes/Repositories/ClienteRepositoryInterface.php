@@ -35,4 +35,7 @@ interface ClienteRepositoryInterface
     public function existeNit(string $nit, ?int $exceptoId = null): bool;
 
     public function existeEmail(string $email, ?int $exceptoId = null): bool;
+
+    /** @return array{creados: int, actualizados: int} */
+    public function sincronizarDesdeErp(array $clientesErp, int $userId): array;
 }

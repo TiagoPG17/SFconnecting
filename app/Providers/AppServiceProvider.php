@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\Auditoria\Repositories\AuditoriaRepository;
+use App\Domain\Auditoria\Repositories\AuditoriaRepositoryInterface;
 use App\Domain\Clientes\Models\Cliente;
 use App\Domain\Clientes\Models\Contacto;
 use App\Domain\Clientes\Policies\ClientePolicy;
@@ -48,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(AuditoriaRepositoryInterface::class, AuditoriaRepository::class);
         $this->app->bind(ClienteRepositoryInterface::class, ClienteRepository::class);
         $this->app->bind(ContactoRepositoryInterface::class, ContactoRepository::class);
         $this->app->bind(SeguimientoRepositoryInterface::class, SeguimientoRepository::class);

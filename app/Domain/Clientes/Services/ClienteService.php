@@ -86,4 +86,12 @@ class ClienteService
 
         return $this->repo->actualizar($cliente, ActualizarClienteDTO::fromArray(['estado' => $estado]));
     }
+
+    /** @return array{creados: int, actualizados: int} */
+    public function sincronizarCarteraDesdeErp(string $nombreVendedor, int $userId): array
+    {
+        $clientesErp = $this->erp->todosClientesPorVendedor($nombreVendedor);
+
+        return $this->repo->sincronizarDesdeErp($clientesErp, $userId);
+    }
 }

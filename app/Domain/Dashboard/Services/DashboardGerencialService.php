@@ -14,6 +14,7 @@ class DashboardGerencialService
         private readonly DashboardGerencialRepositoryInterface $repo,
         private readonly int $compania,
         private readonly int $anio,
+        private readonly array $meses,
     ) {}
 
     public function presupuestoPorVendedor(): Collection
@@ -22,7 +23,7 @@ class DashboardGerencialService
         $codsPorAsesor = $this->repo->codsPorAsesor($this->compania)->keyBy('asesor_id');
 
         try {
-            $logrado = $this->repo->logradoVendedoresYtd($this->compania, $this->anio)->keyBy('COD_VENDEDOR');
+            $logrado = $this->repo->logradoVendedoresYtd($this->compania, $this->meses)->keyBy('COD_VENDEDOR');
         } catch (Throwable) {
             $logrado = collect();
         }
@@ -49,12 +50,12 @@ class DashboardGerencialService
 
     public function cicloDeVenta(): Collection
     {
-        return $this->repo->cicloDeVenta($this->anio);
+        return $this->repo->cicloDeVenta($this->meses);
     }
 
     public function motivosDePerdida(): Collection
     {
-        return $this->repo->motivosDePerdida($this->anio);
+        return $this->repo->motivosDePerdida($this->meses);
     }
 
     public function retencionChurn(): Collection
@@ -68,7 +69,7 @@ class DashboardGerencialService
 
     public function actividadEquipo(): Collection
     {
-        $rows = $this->repo->actividadEquipo($this->anio);
+        $rows = $this->repo->actividadEquipo($this->meses);
 
         // Pivota tipo de actividad por vendedor para la vista
         return $rows

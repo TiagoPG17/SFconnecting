@@ -116,4 +116,45 @@ class ClienteRepository implements ClienteRepositoryInterface
 
         return $query->exists();
     }
+
+    public function sincronizarDesdeErp(array $clientesErp, int $userId): array
+    {
+        $creados     = 0;
+        $actualizados = 0;
+
+        $nits = array_filter(array_column($clientesErp, 'NIT'), fn ($n) => $n !== null && $n !== '');
+
+        $existentes = Cliente::whereIn('nit', $nits)
+            ->pluck('nit')
+            ->flip()
+            ->toArray();
+
+        foreach ($clientesErp as $datos) {
+            $nit = trim((string) ($datos['NIT'] ?? ''));
+
+            if ($nit === '') {
+                continue;
+            }
+
+            if (isset($existentes[$nit])) {
+                Cliente::where('nit', $nit)->update([
+                    'razon_social' => $datos['RAZON_SOCIAL'] ?? '',
+                    'ciudad'       => $datos['CIUDAD'] ?? null,
+                ]);
+                $actualizados++;
+            } else {
+                Cliente::create([
+                    'nit'          => $nit,
+                    'razon_social' => $datos['RAZON_SOCIAL'] ?? $nit,
+                    'ciudad'       => $datos['CIUDAD'] ?? null,
+                    'user_id'      => $userId,
+                    'estado'       => 'activo',
+                ]);
+                $existentes[$nit] = true;
+                $creados++;
+            }
+        }
+
+        return compact('creados', 'actualizados');
+    }
 }

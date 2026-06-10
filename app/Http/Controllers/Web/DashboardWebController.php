@@ -26,29 +26,38 @@ class DashboardWebController extends Controller
     {
         $user     = $request->user();
         $esAsesor = $user->hasRole('comercial');
-        $kpis     = $this->service->kpis($user->id, $esAsesor);
+        $filtroVendedor = $esAsesor
+            ? $this->vendedorRepo->nombreVendedorSiesa($user->id)
+            : null;
+        $kpis = $this->service->kpis($user->id, $esAsesor, $filtroVendedor);
 
         return view('dashboard.index', compact('kpis'));
     }
 
     public function vendedor(Request $request): View
     {
-        $user     = $request->user();
-        $anio     = (int) $request->input('anio', now()->year);
-        $periodo  = $request->input('periodo', 'anio');
-        $compania = (int) config('crm.compania', 1);
-        $meses    = $this->mesesDelPeriodo($periodo, $anio);
+        $user      = $request->user();
+        $anio      = (int) $request->input('anio', now()->year);
+        $periodo   = $request->input('periodo', 'anio');
+        $meses     = $this->mesesDelPeriodo($periodo, $anio);
+
+        $companias = $this->vendedorRepo->companiasDelAsesor($user->id);
+        $compania  = in_array((int) $request->input('compania'), $companias)
+            ? (int) $request->input('compania')
+            : ($companias[0] ?? (int) config('crm.compania', 1));
 
         $svc = new DashboardVendedorService($this->vendedorRepo, $user->id, $compania, $anio, $meses);
 
         return view('dashboards.vendedor', [
-            'kpi'         => $svc->presupuestoVsLogrado(),
-            'actividades' => $svc->proximasActividades(),
-            'pipeline'    => $svc->pipelinePersonal(),
-            'sinContacto' => $svc->clientesSinContacto(),
-            'ranking'     => $svc->posicionEnEquipo(),
-            'anio'        => $anio,
-            'periodo'     => $periodo,
+            'kpi'               => $svc->presupuestoVsLogrado(),
+            'actividades'       => $svc->proximasActividades(),
+            'pipeline'          => $svc->pipelinePersonal(),
+            'sinContacto'       => $svc->clientesSinContacto(),
+            'ranking'           => $svc->posicionEnEquipo(),
+            'anio'              => $anio,
+            'periodo'           => $periodo,
+            'compania'          => $compania,
+            'companias'         => $companias,
         ]);
     }
 
@@ -73,9 +82,11 @@ class DashboardWebController extends Controller
     public function gerencial(Request $request): View
     {
         $anio     = (int) $request->input('anio', now()->year);
+        $periodo  = $request->input('periodo', 'anio');
         $compania = (int) config('crm.compania', 2);
+        $meses    = $this->mesesDelPeriodo($periodo, $anio);
 
-        $svc = new DashboardGerencialService($this->gerencialRepo, $compania, $anio);
+        $svc = new DashboardGerencialService($this->gerencialRepo, $compania, $anio, $meses);
 
         return view('dashboards.gerencial', [
             'vendedores' => $svc->presupuestoPorVendedor(),
@@ -84,6 +95,7 @@ class DashboardWebController extends Controller
             'churn'      => $svc->retencionChurn(),
             'actividad'  => $svc->actividadEquipo(),
             'anio'       => $anio,
+            'periodo'    => $periodo,
         ]);
     }
 }

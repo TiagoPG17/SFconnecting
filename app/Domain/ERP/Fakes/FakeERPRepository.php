@@ -14,6 +14,7 @@ class FakeERPRepository implements ERPRepositoryInterface
     private array $clientes = [];
     private array $documentos = [];
     private array $saldos = [];
+    private array $clientesVendedor = [];
 
     public function clientePorNit(string $nit): ?array
     {
@@ -46,13 +47,13 @@ class FakeERPRepository implements ERPRepositoryInterface
         return $this->saldos[$nit] ?? null;
     }
 
-    public function clientesAtencionInmediata(int $limite = 20): array
+    public function clientesAtencionInmediata(int $limite = 20, ?string $filtroVendedor = null): array
     {
         $this->checkAvailability();
         return [];
     }
 
-    public function clientesRescate(int $limite = 20): array
+    public function clientesRescate(int $limite = 20, ?string $filtroVendedor = null): array
     {
         $this->checkAvailability();
         return [];
@@ -70,37 +71,37 @@ class FakeERPRepository implements ERPRepositoryInterface
         return [];
     }
 
-    public function clientesEnFuga(int $limite = 50): array
+    public function clientesEnFuga(int $limite = 50, ?string $filtroVendedor = null): array
     {
         $this->checkAvailability();
         return [];
     }
 
-    public function clientesExpansion(int $limite = 50): array
+    public function clientesExpansion(int $limite = 50, ?string $filtroVendedor = null): array
     {
         $this->checkAvailability();
         return [];
     }
 
-    public function clientesPresupuestoActivo(int $limite = 30): array
+    public function clientesPresupuestoActivo(int $limite = 30, ?string $filtroVendedor = null): array
     {
         $this->checkAvailability();
         return [];
     }
 
-    public function clientesPresupuestoEnRiesgo(int $limite = 30): array
+    public function clientesPresupuestoEnRiesgo(int $limite = 30, ?string $filtroVendedor = null): array
     {
         $this->checkAvailability();
         return [];
     }
 
-    public function clientesPresupuestoRecuperar(int $limite = 30): array
+    public function clientesPresupuestoRecuperar(int $limite = 30, ?string $filtroVendedor = null): array
     {
         $this->checkAvailability();
         return [];
     }
 
-    public function clientesLargoPlazo(int $limite = 30): array
+    public function clientesLargoPlazo(int $limite = 30, ?string $filtroVendedor = null): array
     {
         $this->checkAvailability();
         return [];
@@ -110,6 +111,53 @@ class FakeERPRepository implements ERPRepositoryInterface
     {
         $this->checkAvailability();
         return [];
+    }
+
+    public function clientesHuerfanos(int $compania, array $nitsExcluir = [], int $limite = 100): array
+    {
+        $this->checkAvailability();
+        return [];
+    }
+
+    public function clientesPorVendedor(
+        string $nombreVendedor,
+        ?string $buscar = null,
+        int $pagina = 1,
+        int $porPagina = 20
+    ): array {
+        $this->checkAvailability();
+
+        $todos = array_filter(
+            $this->clientesVendedor[$nombreVendedor] ?? [],
+            fn ($c) => !$buscar
+                || str_contains(strtolower($c['RAZON_SOCIAL'] ?? ''), strtolower($buscar))
+                || str_contains($c['NIT'] ?? '', $buscar)
+        );
+
+        $todos  = array_values($todos);
+        $total  = count($todos);
+        $data   = array_slice($todos, ($pagina - 1) * $porPagina, $porPagina);
+
+        return compact('data', 'total', 'pagina', 'porPagina');
+    }
+
+    public function todosClientesPorVendedor(string $nombreVendedor): array
+    {
+        $this->checkAvailability();
+
+        return array_values($this->clientesVendedor[$nombreVendedor] ?? []);
+    }
+
+    public function ventasMensualesPorNit(string $nit): array
+    {
+        $this->checkAvailability();
+
+        return ['mensual' => [], 'trimestral' => [], 'anual' => []];
+    }
+
+    public function agregarClientesDeVendedor(string $nombreVendedor, array $clientes): void
+    {
+        $this->clientesVendedor[$nombreVendedor] = $clientes;
     }
 
     public function isAvailable(): bool

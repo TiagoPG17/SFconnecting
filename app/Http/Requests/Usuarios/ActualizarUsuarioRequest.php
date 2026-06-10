@@ -22,9 +22,24 @@ class ActualizarUsuarioRequest extends FormRequest
 
         return [
             'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', Rule::unique('users', 'email')->ignore($userId)],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'email'    => ['required', 'email', 'max:254', Rule::unique('users', 'email')->ignore($userId)],
+            'password' => ['nullable', 'string', 'min:8', 'max:72', 'confirmed'],
             'rol'      => ['required', 'string', "in:{$rolesValidos}"],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.required'      => 'El nombre es obligatorio.',
+            'name.max'           => 'El nombre no puede superar los :max caracteres.',
+            'email.required'     => 'El correo electrónico es obligatorio.',
+            'email.email'        => 'El correo electrónico no tiene un formato válido.',
+            'email.unique'       => 'Ya existe un usuario con este correo electrónico.',
+            'password.min'       => 'La contraseña debe tener al menos :min caracteres.',
+            'password.confirmed' => 'Las contraseñas no coinciden.',
+            'rol.required'       => 'Debes seleccionar un rol.',
+            'rol.in'             => 'El rol seleccionado no es válido.',
         ];
     }
 }

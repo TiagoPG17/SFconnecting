@@ -22,6 +22,11 @@ class AuthController extends Controller
             return ApiResponse::error('Credenciales incorrectas.', [], 401);
         }
 
+        if (! $user->activo) {
+            return ApiResponse::error('Cuenta desactivada. Contacta al administrador.', [], 403);
+        }
+
+        $user->tokens()->where('name', 'api')->delete();
         $token = $user->createToken('api')->plainTextToken;
 
         return ApiResponse::success([

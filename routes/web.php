@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Web\AuditoriaWebController;
 use App\Http\Controllers\Web\AuthWebController;
 use App\Http\Controllers\Web\ClienteWebController;
+use App\Http\Controllers\Web\ClientesHuerfanosWebController;
 use App\Http\Controllers\Web\DashboardWebController;
 use App\Http\Controllers\Web\MaestroWebController;
 use App\Http\Controllers\Web\NegocioWebController;
@@ -15,10 +17,10 @@ use App\Http\Controllers\Web\PresupuestoWebController;
 use App\Http\Controllers\Web\UsuarioWebController;
 use Illuminate\Support\Facades\Route;
 
-// Auth pública
+// Auth pública (5 intentos de login por minuto por IP)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthWebController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthWebController::class, 'login']);
+    Route::post('/login', [AuthWebController::class, 'login'])->middleware('throttle:5,1');
 });
 Route::match(['GET', 'POST'], '/logout', [AuthWebController::class, 'logout'])->name('logout')->middleware('auth');
 
@@ -30,8 +32,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardWebController::class, 'index'])->name('dashboard');
 
     // Dashboards especializados
-    Route::get('/mi-desempeno', [DashboardWebController::class, 'vendedor'])->name('dash.vendedor');
-    Route::get('/gerencial',    [DashboardWebController::class, 'gerencial'])->name('dash.gerencial');
+    Route::get('/mi-desempeno', [DashboardWebController::class, 'vendedor'])->name('dash.vendedor')->middleware('role:asesor|admin');
+    Route::get('/gerencial',    [DashboardWebController::class, 'gerencial'])->name('dash.gerencial')->middleware('role:gerente|admin');
 
     // Prospectos — estáticas antes del wildcard
     Route::get('/prospectos/kanban',           [ProspectoWebController::class, 'kanban'])->name('prospectos.kanban');
@@ -42,14 +44,19 @@ Route::middleware(['auth'])->group(function () {
 
     // Negocios — estáticas antes del wildcard
     Route::get('/negocios/kanban',           [NegocioWebController::class, 'kanban'])->name('negocios.kanban');
-    Route::get('/negocios/forecast',         [NegocioWebController::class, 'forecast'])->name('forecast.index');
-    Route::get('/negocios/create',           [NegocioWebController::class, 'create'])->name('negocios.create');
+Route::get('/negocios/create',           [NegocioWebController::class, 'create'])->name('negocios.create');
     Route::get('/negocios/{negocio}/edit',   [NegocioWebController::class, 'edit'])->name('negocios.edit');
     Route::get('/negocios/{negocio}',        [NegocioWebController::class, 'show'])->name('negocios.show');
     Route::get('/negocios',                  [NegocioWebController::class, 'index'])->name('negocios.index');
 
+    // Clientes huérfanos (todos los roles)
+    Route::get('/clientes-huerfanos', [ClientesHuerfanosWebController::class, 'index'])->name('clientes-huerfanos.index');
+    Route::post('/clientes-huerfanos/{nit}/reclamar', [ClientesHuerfanosWebController::class, 'reclamar'])->name('clientes-huerfanos.reclamar');
+
     // Clientes
+    Route::post('/clientes/sincronizar-cartera', [ClienteWebController::class, 'sincronizarCartera'])->name('clientes.sincronizar');
     Route::get('/clientes/create',        [ClienteWebController::class, 'create'])->name('clientes.create');
+    Route::get('/clientes/erp/{nit}',     [ClienteWebController::class, 'showErp'])->name('clientes.erp.show');
     Route::get('/clientes/{cliente}/edit',[ClienteWebController::class, 'edit'])->name('clientes.edit');
     Route::get('/clientes/{cliente}',     [ClienteWebController::class, 'show'])->name('clientes.show');
     Route::get('/clientes',               [ClienteWebController::class, 'index'])->name('clientes.index');
@@ -70,6 +77,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('mapeo-vendedores', MapeoVendedorWebController::class)
         ->only(['index', 'store', 'update', 'destroy'])
         ->middleware('role:admin');
+
+    // Auditoría (admin only)
+    Route::get('/auditoria', [AuditoriaWebController::class, 'index'])->name('auditoria.index')->middleware('role:admin');
 
     // Usuarios (admin only)
     Route::get('/usuarios/create',        [UsuarioWebController::class, 'create'])->name('usuarios.create');

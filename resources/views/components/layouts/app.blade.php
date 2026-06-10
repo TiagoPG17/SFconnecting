@@ -65,6 +65,8 @@
 
         {{-- Nav --}}
         <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+
+            {{-- Inicio --}}
             <x-ui.nav-item href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')" icon="home">
                 Dashboard
             </x-ui.nav-item>
@@ -79,37 +81,38 @@
             </x-ui.nav-item>
             @endrole
 
+            {{-- Comercial --}}
             <div class="pt-4 pb-1 px-3">
                 <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Comercial</p>
             </div>
-
             <x-ui.nav-item href="{{ route('prospectos.index') }}" :active="request()->routeIs('prospectos.*')" icon="user-plus">
                 Prospectos
             </x-ui.nav-item>
-            <x-ui.nav-item href="{{ route('negocios.index') }}" :active="request()->routeIs('negocios.*') && !request()->routeIs('negocios.kanban') && !request()->routeIs('forecast.*')" icon="briefcase">
+            <x-ui.nav-item href="{{ route('negocios.index') }}" :active="request()->routeIs('negocios.*') && !request()->routeIs('negocios.kanban')" icon="briefcase">
                 Negocios
             </x-ui.nav-item>
             <x-ui.nav-item href="{{ route('negocios.kanban') }}" :active="request()->routeIs('negocios.kanban')" icon="layout">
                 Pipeline Kanban
             </x-ui.nav-item>
-            <x-ui.nav-item href="{{ route('forecast.index') }}" :active="request()->routeIs('forecast.*')" icon="trending-up">
-                Forecast
-            </x-ui.nav-item>
 
+            {{-- Clientes --}}
             <div class="pt-4 pb-1 px-3">
                 <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Clientes</p>
             </div>
-
-            <x-ui.nav-item href="{{ route('clientes.index') }}" :active="request()->routeIs('clientes.*')" icon="users">
+            <x-ui.nav-item href="{{ route('clientes.index') }}" :active="request()->routeIs('clientes.*') && !request()->routeIs('clientes-huerfanos.*')" icon="users">
                 Clientes
+            </x-ui.nav-item>
+            <x-ui.nav-item href="{{ route('clientes-huerfanos.index') }}" :active="request()->routeIs('clientes-huerfanos.*')" icon="user-x">
+                Clientes huérfanos
             </x-ui.nav-item>
             <x-ui.nav-item href="{{ route('seguimientos.index') }}" :active="request()->routeIs('seguimientos.*')" icon="clock">
                 Seguimientos
             </x-ui.nav-item>
 
+            {{-- Análisis (admin + gerente) --}}
             @role('admin|gerente')
             <div class="pt-4 pb-1 px-3">
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Configuración</p>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Análisis</p>
             </div>
             <x-ui.nav-item href="{{ route('presupuestos.index') }}" :active="request()->routeIs('presupuestos.*')" icon="trending-up">
                 Presupuestos
@@ -119,20 +122,25 @@
             </x-ui.nav-item>
             @endrole
 
+            {{-- Administración (admin) --}}
             @role('admin')
+            <div class="pt-4 pb-1 px-3">
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Administración</p>
+            </div>
             <x-ui.nav-item href="{{ route('mapeo-vendedores.index') }}" :active="request()->routeIs('mapeo-vendedores.*')" icon="users">
                 Mapeo vendedores
             </x-ui.nav-item>
             <x-ui.nav-item href="{{ route('maestros.index') }}" :active="request()->routeIs('maestros.*')" icon="settings">
                 Maestros CRM
             </x-ui.nav-item>
-            @endrole
-
-            @role('admin')
             <x-ui.nav-item href="{{ route('usuarios.index') }}" :active="request()->routeIs('usuarios.*')" icon="users">
                 Usuarios
             </x-ui.nav-item>
+            <x-ui.nav-item href="{{ route('auditoria.index') }}" :active="request()->routeIs('auditoria.*')" icon="shield">
+                Auditoría
+            </x-ui.nav-item>
             @endrole
+
         </nav>
 
         {{-- User footer --}}

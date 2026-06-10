@@ -15,7 +15,7 @@ class DashboardService
         private readonly ERPRepositoryInterface $erp,
     ) {}
 
-    public function kpis(int $userId, bool $esAsesor): array
+    public function kpis(int $userId, bool $esAsesor, ?string $filtroVendedor = null): array
     {
         $filtroUserId = $esAsesor ? $userId : null;
 
@@ -34,11 +34,11 @@ class DashboardService
             'top_asesores'     => $esAsesor ? [] : $this->repo->topAsesores(),
             'conversion'       => $this->repo->tasaConversion($filtroUserId),
             'aging'            => $this->repo->agingNegocios($filtroUserId),
-            'inteligencia'     => $this->inteligenciaComercial($esAsesor),
+            'inteligencia'     => $this->inteligenciaComercial($esAsesor, $filtroVendedor),
         ];
     }
 
-    private function inteligenciaComercial(bool $esAsesor): array
+    private function inteligenciaComercial(bool $esAsesor, ?string $filtroVendedor = null): array
     {
         $disponible = false;
         try {
@@ -58,17 +58,19 @@ class DashboardService
             }
         };
 
+        $v = $filtroVendedor;
+
         return [
-            'atencion_inmediata'    => $safe(fn () => $this->erp->clientesAtencionInmediata(15)),
-            'rescate'               => $safe(fn () => $this->erp->clientesRescate(15)),
-            'en_fuga'               => $safe(fn () => $this->erp->clientesEnFuga(20)),
-            'expansion'             => $safe(fn () => $this->erp->clientesExpansion(20)),
+            'atencion_inmediata'    => $safe(fn () => $this->erp->clientesAtencionInmediata(15, $v)),
+            'rescate'               => $safe(fn () => $this->erp->clientesRescate(15, $v)),
+            'en_fuga'               => $safe(fn () => $this->erp->clientesEnFuga(20, $v)),
+            'expansion'             => $safe(fn () => $this->erp->clientesExpansion(20, $v)),
             'panorama_gerencial'    => $esAsesor ? [] : $safe(fn () => $this->erp->panoramaGerencial()),
             'integrales'            => $esAsesor ? [] : $safe(fn () => $this->erp->clientesIntegrales(30)),
-            'presupuesto_activo'    => $safe(fn () => $this->erp->clientesPresupuestoActivo(30)),
-            'presupuesto_en_riesgo' => $safe(fn () => $this->erp->clientesPresupuestoEnRiesgo(30)),
-            'presupuesto_recuperar' => $safe(fn () => $this->erp->clientesPresupuestoRecuperar(30)),
-            'largo_plazo'           => $safe(fn () => $this->erp->clientesLargoPlazo(30)),
+            'presupuesto_activo'    => $safe(fn () => $this->erp->clientesPresupuestoActivo(30, $v)),
+            'presupuesto_en_riesgo' => $safe(fn () => $this->erp->clientesPresupuestoEnRiesgo(30, $v)),
+            'presupuesto_recuperar' => $safe(fn () => $this->erp->clientesPresupuestoRecuperar(30, $v)),
+            'largo_plazo'           => $safe(fn () => $this->erp->clientesLargoPlazo(30, $v)),
             'panorama_presupuestal' => $esAsesor ? [] : $safe(fn () => $this->erp->panoramaPresupuestal()),
             'disponible'            => true,
         ];

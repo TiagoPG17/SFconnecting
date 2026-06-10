@@ -7,6 +7,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -56,5 +57,10 @@ class User extends Authenticatable
     public function negocios(): HasMany
     {
         return $this->hasMany(\App\Domain\Negocios\Models\Negocio::class, 'asesor_id');
+    }
+
+    public function equivalencia(): HasOne
+    {
+        return $this->hasOne(\App\Domain\Dashboard\Models\VendedorEquivalencia::class, 'asesor_id');
     }
 }

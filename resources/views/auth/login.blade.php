@@ -1,5 +1,5 @@
 <x-layouts.guest title="Iniciar sesión — SFconnecting">
-    <div class="w-full max-w-sm">
+    <div class="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-slate-100 px-8 py-10">
 
         {{-- Logo mobile --}}
         <div class="flex lg:hidden items-center gap-2 mb-10">
@@ -104,9 +104,9 @@
             </button>
         </form>
 
-        {{-- Footer --}}
-        <p class="mt-8 text-center text-xs text-slate-400">
-            © {{ date('Y') }} SFconnecting &middot; Uso corporativo exclusivo
-        </p>
     </div>
+
+    <p class="mt-6 text-center text-xs text-slate-400">
+        © {{ date('Y') }} Sistemas &middot; Uso corporativo exclusivo
+    </p>
 </x-layouts.guest>

@@ -15,9 +15,11 @@ use App\Http\Controllers\Api\SeguimientoController;
 use App\Http\Controllers\Api\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
-// Auth — público
+// Auth — público (5 intentos por minuto por IP)
 Route::prefix('auth')->group(function () {
-    Route::post('login', [AuthController::class, 'login'])->name('auth.login');
+    Route::post('login', [AuthController::class, 'login'])
+        ->middleware('throttle:5,1')
+        ->name('auth.login');
 });
 
 Route::middleware('auth:sanctum')->name('api.')->group(function () {

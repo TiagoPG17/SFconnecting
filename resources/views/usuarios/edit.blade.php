@@ -15,8 +15,10 @@
             password_confirmation: '',
             rol: '{{ $usuario->getRoleNames()->first() ?? '' }}',
         },
+        errors: {},
         loading: false,
         async guardar() {
+            this.errors = {};
             this.loading = true;
             try {
                 const payload = { ...this.form };
@@ -29,8 +31,13 @@
                     $store.toast.success('Usuario actualizado.');
                     setTimeout(() => window.location.href = '{{ route('usuarios.index') }}', 800);
                 } else {
-                    const msgs = Object.values(res.errors ?? {}).flat();
-                    $store.toast.error(msgs[0] ?? res.message);
+                    this.errors = res.errors ?? {};
+                    const msgs = Object.values(this.errors).flat();
+                    $store.toast.error(
+                        msgs.length > 1
+                            ? `Corrige los ${msgs.length} errores marcados.`
+                            : (msgs[0] ?? res.message)
+                    );
                 }
             } finally {
                 this.loading = false;
@@ -55,13 +62,24 @@
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Nombre completo <span class="text-red-500">*</span></label>
-                    <x-ui.input x-model="form.name"/>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">
+                        Nombre completo <span class="text-red-500">*</span>
+                    </label>
+                    <x-ui.input
+                        x-model="form.name"
+                        @input="delete errors.name"
+                        x-error="errors.name"/>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Email <span class="text-red-500">*</span></label>
-                    <x-ui.input type="email" x-model="form.email"/>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">
+                        Email <span class="text-red-500">*</span>
+                    </label>
+                    <x-ui.input
+                        type="email"
+                        x-model="form.email"
+                        @input="delete errors.email"
+                        x-error="errors.email"/>
                 </div>
 
                 <div class="border-t border-slate-100 pt-4">
@@ -69,18 +87,34 @@
                     <div class="space-y-3">
                         <div>
                             <label class="block text-xs font-medium text-slate-700 mb-1">Nueva contraseña</label>
-                            <x-ui.input type="password" x-model="form.password" placeholder="Nueva contraseña (mínimo 8 caracteres)"/>
+                            <x-ui.input
+                                type="password"
+                                x-model="form.password"
+                                @input="delete errors.password"
+                                x-error="errors.password"
+                                placeholder="Nueva contraseña (mínimo 8 caracteres)"/>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-700 mb-1">Confirmar nueva contraseña</label>
-                            <x-ui.input type="password" x-model="form.password_confirmation" placeholder="Repite la nueva contraseña"/>
+                            <x-ui.input
+                                type="password"
+                                x-model="form.password_confirmation"
+                                @input="delete errors.password"
+                                x-error="errors.password"
+                                placeholder="Repite la nueva contraseña"/>
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Rol <span class="text-red-500">*</span></label>
-                    <x-ui.select x-model="form.rol">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">
+                        Rol <span class="text-red-500">*</span>
+                    </label>
+                    <x-ui.select
+                        x-model="form.rol"
+                        @change="delete errors.rol"
+                        x-error="errors.rol"
+                        :placeholder="null">
                         @foreach ($roles as $rol)
                             <option value="{{ $rol }}" @selected($usuario->hasRole($rol))>{{ ucfirst($rol) }}</option>
                         @endforeach
@@ -89,7 +123,6 @@
             </div>
 
             <div class="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
-                {{-- Toggle activo --}}
                 @if ($usuario->id !== auth()->id())
                     <button
                         x-data

@@ -29,4 +29,21 @@ class CrearProspectoRequest extends FormRequest
             'observaciones'         => ['nullable', 'string', 'max:2000'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'empresa.required'            => 'El nombre de la empresa es obligatorio.',
+            'empresa.max'                 => 'El nombre no puede superar los :max caracteres.',
+            'contacto.required'           => 'El nombre del contacto es obligatorio.',
+            'email.email'                 => 'El correo no tiene un formato válido.',
+            'estado_pipeline_id.required' => 'Debes seleccionar un estado del pipeline.',
+            'estado_pipeline_id.exists'   => 'El estado seleccionado no existe.',
+            'valor_estimado.min'          => 'El valor no puede ser negativo.',
+            'probabilidad_cierre.min'     => 'La probabilidad mínima es 0 %.',
+            'probabilidad_cierre.max'     => 'La probabilidad máxima es 100 %.',
+            'fecha_proximo_contacto.date'             => 'La fecha de contacto no es válida.',
+            'fecha_proximo_contacto.after_or_equal'   => 'La fecha de contacto no puede ser en el pasado.',
+        ];
+    }
 }

@@ -14,6 +14,23 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardVendedorRepository implements DashboardVendedorRepositoryInterface
 {
+    public function companiasDelAsesor(int $asesorId): array
+    {
+        return VendedorEquivalencia::where('asesor_id', $asesorId)
+            ->where('activo', true)
+            ->orderBy('compania')
+            ->pluck('compania')
+            ->map(fn ($c) => (int) $c)
+            ->toArray();
+    }
+
+    public function nombreVendedorSiesa(int $asesorId): ?string
+    {
+        return VendedorEquivalencia::where('asesor_id', $asesorId)
+            ->where('activo', true)
+            ->value('nombre_vendedor');
+    }
+
     public function presupuestoVendedor(int $asesorId, int $compania, int $anio): ?object
     {
         return Presupuesto::where('asesor_id', $asesorId)
