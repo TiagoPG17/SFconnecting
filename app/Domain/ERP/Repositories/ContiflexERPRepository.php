@@ -147,6 +147,8 @@ class ContiflexERPRepository implements ERPRepositoryInterface
                     AS decimal(5,2)) AS porc_riesgo
                 FROM dbo.vw_CRM_Clientes_Prioritarios
                 GROUP BY COMPANIA, NOMBRE_VENDEDOR
+                HAVING MIN(DIAS_DESDE_ULTIMA_COMPRA) <= 365
+                  AND SUM(FACTURADO_ANIO_ACTUAL) + SUM(FACTURADO_ANIO_ANTERIOR) > 0
                 ORDER BY COMPANIA, SUM(FACTURADO_ANIO_ACTUAL) DESC
             ";
 
@@ -371,7 +373,8 @@ class ContiflexERPRepository implements ERPRepositoryInterface
                              THEN FACTURADO_ANIO_ANTERIOR ELSE 0 END) AS valor_potencial_p3
                 FROM dbo.vw_CRM_Clientes_Prioritarios
                 GROUP BY COMPANIA, NOMBRE_VENDEDOR
-                HAVING MIN(DIAS_DESDE_ULTIMA_COMPRA) <= 90
+                HAVING MIN(DIAS_DESDE_ULTIMA_COMPRA) <= 365
+                  AND SUM(FACTURADO_ANIO_ACTUAL) + SUM(FACTURADO_ANIO_ANTERIOR) > 0
                 ORDER BY COMPANIA, SUM(FACTURADO_ANIO_ACTUAL) DESC
             ";
 

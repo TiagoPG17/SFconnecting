@@ -388,7 +388,7 @@
                 <span class="flex items-center justify-center gap-1">P3 Recuperar <span x-text="arrow('p3_recuperar')" class="opacity-50"></span></span>
               </th>
               <th @click="sortOn('p4_largo_plazo')" :class="sortBy==='p4_largo_plazo'?'text-slate-700':'text-slate-500'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                <span class="flex items-center justify-center gap-1">P4 L.P. <span x-text="arrow('p4_largo_plazo')" class="opacity-50"></span></span>
+                <span class="flex items-center justify-center gap-1">P4 Inactivos <span x-text="arrow('p4_largo_plazo')" class="opacity-50"></span></span>
               </th>
               <th @click="sortOn('valor_a_rescatar_p2')" :class="sortBy==='valor_a_rescatar_p2'?'text-orange-700':'text-orange-600'" class="text-right py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
                 <span class="flex items-center justify-end gap-1">$ Rescatar P2 <span x-text="arrow('valor_a_rescatar_p2')" class="opacity-50"></span></span>

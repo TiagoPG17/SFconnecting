@@ -7,8 +7,13 @@ services:
     restart: unless-stopped
     working_dir: /var/www/sfconnecting
     volumes:
-      - .:/var/www/sfconnecting
       - sfconnecting_storage:/var/www/sfconnecting/storage
+      - ./.env:/var/www/sfconnecting/.env
+      - sfconnecting_public:/var/www/sfconnecting/public
+      - ./config:/var/www/sfconnecting/config
+      - ./resources:/var/www/sfconnecting/resources
+      - ./routes:/var/www/sfconnecting/routes
+      - ./app:/var/www/sfconnecting/app
     networks:
       - sfconnecting-network
     depends_on:
@@ -21,8 +26,8 @@ services:
     ports:
       - "8080:80"   # Cambia 8080 si ese puerto está ocupado en el servidor
     volumes:
-      - .:/var/www/sfconnecting
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - sfconnecting_public:/var/www/sfconnecting/public:ro
     networks:
       - sfconnecting-network
     depends_on:
@@ -32,6 +37,8 @@ services:
     image: mysql:8.0
     container_name: sfconnecting-db
     restart: unless-stopped
+    ports:
+      - "3307:3306"
     environment:
       MYSQL_DATABASE: sfconnecting
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -49,3 +56,4 @@ networks:
 volumes:
   sfconnecting_storage:
   sfconnecting_db:
+  sfconnecting_public:
