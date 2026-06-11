@@ -21,7 +21,7 @@
                     </svg>
                 </div>
                 <p class="text-2xl font-extrabold text-white tracking-tight">${{ number_format($kpis['forecast']['total_pipeline'], 0, ',', '.') }}</p>
-                <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-blue-100">Total Pipeline</p>
+                <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-blue-100">Total en negociación</p>
             </div>
         </div>
 
@@ -35,7 +35,7 @@
                     </svg>
                 </div>
                 <p class="text-2xl font-extrabold text-white tracking-tight">${{ number_format($kpis['forecast']['total_forecast'], 0, ',', '.') }}</p>
-                <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-emerald-100">Forecast Ponderado</p>
+                <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-emerald-100">Valor esperado del pipeline</p>
             </div>
         </div>
 
@@ -78,7 +78,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/>
             </svg>
         </div>
-        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Pipeline Comercial</h2>
+        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Oportunidades de venta</h2>
         <div class="flex-1 h-px bg-gradient-to-r from-blue-200 via-blue-100 to-transparent"></div>
     </div>
 
@@ -86,7 +86,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
 
         <x-ui.card class="p-5 lg:col-span-2">
-            <h3 class="text-sm font-semibold text-slate-700 mb-5">Estado del Pipeline</h3>
+            <h3 class="text-sm font-semibold text-slate-700 mb-5">Estado de las oportunidades</h3>
 
             {{-- Funnel steps --}}
             <div class="grid grid-cols-4 gap-2 mb-6">
@@ -160,8 +160,8 @@
 
     </div>
 
-    {{-- Fila 2: Próximos cierres + Top Asesores --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+    {{-- Fila 2: Próximos cierres --}}
+    <div class="mb-4">
 
         <x-ui.card class="p-5">
             <div class="flex items-center justify-between mb-4">
@@ -194,47 +194,6 @@
             @endforelse
         </x-ui.card>
 
-        @if(!empty($kpis['top_asesores']))
-        <x-ui.card class="p-5">
-            <h3 class="text-sm font-semibold text-slate-700 mb-4">Top Asesores</h3>
-            @php
-                $medals = [
-                    0 => ['ring'=>'ring-2 ring-yellow-300','bg'=>'bg-gradient-to-b from-yellow-300 to-yellow-500','text'=>'text-white','shadow'=>'shadow-yellow-200'],
-                    1 => ['ring'=>'ring-2 ring-slate-300', 'bg'=>'bg-gradient-to-b from-slate-300 to-slate-400', 'text'=>'text-white','shadow'=>'shadow-slate-200'],
-                    2 => ['ring'=>'ring-2 ring-orange-300','bg'=>'bg-gradient-to-b from-orange-300 to-orange-500','text'=>'text-white','shadow'=>'shadow-orange-200'],
-                ];
-            @endphp
-            @foreach($kpis['top_asesores'] as $i => $asesor)
-            @php $m = $medals[$i] ?? ['ring'=>'','bg'=>'bg-slate-100','text'=>'text-slate-600','shadow'=>'']; @endphp
-            <div class="flex items-center gap-3 py-2.5 {{ !$loop->last ? 'border-b border-slate-100' : '' }}">
-                <div class="w-8 h-8 rounded-full {{ $m['bg'] }} {{ $m['ring'] }} shadow-md {{ $m['shadow'] }} flex items-center justify-center text-xs font-extrabold {{ $m['text'] }} shrink-0">
-                    @if($i === 0)
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0"/>
-                        </svg>
-                    @elseif($i === 1)
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd"/>
-                        </svg>
-                    @elseif($i === 2)
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/>
-                        </svg>
-                    @else
-                        {{ $i + 1 }}
-                    @endif
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-slate-900 truncate">{{ $asesor['nombre'] }}</p>
-                    <p class="text-xs text-slate-400">{{ $asesor['negocios_ganados'] }} negocios ganados</p>
-                </div>
-                <p class="text-sm font-bold text-emerald-600 shrink-0">
-                    ${{ number_format($asesor['valor_ganado'], 0, ',', '.') }}
-                </p>
-            </div>
-            @endforeach
-        </x-ui.card>
-        @endif
     </div>
 
     {{-- Aging: colapsado por defecto --}}
@@ -305,7 +264,6 @@
         $intel        = $kpis['inteligencia'];
         $totalAlertas = count($intel['en_fuga'] ?? []) + count($intel['atencion_inmediata'] ?? []);
         $totalOpor    = count($intel['rescate'] ?? []) + count($intel['expansion'] ?? []);
-        $tieneGer     = !empty($intel['integrales']) || !empty($intel['panorama_gerencial']);
         $totalPres    = count($intel['presupuesto_activo'] ?? [])
                       + count($intel['presupuesto_en_riesgo'] ?? [])
                       + count($intel['presupuesto_recuperar'] ?? [])
@@ -346,8 +304,6 @@
 
         window._tableData = {
             panoramaPresupuestal: {!! json_encode($intel['panorama_presupuestal'] ?? []) !!},
-            integrales:           {!! json_encode($intel['integrales'] ?? []) !!},
-            panoramaGerencial:    {!! json_encode($intel['panorama_gerencial'] ?? []) !!},
         };
 
         function sortableTable(items) {
@@ -433,14 +389,6 @@
             </button>
             @endif
 
-            @if($tieneGer)
-            <button @click="tab = 'gerencial'"
-                    :class="tab === 'gerencial' ? 'bg-white shadow-sm text-slate-900 shadow-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'"
-                    class="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all">
-                <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
-                Visión gerencial
-            </button>
-            @endif
         </div>
 
         {{-- ── TAB: ALERTAS URGENTES ── --}}
@@ -943,256 +891,10 @@
 
             </div>
 
-            {{-- Q5: Panorama Presupuestal Gerencial --}}
-            @if(!empty($intel['panorama_presupuestal']))
-            <x-ui.card x-data="sortableTable(window._tableData.panoramaPresupuestal)">
-                <div class="h-1.5 w-full rounded-t-xl bg-gradient-to-r from-teal-600 to-teal-400"></div>
-                <div class="p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-900">Panorama Presupuestal por Vendedor</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Facturación actual vs. año anterior · distribución de cartera por horizonte</p>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-xs">
-                            <thead>
-                                <tr class="border-b border-slate-100 bg-slate-50/70">
-                                    <th @click="sortOn('NOMBRE_VENDEDOR')" :class="sortBy==='NOMBRE_VENDEDOR' ? 'text-teal-700' : 'text-slate-500'" class="text-left py-2.5 pr-3 pl-3 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center gap-1">Vendedor <span x-text="arrow('NOMBRE_VENDEDOR')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('facturado_anio_actual')" :class="sortBy==='facturado_anio_actual' ? 'text-teal-800' : 'text-teal-600'" class="text-right py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-end gap-1">Año actual <span x-text="arrow('facturado_anio_actual')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('facturado_anio_anterior')" :class="sortBy==='facturado_anio_anterior' ? 'text-slate-800' : 'text-slate-500'" class="text-right py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-end gap-1">Año ant. <span x-text="arrow('facturado_anio_anterior')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('variacion_porc')" :class="sortBy==='variacion_porc' ? 'text-slate-800' : 'text-slate-500'" class="text-right py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-end gap-1">Var.% <span x-text="arrow('variacion_porc')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('p1_activos')" :class="sortBy==='p1_activos' ? 'text-emerald-700' : 'text-emerald-600'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-center gap-1">P1 <span x-text="arrow('p1_activos')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('p2_en_riesgo')" :class="sortBy==='p2_en_riesgo' ? 'text-orange-700' : 'text-orange-600'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-center gap-1">P2 <span x-text="arrow('p2_en_riesgo')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('p3_recuperar')" :class="sortBy==='p3_recuperar' ? 'text-blue-700' : 'text-blue-600'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-center gap-1">P3 <span x-text="arrow('p3_recuperar')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('p4_largo_plazo')" :class="sortBy==='p4_largo_plazo' ? 'text-slate-700' : 'text-slate-500'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-center gap-1">P4 <span x-text="arrow('p4_largo_plazo')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('valor_a_rescatar_p2')" :class="sortBy==='valor_a_rescatar_p2' ? 'text-orange-700' : 'text-orange-600'" class="text-right py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-end gap-1">Rescatar P2 <span x-text="arrow('valor_a_rescatar_p2')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('valor_potencial_p3')" :class="sortBy==='valor_potencial_p3' ? 'text-blue-700' : 'text-blue-600'" class="text-right py-2.5 pl-2 pr-3 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-end gap-1">Potencial P3 <span x-text="arrow('valor_potencial_p3')" class="opacity-50"></span></span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-50">
-                                <template x-for="(fila, idx) in sorted" :key="idx">
-                                    <tr class="hover:bg-slate-50 transition-colors">
-                                        <td class="py-2.5 pr-3 pl-3 font-semibold text-slate-800 whitespace-nowrap">
-                                            <span x-text="fila.NOMBRE_VENDEDOR"></span>
-                                            <span x-show="fila.COMPANIA" class="text-slate-400 font-normal" x-text="' · Cía ' + (fila.COMPANIA||'')"></span>
-                                        </td>
-                                        <td class="text-right py-2.5 px-2 font-bold text-teal-700 whitespace-nowrap" x-text="fmt(fila.facturado_anio_actual)"></td>
-                                        <td class="text-right py-2.5 px-2 text-slate-500 whitespace-nowrap" x-text="fmt(fila.facturado_anio_anterior)"></td>
-                                        <td class="text-right py-2.5 px-2"
-                                            :class="(parseFloat(fila.variacion_porc)||0) >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'"
-                                            x-text="((parseFloat(fila.variacion_porc)||0) >= 0 ? '+' : '') + (parseFloat(fila.variacion_porc)||0).toFixed(1) + '%'"></td>
-                                        <td class="text-center py-2.5 px-2">
-                                            <span class="bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded" x-text="fila.p1_activos"></span>
-                                        </td>
-                                        <td class="text-center py-2.5 px-2">
-                                            <span class="bg-orange-100 text-orange-700 font-bold px-1.5 py-0.5 rounded" x-text="fila.p2_en_riesgo"></span>
-                                        </td>
-                                        <td class="text-center py-2.5 px-2">
-                                            <span class="bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded" x-text="fila.p3_recuperar"></span>
-                                        </td>
-                                        <td class="text-center py-2.5 px-2">
-                                            <span class="bg-slate-100 text-slate-600 font-bold px-1.5 py-0.5 rounded" x-text="fila.p4_largo_plazo"></span>
-                                        </td>
-                                        <td class="text-right py-2.5 px-2 text-orange-600 font-semibold whitespace-nowrap" x-text="fmt(fila.valor_a_rescatar_p2)"></td>
-                                        <td class="text-right py-2.5 pl-2 pr-3 text-blue-600 font-semibold whitespace-nowrap" x-text="fmt(fila.valor_potencial_p3)"></td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </x-ui.card>
-            @endif
 
         </div>
         @endif
 
-        {{-- ── TAB: VISIÓN GERENCIAL ── --}}
-        @if($tieneGer)
-        <div x-show="tab === 'gerencial'"
-             x-transition:enter="transition ease-out duration-150"
-             x-transition:enter-start="opacity-0 translate-y-1"
-             x-transition:enter-end="opacity-100 translate-y-0">
-
-            @if(!empty($intel['integrales']))
-            <x-ui.card class="mb-4" x-data="sortableTable(window._tableData.integrales)">
-                <div class="h-1.5 w-full rounded-t-xl bg-gradient-to-r from-purple-500 to-violet-500"></div>
-                <div class="p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-900">Oportunidades de Venta Integral</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Perfil de compra entre compañías · clientes VIP y urgentes</p>
-                        </div>
-                        <span class="text-xs bg-purple-100 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-lg font-bold">{{ count($intel['integrales']) }} clientes</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-xs">
-                            <thead>
-                                <tr class="border-b border-slate-100 bg-slate-50/70">
-                                    <th @click="sortOn('RAZON_SOCIAL')" :class="sortBy==='RAZON_SOCIAL' ? 'text-purple-700' : 'text-slate-500'" class="text-left py-2.5 pr-3 pl-3 font-semibold rounded-tl-lg cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center gap-1">Cliente <span x-text="arrow('RAZON_SOCIAL')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('NOMBRE_VENDEDOR')" :class="sortBy==='NOMBRE_VENDEDOR' ? 'text-purple-700' : 'text-slate-500'" class="text-left py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center gap-1">Vendedor <span x-text="arrow('NOMBRE_VENDEDOR')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('HORIZONTE_PRESUPUESTO')" :class="sortBy==='HORIZONTE_PRESUPUESTO' ? 'text-purple-700' : 'text-slate-500'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-center gap-1">Tipo <span x-text="arrow('HORIZONTE_PRESUPUESTO')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('perfil_cruzado')" :class="sortBy==='perfil_cruzado' ? 'text-purple-700' : 'text-purple-600'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-center gap-1">Perfil cruzado <span x-text="arrow('perfil_cruzado')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('VLR_NETO_FACTURADO')" :class="sortBy==='VLR_NETO_FACTURADO' ? 'text-slate-800' : 'text-slate-500'" class="text-right py-2.5 pr-3 pl-3 font-semibold rounded-tr-lg cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-end gap-1">Facturado <span x-text="arrow('VLR_NETO_FACTURADO')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('DIAS_DESDE_ULTIMA_COMPRA')" :class="sortBy==='DIAS_DESDE_ULTIMA_COMPRA' ? 'text-slate-800' : 'text-slate-500'" class="text-right py-2.5 pl-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-end gap-1">Días <span x-text="arrow('DIAS_DESDE_ULTIMA_COMPRA')" class="opacity-50"></span></span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-50">
-                                <template x-for="(cli, idx) in sorted" :key="idx">
-                                    <tr class="hover:bg-slate-50 transition-colors">
-                                        <td class="py-2.5 pr-3 pl-3">
-                                            <p class="font-semibold text-slate-900" x-text="cli.RAZON_SOCIAL"></p>
-                                            <p class="text-slate-400" x-text="cli.CIUDAD"></p>
-                                        </td>
-                                        <td class="py-2.5 px-2 text-slate-500 whitespace-nowrap" x-text="cli.NOMBRE_VENDEDOR"></td>
-                                        <td class="py-2.5 px-2 text-center">
-                                            <span class="border px-1.5 py-0.5 rounded-md font-bold"
-                                                  :class="(cli.HORIZONTE_PRESUPUESTO||'').startsWith('P1') ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-orange-100 text-orange-700 border-orange-200'"
-                                                  x-text="(cli.HORIZONTE_PRESUPUESTO||'').startsWith('P1') ? 'P1 Activo' : 'P2 Riesgo'"></span>
-                                        </td>
-                                        <td class="py-2.5 px-2 text-center">
-                                            <span class="border px-1.5 py-0.5 rounded-md font-semibold"
-                                                  :class="cli.perfil_cruzado === 'YA INTEGRAL' ? 'bg-purple-100 text-purple-700 border-purple-200' : ((cli.perfil_cruzado||'').includes('COMPAÑÍA 1') ? 'bg-sky-100 text-sky-700 border-sky-200' : ((cli.perfil_cruzado||'').includes('COMPAÑÍA 2') ? 'bg-teal-100 text-teal-700 border-teal-200' : 'bg-slate-100 text-slate-500 border-slate-200'))"
-                                                  x-text="cli.perfil_cruzado"></span>
-                                        </td>
-                                        <td class="py-2.5 pl-3 pr-3 text-right font-bold text-slate-700 whitespace-nowrap" x-text="fmt(cli.VLR_NETO_FACTURADO)"></td>
-                                        <td class="py-2.5 pl-2 text-right font-semibold whitespace-nowrap"
-                                            :class="(parseInt(cli.DIAS_DESDE_ULTIMA_COMPRA)||0) > 60 ? 'text-red-600' : 'text-slate-500'"
-                                            x-text="cli.DIAS_DESDE_ULTIMA_COMPRA ?? '-'"></td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                    @php $yaIntegrales = collect($intel['integrales'])->where('perfil_cruzado', 'YA INTEGRAL')->count(); @endphp
-                    @if(count($intel['integrales']) - $yaIntegrales > 0)
-                    <div class="flex items-center gap-4 mt-4 pt-3 border-t border-slate-100">
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-purple-400"></span>
-                            <span class="text-xs text-slate-500"><span class="font-bold text-purple-700">{{ count($intel['integrales']) - $yaIntegrales }}</span> con potencial cross-selling</span>
-                        </div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-slate-300"></span>
-                            <span class="text-xs text-slate-500"><span class="font-bold text-slate-700">{{ $yaIntegrales }}</span> ya compran en ambas compañías</span>
-                        </div>
-                    </div>
-                    @endif
-                </div>
-            </x-ui.card>
-            @endif
-
-            @if(!empty($intel['panorama_gerencial']))
-            <x-ui.card x-data="sortableTable(window._tableData.panoramaGerencial)">
-                <div class="h-1.5 w-full rounded-t-xl bg-gradient-to-r from-slate-500 to-slate-400"></div>
-                <div class="p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-900">Panorama Gerencial</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Clasificación de cartera por vendedor</p>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-xs">
-                            <thead>
-                                <tr class="border-b border-slate-100 bg-slate-50/70">
-                                    <th @click="sortOn('NOMBRE_VENDEDOR')" :class="sortBy==='NOMBRE_VENDEDOR' ? 'text-slate-800' : 'text-slate-500'" class="text-left py-2.5 pr-4 pl-3 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center gap-1">Vendedor <span x-text="arrow('NOMBRE_VENDEDOR')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('total_clientes')" :class="sortBy==='total_clientes' ? 'text-slate-800' : 'text-slate-500'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-center gap-1">Total <span x-text="arrow('total_clientes')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('vip_activos')" :class="sortBy==='vip_activos' ? 'text-emerald-700' : 'text-emerald-600'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-center gap-1">VIP <span x-text="arrow('vip_activos')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('urgentes')" :class="sortBy==='urgentes' ? 'text-amber-700' : 'text-amber-600'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-center gap-1">Urgente <span x-text="arrow('urgentes')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('rescate')" :class="sortBy==='rescate' ? 'text-red-600' : 'text-red-500'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-center gap-1">Rescate <span x-text="arrow('rescate')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('reactivacion')" :class="sortBy==='reactivacion' ? 'text-indigo-600' : 'text-indigo-500'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-center gap-1">Reactiv. <span x-text="arrow('reactivacion')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('facturacion_total')" :class="sortBy==='facturacion_total' ? 'text-slate-800' : 'text-slate-500'" class="text-right py-2.5 pl-4 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-end gap-1">Facturación <span x-text="arrow('facturacion_total')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('valor_en_riesgo')" :class="sortBy==='valor_en_riesgo' ? 'text-slate-800' : 'text-slate-500'" class="text-right py-2.5 pl-3 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-end gap-1">En riesgo <span x-text="arrow('valor_en_riesgo')" class="opacity-50"></span></span>
-                                    </th>
-                                    <th @click="sortOn('porc_riesgo')" :class="sortBy==='porc_riesgo' ? 'text-slate-800' : 'text-slate-500'" class="text-right py-2.5 pl-2 pr-3 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors">
-                                        <span class="flex items-center justify-end gap-1">% Riesgo <span x-text="arrow('porc_riesgo')" class="opacity-50"></span></span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-50">
-                                <template x-for="(fila, idx) in sorted" :key="idx">
-                                    <tr class="hover:bg-slate-50 transition-colors">
-                                        <td class="py-2.5 pr-4 pl-3 font-semibold text-slate-800 whitespace-nowrap">
-                                            <span x-text="fila.NOMBRE_VENDEDOR"></span>
-                                            <span x-show="fila.COMPANIA" class="text-slate-400 font-normal" x-text="' · Cía ' + (fila.COMPANIA||'')"></span>
-                                        </td>
-                                        <td class="text-center py-2.5 px-2 text-slate-600 font-medium" x-text="fila.total_clientes"></td>
-                                        <td class="text-center py-2.5 px-2">
-                                            <span class="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded" x-text="fila.vip_activos"></span>
-                                        </td>
-                                        <td class="text-center py-2.5 px-2">
-                                            <span class="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded" x-text="fila.urgentes"></span>
-                                        </td>
-                                        <td class="text-center py-2.5 px-2">
-                                            <span class="text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded" x-text="fila.rescate"></span>
-                                        </td>
-                                        <td class="text-center py-2.5 px-2">
-                                            <span class="text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded" x-text="fila.reactivacion"></span>
-                                        </td>
-                                        <td class="text-right py-2.5 pl-4 text-slate-600 whitespace-nowrap font-medium" x-text="fmt(fila.facturacion_total)"></td>
-                                        <td class="text-right py-2.5 pl-3 text-amber-600 whitespace-nowrap font-semibold" x-text="fmt(fila.valor_en_riesgo)"></td>
-                                        <td class="text-right py-2.5 pl-2 pr-3"
-                                            :class="(parseFloat(fila.porc_riesgo)||0) >= 40 ? 'text-red-600 font-bold' : ((parseFloat(fila.porc_riesgo)||0) >= 20 ? 'text-amber-600 font-semibold' : 'text-slate-500')"
-                                            x-text="(parseFloat(fila.porc_riesgo)||0).toFixed(1) + '%'"></td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </x-ui.card>
-            @endif
-
-        </div>
-        @endif
 
     </div>{{-- fin tabs --}}
 

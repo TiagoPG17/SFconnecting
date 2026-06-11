@@ -9,8 +9,8 @@ use App\Domain\Dashboard\Repositories\DashboardVendedorRepositoryInterface;
 use App\Domain\Dashboard\Services\DashboardGerencialService;
 use App\Domain\Dashboard\Services\DashboardService;
 use App\Domain\Dashboard\Services\DashboardVendedorService;
+use App\Domain\ERP\Contracts\ERPRepositoryInterface;
 use App\Http\Controllers\Controller;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -20,6 +20,7 @@ class DashboardWebController extends Controller
         private readonly DashboardService $service,
         private readonly DashboardVendedorRepositoryInterface $vendedorRepo,
         private readonly DashboardGerencialRepositoryInterface $gerencialRepo,
+        private readonly ERPRepositoryInterface $erp,
     ) {}
 
     public function index(Request $request): View
@@ -88,14 +89,20 @@ class DashboardWebController extends Controller
 
         $svc = new DashboardGerencialService($this->gerencialRepo, $compania, $anio, $meses);
 
+        $safe = fn (callable $fn) => rescue($fn, [], false);
+
         return view('dashboards.gerencial', [
-            'vendedores' => $svc->presupuestoPorVendedor(),
-            'ciclo'      => $svc->cicloDeVenta(),
-            'motivos'    => $svc->motivosDePerdida(),
-            'churn'      => $svc->retencionChurn(),
-            'actividad'  => $svc->actividadEquipo(),
-            'anio'       => $anio,
-            'periodo'    => $periodo,
+            'vendedores'           => $svc->presupuestoPorVendedor(),
+            'ciclo'                => $svc->cicloDeVenta(),
+            'motivos'              => $svc->motivosDePerdida(),
+            'churn'                => $svc->retencionChurn(),
+            'actividad'            => $svc->actividadEquipo(),
+            'topAsesores'          => $this->service->topAsesores(),
+            'integrales'           => $safe(fn () => $this->erp->clientesIntegrales(50)),
+            'panoramaGerencial'    => $safe(fn () => $this->erp->panoramaGerencial()),
+            'panoramaPresupuestal' => $safe(fn () => $this->erp->panoramaPresupuestal()),
+            'anio'                 => $anio,
+            'periodo'              => $periodo,
         ]);
     }
 }

@@ -26,6 +26,7 @@ class ActualizarNegocioRequest extends FormRequest
             'probabilidad_cierre'  => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100'],
             'fecha_estimada_cierre' => ['sometimes', 'nullable', 'date'],
             'motivo_perdida_id'    => ['sometimes', 'nullable', 'integer', 'exists:sf_maestros_comerciales,id'],
+            'observacion_perdida'  => ['sometimes', 'nullable', 'string', 'max:1000'],
         ];
     }
 }

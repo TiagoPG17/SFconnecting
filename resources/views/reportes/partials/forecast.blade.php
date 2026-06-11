@@ -1,13 +1,13 @@
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-    <x-ui.stat-card label="Pipeline total" :value="'$' . number_format($datos['total_pipeline'] ?? 0, 0, ',', '.')" color="blue" icon="briefcase"/>
-    <x-ui.stat-card label="Forecast ponderado" :value="'$' . number_format($datos['total_forecast'] ?? 0, 0, ',', '.')" color="green" icon="trending-up"/>
+    <x-ui.stat-card label="Total en negociación" :value="'$' . number_format($datos['total_pipeline'] ?? 0, 0, ',', '.')" color="blue" icon="briefcase"/>
+    <x-ui.stat-card label="Valor esperado del pipeline" :value="'$' . number_format($datos['total_forecast'] ?? 0, 0, ',', '.')" color="green" icon="trending-up"/>
     <x-ui.stat-card label="Negocios activos" :value="$datos['cantidad'] ?? 0" color="purple" icon="bar-chart"/>
 </div>
 
 @if(!empty($datos['por_asesor']))
 <x-ui.card>
     <div class="p-4 border-b border-slate-100">
-        <h3 class="text-sm font-semibold text-slate-900">Forecast por asesor</h3>
+        <h3 class="text-sm font-semibold text-slate-900">Proyección por asesor</h3>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
@@ -15,8 +15,8 @@
                 <tr class="border-b border-slate-100">
                     <th class="text-left py-2 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Asesor</th>
                     <th class="text-right py-2 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Negocios</th>
-                    <th class="text-right py-2 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Pipeline</th>
-                    <th class="text-right py-2 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Forecast</th>
+                    <th class="text-right py-2 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">En negociación</th>
+                    <th class="text-right py-2 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Valor esperado</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">

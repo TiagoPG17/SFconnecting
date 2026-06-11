@@ -108,7 +108,7 @@
                     @empty
                         <tr>
                             <td colspan="6" class="px-4 py-12">
-                                <x-ui.empty-state icon="users" message="No hay usuarios que coincidan con los filtros."/>
+                                <x-ui.empty-state icon="users" title="No hay usuarios que coincidan con los filtros."/>
                             </td>
                         </tr>
                     @endforelse

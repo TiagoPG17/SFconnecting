@@ -110,7 +110,7 @@
                     @empty
                         <tr>
                             <td colspan="6" class="px-4 py-12">
-                                <x-ui.empty-state icon="clipboard" message="No hay registros de actividad con los filtros aplicados."/>
+                                <x-ui.empty-state icon="clipboard" title="No hay registros de actividad con los filtros aplicados."/>
                             </td>
                         </tr>
                     @endforelse

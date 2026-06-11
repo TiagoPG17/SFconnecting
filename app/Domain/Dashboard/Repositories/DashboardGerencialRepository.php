@@ -53,7 +53,7 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->groupBy('sf_negocios.asesor_id')
             ->select(
                 'sf_negocios.asesor_id',
-                DB::raw('SUM(sf_negocios.valor_estimado * sf_negocios.probabilidad_cierre / 100.0) AS forecast')
+                DB::raw('SUM(sf_negocios.valor_estimado) AS forecast')
             )
             ->get();
     }
@@ -104,14 +104,18 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             WHEN DIAS_DESDE_ULTIMA_COMPRA <= 365 THEN '3-En riesgo'
             ELSE '4-Inactivo' END";
 
+        $valor = "SUM(CASE
+            WHEN DIAS_DESDE_ULTIMA_COMPRA <= 180 THEN FACTURADO_ANIO_ACTUAL
+            ELSE FACTURADO_ANIO_ANTERIOR
+        END)";
+
         return DB::connection('erp_contiflex')
-            ->table('vw_CRM_Ventas_por_Vendedor_Cliente')
+            ->table('dbo.vw_CRM_Clientes_Prioritarios')
             ->where('COMPANIA', $compania)
-            ->where('VLR_NETO_FACTURADO', '>', 0)
             ->select(
                 DB::raw("$banda AS banda"),
                 DB::raw('COUNT(*) AS num_clientes'),
-                DB::raw('SUM(VLR_NETO_FACTURADO) AS valor_en_banda')
+                DB::raw("$valor AS valor_en_banda")
             )
             ->groupBy(DB::raw($banda))
             ->orderBy('banda')

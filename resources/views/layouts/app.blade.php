@@ -56,7 +56,7 @@
             <x-ui.nav-item href="{{ route('negocios.kanban') }}" :active="request()->routeIs('negocios.kanban')" icon="layout">
                 Pipeline Kanban
             </x-ui.nav-item>
-            <x-ui.nav-item href="{{ route('forecast.index') }}" :active="request()->routeIs('forecast.*')" icon="trending-up">
+            <x-ui.nav-item href="{{ route('reportes.index') }}" :active="request()->routeIs('reportes.*')" icon="trending-up">
                 Forecast
             </x-ui.nav-item>
 

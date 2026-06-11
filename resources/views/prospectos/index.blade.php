@@ -3,9 +3,11 @@
         <x-ui.button href="{{ route('prospectos.kanban') }}" variant="secondary" size="sm">
             <x-ui.icon name="layout" class="w-4 h-4"/> Kanban
         </x-ui.button>
+        @unlessrole('gerente')
         <x-ui.button href="{{ route('prospectos.create') }}" variant="primary" size="sm">
             <x-ui.icon name="plus" class="w-4 h-4"/> Nuevo prospecto
         </x-ui.button>
+        @endunlessrole
     </x-slot>
 
     {{-- Filtros --}}
@@ -57,9 +59,11 @@
             <x-ui.empty-state icon="user-plus" title="Sin prospectos"
                 description="Crea tu primer prospecto para comenzar el pipeline comercial.">
                 <x-slot name="action">
+                    @unlessrole('gerente')
                     <x-ui.button href="{{ route('prospectos.create') }}" variant="primary" size="sm">
                         <x-ui.icon name="plus" class="w-4 h-4"/> Crear prospecto
                     </x-ui.button>
+                    @endunlessrole
                 </x-slot>
             </x-ui.empty-state>
         @else
@@ -113,9 +117,11 @@
                                 <x-ui.button href="{{ route('prospectos.show', $p) }}" variant="ghost" size="xs">
                                     <x-ui.icon name="eye" class="w-4 h-4"/>
                                 </x-ui.button>
+                                @can('update', $p)
                                 <x-ui.button href="{{ route('prospectos.edit', $p) }}" variant="ghost" size="xs">
                                     <x-ui.icon name="edit" class="w-4 h-4"/>
                                 </x-ui.button>
+                                @endcan
                             </div>
                         </td>
                     </tr>

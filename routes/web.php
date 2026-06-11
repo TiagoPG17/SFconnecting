@@ -27,25 +27,32 @@ Route::match(['GET', 'POST'], '/logout', [AuthWebController::class, 'logout'])->
 // App — autenticado
 Route::middleware(['auth'])->group(function () {
 
-    Route::get('/', fn () => redirect()->route('dashboard'));
+    $homeRedirect = function (\Illuminate\Http\Request $req) {
+        $user = $req->user();
+        if ($user->hasRole('gerente') || $user->hasRole('admin')) {
+            return redirect()->route('dash.gerencial');
+        }
+        return redirect()->route('dash.vendedor');
+    };
 
-    Route::get('/dashboard', [DashboardWebController::class, 'index'])->name('dashboard');
+    Route::get('/', $homeRedirect);
+    Route::get('/dashboard', $homeRedirect)->name('dashboard');
 
     // Dashboards especializados
-    Route::get('/mi-desempeno', [DashboardWebController::class, 'vendedor'])->name('dash.vendedor')->middleware('role:asesor|admin');
+    Route::get('/mi-desempeno', [DashboardWebController::class, 'vendedor'])->name('dash.vendedor')->middleware('role:comercial|admin');
     Route::get('/gerencial',    [DashboardWebController::class, 'gerencial'])->name('dash.gerencial')->middleware('role:gerente|admin');
 
     // Prospectos — estáticas antes del wildcard
     Route::get('/prospectos/kanban',           [ProspectoWebController::class, 'kanban'])->name('prospectos.kanban');
-    Route::get('/prospectos/create',           [ProspectoWebController::class, 'create'])->name('prospectos.create');
-    Route::get('/prospectos/{prospecto}/edit', [ProspectoWebController::class, 'edit'])->name('prospectos.edit');
+    Route::get('/prospectos/create',           [ProspectoWebController::class, 'create'])->name('prospectos.create')->middleware('role:admin|comercial');
+    Route::get('/prospectos/{prospecto}/edit', [ProspectoWebController::class, 'edit'])->name('prospectos.edit')->middleware('role:admin|comercial');
     Route::get('/prospectos/{prospecto}',      [ProspectoWebController::class, 'show'])->name('prospectos.show');
     Route::get('/prospectos',                  [ProspectoWebController::class, 'index'])->name('prospectos.index');
 
     // Negocios — estáticas antes del wildcard
     Route::get('/negocios/kanban',           [NegocioWebController::class, 'kanban'])->name('negocios.kanban');
-Route::get('/negocios/create',           [NegocioWebController::class, 'create'])->name('negocios.create');
-    Route::get('/negocios/{negocio}/edit',   [NegocioWebController::class, 'edit'])->name('negocios.edit');
+    Route::get('/negocios/create',           [NegocioWebController::class, 'create'])->name('negocios.create')->middleware('role:admin|comercial');
+    Route::get('/negocios/{negocio}/edit',   [NegocioWebController::class, 'edit'])->name('negocios.edit')->middleware('role:admin|comercial');
     Route::get('/negocios/{negocio}',        [NegocioWebController::class, 'show'])->name('negocios.show');
     Route::get('/negocios',                  [NegocioWebController::class, 'index'])->name('negocios.index');
 
@@ -76,7 +83,8 @@ Route::get('/negocios/create',           [NegocioWebController::class, 'create']
     // Mapeo vendedores (solo admin)
     Route::resource('mapeo-vendedores', MapeoVendedorWebController::class)
         ->only(['index', 'store', 'update', 'destroy'])
-        ->middleware('role:admin');
+        ->middleware('role:admin')
+        ->parameters(['mapeo-vendedores' => 'mapeoVendedor']);
 
     // Auditoría (admin only)
     Route::get('/auditoria', [AuditoriaWebController::class, 'index'])->name('auditoria.index')->middleware('role:admin');

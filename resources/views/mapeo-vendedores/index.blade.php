@@ -1,6 +1,6 @@
 <x-layouts.app title="Mapeo vendedores · CRM">
 
-<div x-data="{ modalCrear: false, modalEditar: false, editando: null }">
+<div x-data="{ modalCrear: false, modalEditar: false, editando: null, editandoOriginal: null, codVendedorEditando: '' }">
 
     {{-- ===== Cabecera ===== --}}
     <div class="flex items-center justify-between mb-6">
@@ -96,7 +96,7 @@
                     </td>
                     <td class="px-5 py-4 text-right">
                         <div class="flex items-center justify-end gap-2">
-                            <button @click="editando = {{ $m->toJson() }}; modalEditar = true"
+                            <button @click="editando = {{ $m->toJson() }}; editandoOriginal = {{ $m->toJson() }}; codVendedorEditando = '{{ trim($m->cod_vendedor_siesa) }}'; modalEditar = true; console.log('[MapeoVendedor] abriendo edición', editando)"
                                     class="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                                 <x-ui.icon name="edit" class="w-4 h-4"/>
                             </button>
@@ -191,23 +191,25 @@
             <h3 class="text-base font-bold text-slate-900 mb-1">Editar mapeo</h3>
             <p class="text-sm text-slate-400 mb-5" x-text="editando?.asesor?.name ?? ''"></p>
             <template x-if="editando">
-                <form :action="`/mapeo-vendedores/${editando.id}`" method="POST" class="space-y-4">
+                <form :action="`/mapeo-vendedores/${editando.id}`" method="POST" class="space-y-4"
+                      @submit="const fd = new FormData($event.target); console.log('[MapeoVendedor] submit form (alpine)', {id: editando.id, cod: editando.cod_vendedor_siesa, nombre: editando.nombre_vendedor}); console.log('[MapeoVendedor] submit form (DOM real)', {_method: fd.get('_method'), cod: fd.get('cod_vendedor_siesa'), nombre: fd.get('nombre_vendedor'), activo: fd.get('activo')})">
                     @csrf @method('PUT')
                     @if(!empty($vendedoresSiesa))
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1.5">Vendedor SIESA</label>
                         <select name="_vendedor_select"
-                                @change="const v = JSON.parse($event.target.value); editando.cod_vendedor_siesa = v.cod; editando.nombre_vendedor = v.nombre"
+                                x-model="codVendedorEditando"
+                                @change="editando.cod_vendedor_siesa = $event.target.value; editando.nombre_vendedor = $event.target.selectedOptions[0].dataset.nombre; console.log('[MapeoVendedor] cambió select', {cod: editando.cod_vendedor_siesa, nombre: editando.nombre_vendedor})"
                                 class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                             @foreach($vendedoresSiesa as $v)
-                                <option value='{"cod":"{{ $v->cod }}","nombre":"{{ addslashes($v->nombre) }}"}'>
-                                    {{ $v->cod }} — {{ $v->nombre }}
+                                <option value="{{ trim($v->cod) }}" data-nombre="{{ $v->nombre }}">
+                                    {{ trim($v->cod) }} — {{ $v->nombre }}
                                 </option>
                             @endforeach
                         </select>
                         <p class="text-xs text-slate-400 mt-1">
-                            Actual: <span class="font-mono font-semibold" x-text="editando.cod_vendedor_siesa"></span>
-                            — <span x-text="editando.nombre_vendedor"></span>
+                            Actual: <span class="font-mono font-semibold" x-text="editandoOriginal?.cod_vendedor_siesa"></span>
+                            — <span x-text="editandoOriginal?.nombre_vendedor"></span>
                         </p>
                     </div>
                     @endif

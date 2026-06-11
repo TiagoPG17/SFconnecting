@@ -72,6 +72,13 @@
                         @endif
                     </dl>
 
+                    @if($negocio->observacion_perdida)
+                    <div class="mt-4 pt-4 border-t border-red-100 bg-red-50 rounded-lg px-4 py-3">
+                        <p class="text-xs font-semibold text-red-500 uppercase tracking-wide mb-1">Observación de pérdida</p>
+                        <p class="text-sm text-slate-700">{{ $negocio->observacion_perdida }}</p>
+                    </div>
+                    @endif
+
                     @if($negocio->descripcion)
                     <div class="mt-4 pt-4 border-t border-slate-100">
                         <p class="text-sm font-medium text-slate-500 mb-1">Descripción</p>

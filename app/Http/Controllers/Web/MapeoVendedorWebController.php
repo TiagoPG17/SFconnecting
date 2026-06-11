@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class MapeoVendedorWebController extends Controller
@@ -65,13 +66,33 @@ class MapeoVendedorWebController extends Controller
 
     public function update(Request $request, VendedorEquivalencia $mapeoVendedor): RedirectResponse
     {
+        Log::info('[MapeoVendedor] update() recibido', [
+            'mapeo_id'    => $mapeoVendedor->id,
+            'all_input'   => $request->all(),
+            'method'      => $request->method(),
+        ]);
+
         $data = $request->validate([
             'cod_vendedor_siesa' => ['required', 'string', 'max:20'],
             'nombre_vendedor'    => ['required', 'string', 'max:200'],
             'activo'             => ['boolean'],
         ]);
 
-        $this->repo->actualizar($mapeoVendedor, $data);
+        Log::info('[MapeoVendedor] validación OK, actualizando', [
+            'mapeo_id' => $mapeoVendedor->id,
+            'data'     => $data,
+        ]);
+
+        try {
+            $this->repo->actualizar($mapeoVendedor, $data);
+            Log::info('[MapeoVendedor] actualizado correctamente', ['mapeo_id' => $mapeoVendedor->id]);
+        } catch (\Throwable $e) {
+            Log::error('[MapeoVendedor] error al actualizar', [
+                'mapeo_id' => $mapeoVendedor->id,
+                'error'    => $e->getMessage(),
+            ]);
+            return back()->withErrors(['general' => 'Error al guardar: ' . $e->getMessage()]);
+        }
 
         return redirect()->route('mapeo-vendedores.index')
             ->with('success', 'Mapeo actualizado correctamente.');

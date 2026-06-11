@@ -40,11 +40,11 @@
         }
     }">
         <x-ui.card>
-            <div class="p-6">
-                <h2 class="text-base font-semibold text-slate-900 mb-6">Datos del cliente</h2>
+            <div class="p-8">
+                <h2 class="text-base font-semibold text-slate-900 mb-8">Datos del cliente</h2>
 
-                <div class="space-y-5">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1.5">
                                 Razón social <span class="text-red-500">*</span>
@@ -67,7 +67,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
                             <x-ui.input
@@ -87,7 +87,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1.5">Ciudad</label>
                             <x-ui.input
@@ -129,8 +129,8 @@
                         ></textarea>
                     </div>
 
-                    <div class="flex justify-end gap-3 pt-2">
-                        <x-ui.button href="{{ route('clientes.index') }}" variant="ghost">Cancelar</x-ui.button>
+                    <div class="flex justify-end gap-3 pt-6 border-t border-slate-100 mt-2">
+                        <x-ui.button href="{{ route('clientes.index') }}" variant="secondary">Cancelar</x-ui.button>
                         <x-ui.button @click="guardar" variant="primary" x-bind:disabled="loading">
                             <span x-show="!loading">Crear cliente</span>
                             <span x-show="loading" x-cloak>Guardando...</span>

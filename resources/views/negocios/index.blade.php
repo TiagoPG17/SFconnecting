@@ -3,7 +3,7 @@
         <x-ui.button href="{{ route('negocios.kanban') }}" variant="secondary" size="sm">
             <x-ui.icon name="layout" class="w-4 h-4"/> Kanban
         </x-ui.button>
-        <x-ui.button href="{{ route('forecast.index') }}" variant="secondary" size="sm">
+        <x-ui.button href="{{ route('reportes.index') }}" variant="secondary" size="sm">
             <x-ui.icon name="trending-up" class="w-4 h-4"/> Forecast
         </x-ui.button>
         <x-ui.button href="{{ route('negocios.create') }}" variant="primary" size="sm">
@@ -111,9 +111,11 @@
                                 <x-ui.button href="{{ route('negocios.show', $n) }}" variant="ghost" size="xs">
                                     <x-ui.icon name="eye" class="w-4 h-4"/>
                                 </x-ui.button>
+                                @can('update', $n)
                                 <x-ui.button href="{{ route('negocios.edit', $n) }}" variant="ghost" size="xs">
                                     <x-ui.icon name="edit" class="w-4 h-4"/>
                                 </x-ui.button>
+                                @endcan
                             </div>
                         </td>
                     </tr>

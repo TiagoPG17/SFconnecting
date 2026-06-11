@@ -33,11 +33,13 @@ class MaestrosComercialDemoSeeder extends Seeder
         ];
 
         foreach ($maestros as $m) {
+            $slug = \Illuminate\Support\Str::slug($m['nombre']);
+
             DB::table('sf_maestros_comerciales')->updateOrInsert(
-                ['tipo' => $m['tipo'], 'nombre' => $m['nombre']],
+                ['tipo' => $m['tipo'], 'slug' => $slug],
                 array_merge($m, [
-                    'slug'      => \Illuminate\Support\Str::slug($m['nombre']),
-                    'activo'    => true,
+                    'slug'       => $slug,
+                    'activo'     => true,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ])

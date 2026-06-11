@@ -44,7 +44,7 @@
             }
         }
     }">
-        <x-ui.card>
+        <x-ui.card class="p-6">
             <div class="flex items-center gap-3 mb-6">
                 <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold">
                     {{ strtoupper(substr($usuario->name, 0, 2)) }}
@@ -60,7 +60,7 @@
                 @endif
             </div>
 
-            <div class="space-y-4">
+            <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">
                         Nombre completo <span class="text-red-500">*</span>
@@ -83,7 +83,7 @@
                 </div>
 
                 <div class="border-t border-slate-100 pt-4">
-                    <p class="text-xs text-slate-500 mb-3">Deja en blanco para no cambiar la contraseña.</p>
+                    <p class="text-xs text-slate-500 mb-4">Deja en blanco para no cambiar la contraseña.</p>
                     <div class="space-y-3">
                         <div>
                             <label class="block text-xs font-medium text-slate-700 mb-1">Nueva contraseña</label>
@@ -147,7 +147,7 @@
                        class="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
                         Cancelar
                     </a>
-                    <x-ui.button @click="guardar" :loading="loading">
+                    <x-ui.button @click="guardar" x-bind:disabled="loading">
                         Guardar cambios
                     </x-ui.button>
                 </div>

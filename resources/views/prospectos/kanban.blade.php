@@ -3,9 +3,11 @@
         <x-ui.button href="{{ route('prospectos.index') }}" variant="ghost" size="sm">
             <x-ui.icon name="list" class="w-4 h-4"/> Lista
         </x-ui.button>
+        @unlessrole('gerente')
         <x-ui.button href="{{ route('prospectos.create') }}" variant="primary" size="sm">
             <x-ui.icon name="plus" class="w-4 h-4"/> Nuevo prospecto
         </x-ui.button>
+        @endunlessrole
     </x-slot>
 
     <div

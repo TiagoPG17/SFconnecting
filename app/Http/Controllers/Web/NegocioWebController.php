@@ -76,8 +76,9 @@ class NegocioWebController extends Controller
 
         $asesorId = auth()->user()->hasRole('comercial') ? auth()->id() : null;
         $columnas = $this->repo->kanban($asesorId);
+        $motivos  = $this->maestros->porTipo('motivo_perdida');
 
-        return view('negocios.kanban', compact('columnas'));
+        return view('negocios.kanban', compact('columnas', 'motivos'));
     }
 
 }

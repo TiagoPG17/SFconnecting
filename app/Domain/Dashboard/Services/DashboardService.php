@@ -38,6 +38,11 @@ class DashboardService
         ];
     }
 
+    public function topAsesores(): array
+    {
+        return $this->repo->topAsesores();
+    }
+
     private function inteligenciaComercial(bool $esAsesor, ?string $filtroVendedor = null): array
     {
         $disponible = false;

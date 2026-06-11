@@ -32,6 +32,7 @@ class Negocio extends Model
         'fecha_estimada_cierre',
         'fecha_cierre_real',
         'motivo_perdida_id',
+        'observacion_perdida',
         'asesor_id',
         'activo',
     ];

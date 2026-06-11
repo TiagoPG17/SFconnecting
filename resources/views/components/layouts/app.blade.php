@@ -66,10 +66,7 @@
         {{-- Nav --}}
         <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
 
-            {{-- Inicio --}}
-            <x-ui.nav-item href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')" icon="home">
-                Dashboard
-            </x-ui.nav-item>
+
             @role('comercial')
             <x-ui.nav-item href="{{ route('dash.vendedor') }}" :active="request()->routeIs('dash.vendedor')" icon="trending-up">
                 Mi desempeño
@@ -136,9 +133,9 @@
             <x-ui.nav-item href="{{ route('usuarios.index') }}" :active="request()->routeIs('usuarios.*')" icon="users">
                 Usuarios
             </x-ui.nav-item>
-            <x-ui.nav-item href="{{ route('auditoria.index') }}" :active="request()->routeIs('auditoria.*')" icon="shield">
+            {{-- <x-ui.nav-item href="{{ route('auditoria.index') }}" :active="request()->routeIs('auditoria.*')" icon="shield">
                 Auditoría
-            </x-ui.nav-item>
+            </x-ui.nav-item> --}}
             @endrole
 
         </nav>
@@ -166,38 +163,39 @@
     {{-- Main --}}
     <div class="flex-1 lg:pl-64 flex flex-col min-h-screen">
 
-        {{-- Topbar --}}
-        <header class="sticky top-0 z-20 flex h-16 items-center gap-3 bg-white border-b border-slate-200 px-4 sm:px-6">
-            {{-- Hamburger móvil --}}
+        {{-- Topbar móvil --}}
+        <header class="sticky top-0 z-20 flex h-12 items-center gap-3 bg-white border-b border-slate-200 px-4 lg:hidden">
             <button
                 @click="sidebarOpen = true"
-                class="lg:hidden text-slate-500 hover:text-slate-700 transition-colors p-1 -ml-1 rounded-lg hover:bg-slate-100"
+                class="text-slate-500 hover:text-slate-700 transition-colors p-1 -ml-1 rounded-lg hover:bg-slate-100"
                 aria-label="Abrir menú"
             >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                 </svg>
             </button>
-
-            <h1 class="text-sm font-semibold text-slate-900 truncate">{{ $title ?? 'SFconnecting' }}</h1>
-            <div class="flex-1"></div>
-            <div class="flex items-center gap-2">
-                {{ $actions ?? '' }}
-                {{-- Botón de accesibilidad --}}
-                <button
-                    @click="$store.ui.a11yOpen = true"
-                    title="Opciones de accesibilidad (Alt+A)"
-                    class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-                >
-                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a1 1 0 100 2 1 1 0 000-2zM12 5v4m0 0l-3 3m3-3l3 3M9 12v5a3 3 0 006 0v-5"/>
-                    </svg>
-                </button>
-            </div>
+            <span class="text-sm font-semibold text-slate-900 truncate">{{ $title ?? 'SFconnecting' }}</span>
         </header>
 
         {{-- Content --}}
         <main class="flex-1 p-4 sm:p-6">
+            {{-- Page header --}}
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-xl font-bold text-slate-900 hidden lg:block">{{ $title ?? 'SFconnecting' }}</h1>
+                <div class="flex items-center gap-2 ml-auto">
+                    @if(isset($actions)){{ $actions }}@endif
+                    {{-- Botón de accesibilidad --}}
+                    <button
+                        @click="$store.ui.a11yOpen = true"
+                        title="Opciones de accesibilidad (Alt+A)"
+                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                    >
+                        <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a1 1 0 100 2 1 1 0 000-2zM12 5v4m0 0l-3 3m3-3l3 3M9 12v5a3 3 0 006 0v-5"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
             {{ $slot }}
         </main>
     </div>

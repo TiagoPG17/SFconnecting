@@ -75,7 +75,7 @@ class DashboardGerencialService
         return $rows
             ->groupBy('vendedor')
             ->map(function (Collection $actividades, string $vendedor) {
-                $row = ['vendedor' => $vendedor, 'llamada' => 0, 'visita' => 0, 'email' => 0];
+                $row = ['vendedor' => $vendedor, 'llamada' => 0, 'visita' => 0, 'email' => 0, 'reunion' => 0, 'whatsapp' => 0, 'otro' => 0];
                 foreach ($actividades as $a) {
                     $row[$a->tipo] = (int) $a->num_actividades;
                 }

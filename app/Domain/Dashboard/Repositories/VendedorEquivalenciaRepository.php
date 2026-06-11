@@ -7,6 +7,7 @@ namespace App\Domain\Dashboard\Repositories;
 use App\Domain\Dashboard\Models\VendedorEquivalencia;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class VendedorEquivalenciaRepository implements VendedorEquivalenciaRepositoryInterface
 {
@@ -26,8 +27,23 @@ class VendedorEquivalenciaRepository implements VendedorEquivalenciaRepositoryIn
 
     public function actualizar(VendedorEquivalencia $mapeo, array $datos): VendedorEquivalencia
     {
-        $mapeo->update($datos);
-        return $mapeo->fresh();
+        $mapeo->fill($datos);
+
+        Log::info('[MapeoVendedor][Repo] antes de save()', [
+            'mapeo_id'    => $mapeo->id,
+            'datos_input' => $datos,
+            'dirty'       => $mapeo->getDirty(),
+            'original'    => $mapeo->getOriginal(),
+        ]);
+
+        $result = $mapeo->save();
+
+        Log::info('[MapeoVendedor][Repo] resultado save()', [
+            'mapeo_id' => $mapeo->id,
+            'result'   => $result,
+        ]);
+
+        return $mapeo->refresh();
     }
 
     public function eliminar(VendedorEquivalencia $mapeo): void
@@ -50,18 +66,23 @@ class VendedorEquivalenciaRepository implements VendedorEquivalenciaRepositoryIn
 
     public function vendedoresSiesa(int $compania): array
     {
+        $ls = '[siesa-m4-sqlsw-db8.ceqnrhbwqaoo.us-east-1.rds.amazonaws.com].[unoee_formacol_real].[dbo]';
+
         try {
             return DB::connection('erp_contiflex')
                 ->select("
-                    SELECT DISTINCT
-                        LTRIM(RTRIM(ID_VENDEDOR))   AS cod,
-                        LTRIM(RTRIM(NOMBRE_VENDEDOR)) AS nombre
-                    FROM clientes
-                    WHERE NOMBRE_VENDEDOR IS NOT NULL
-                      AND LTRIM(RTRIM(NOMBRE_VENDEDOR)) <> ''
-                      AND LTRIM(RTRIM(ID_VENDEDOR)) <> ''
-                    ORDER BY nombre
-                ");
+                    SELECT
+                        LTRIM(RTRIM(v.f210_id))             AS cod,
+                        LTRIM(RTRIM(t.f200_razon_social))   AS nombre
+                    FROM {$ls}.[t210_mm_vendedores] AS v
+                    LEFT JOIN {$ls}.[t200_mm_terceros] AS t
+                           ON t.f200_rowid = v.f210_rowid_tercero
+                    WHERE v.f210_id_cia        = ?
+                      AND v.f210_ind_vendedor  = 1
+                      AND t.f200_razon_social IS NOT NULL
+                      AND LTRIM(RTRIM(t.f200_razon_social)) <> ''
+                    ORDER BY t.f200_razon_social
+                ", [$compania]);
         } catch (\Throwable) {
             return [];
         }

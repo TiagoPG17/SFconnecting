@@ -114,16 +114,16 @@ return [
 
         'erp_contiflex' => [
             'driver' => 'sqlsrv',
-            'host' => env('ERP_HOST', ''),
-            'port' => env('ERP_PORT', '1433'),
-            'database' => env('ERP_DATABASE', ''),
-            'username' => env('ERP_USERNAME', ''),
-            'password' => env('ERP_PASSWORD', ''),
+            'host' => env('ERP_CONTIFLEX_HOST', ''),
+            'port' => env('ERP_CONTIFLEX_PORT', '1433'),
+            'database' => env('ERP_CONTIFLEX_DATABASE', ''),
+            'username' => env('ERP_CONTIFLEX_USERNAME', ''),
+            'password' => env('ERP_CONTIFLEX_PASSWORD', ''),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
-            'TrustServerCertificate' => true,
-            'Encrypt' => false,
+            'trust_server_certificate' => env('DB_CONTIFLEX_TRUST_CERTIFICATE', true),
+            'encrypt' => 'no',
         ],
 
     ],

@@ -16,6 +16,7 @@ class ActualizarNegocioDTO
         public readonly ?string $fechaEstimadaCierre = null,
         public readonly ?string $fechaCierreReal = null,
         public readonly ?int $motivoPerdidaId = null,
+        public readonly ?string $observacionPerdida = null,
     ) {}
 
     public static function fromArray(array $data): self
@@ -30,6 +31,7 @@ class ActualizarNegocioDTO
             fechaEstimadaCierre: $data['fecha_estimada_cierre'] ?? null,
             fechaCierreReal:     $data['fecha_cierre_real'] ?? null,
             motivoPerdidaId:     isset($data['motivo_perdida_id']) ? (int) $data['motivo_perdida_id'] : null,
+            observacionPerdida:  $data['observacion_perdida'] ?? null,
         );
     }
 
@@ -45,6 +47,7 @@ class ActualizarNegocioDTO
             'fecha_estimada_cierre' => $this->fechaEstimadaCierre,
             'fecha_cierre_real'    => $this->fechaCierreReal,
             'motivo_perdida_id'    => $this->motivoPerdidaId,
+            'observacion_perdida'  => $this->observacionPerdida,
         ], fn ($v) => $v !== null);
     }
 }

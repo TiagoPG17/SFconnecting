@@ -69,6 +69,15 @@
                             </option>
                         @endforeach
                     </x-ui.select>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">¿Por qué se perdió? <span class="text-slate-400 font-normal">(opcional)</span></label>
+                        <textarea
+                            name="observacion_perdida"
+                            rows="3"
+                            placeholder="Describe aquí el detalle de por qué se perdió el negocio..."
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
+                        >{{ old('observacion_perdida', $negocio->observacion_perdida) }}</textarea>
+                    </div>
                     @endif
 
                     <div>

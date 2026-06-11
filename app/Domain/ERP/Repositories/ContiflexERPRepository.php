@@ -394,6 +394,8 @@ class ContiflexERPRepository implements ERPRepositoryInterface
                     ->orWhereRaw("LTRIM(RTRIM(NOMBRE_VENDEDOR)) = ''")
                     ->orWhere('NOMBRE_VENDEDOR', 'like', '%VACANTE%')
                 )
+                ->where('DIAS_DESDE_ULTIMA_COMPRA', '>=', 365)
+                ->where('VLR_NETO_FACTURADO', '>', 0)
                 ->when($nitsExcluir, fn ($q) => $q->whereNotIn('NIT', $nitsExcluir))
                 ->orderByDesc('VLR_NETO_FACTURADO')
                 ->limit($limite)

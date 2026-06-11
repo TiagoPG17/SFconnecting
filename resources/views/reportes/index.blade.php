@@ -2,7 +2,7 @@
 
     {{-- Selector de reporte --}}
     <div class="flex gap-2 mb-6 flex-wrap">
-        @foreach(['forecast' => 'Forecast', 'prospectos' => 'Prospectos', 'negocios' => 'Negocios', 'conversion' => 'Conversión'] as $key => $label)
+        @foreach(['forecast' => 'Proyección', 'prospectos' => 'Prospectos', 'negocios' => 'Negocios', 'conversion' => 'Conversión'] as $key => $label)
         <a
             href="{{ request()->fullUrlWithQuery(['tipo' => $key]) }}"
             class="px-4 py-2 rounded-lg text-sm font-medium transition-colors

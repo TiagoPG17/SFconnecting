@@ -1,13 +1,13 @@
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <x-ui.stat-card label="Total negocios" :value="$datos['total'] ?? 0" color="blue" icon="briefcase"/>
-    <x-ui.stat-card label="Valor pipeline" :value="'$' . number_format($datos['valor_total'] ?? 0, 0, ',', '.')" color="green" icon="trending-up"/>
+    <x-ui.stat-card label="Valor en negociación" :value="'$' . number_format($datos['valor_total'] ?? 0, 0, ',', '.')" color="green" icon="trending-up"/>
     <x-ui.stat-card label="Ganados" :value="$datos['ganados'] ?? 0" color="purple" icon="check"/>
 </div>
 
 @if(!empty($datos['por_estado']))
 <x-ui.card>
     <div class="p-4 border-b border-slate-100">
-        <h3 class="text-sm font-semibold text-slate-900">Por estado de pipeline</h3>
+        <h3 class="text-sm font-semibold text-slate-900">Por etapa de negociación</h3>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
