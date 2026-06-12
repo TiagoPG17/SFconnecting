@@ -18,7 +18,7 @@ interface ERPRepositoryInterface
 
     public function clientesRescate(int $limite = 20, ?string $filtroVendedor = null): array;
 
-    public function panoramaGerencial(): array;
+    public function panoramaGerencial(int $compania = 0): array;
 
     public function clientesIntegrales(int $limite = 30): array;
 
@@ -34,7 +34,9 @@ interface ERPRepositoryInterface
 
     public function clientesLargoPlazo(int $limite = 30, ?string $filtroVendedor = null): array;
 
-    public function panoramaPresupuestal(): array;
+    public function panoramaPresupuestal(int $compania = 0): array;
+
+    public function countClientesHuerfanos(int $compania, array $nitsExcluir = []): int;
 
     public function clientesHuerfanos(int $compania, array $nitsExcluir = [], int $limite = 100): array;
 

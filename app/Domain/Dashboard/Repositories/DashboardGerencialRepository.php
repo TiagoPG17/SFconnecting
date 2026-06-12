@@ -17,14 +17,14 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
     public function presupuestoPorAsesor(int $compania, int $anio): Collection
     {
         return Presupuesto::with('asesor:id,name')
-            ->where('compania', $compania)
+            ->when($compania > 0, fn ($q) => $q->where('compania', $compania))
             ->where('anio', $anio)
             ->get();
     }
 
     public function codsPorAsesor(int $compania): Collection
     {
-        return VendedorEquivalencia::where('compania', $compania)
+        return VendedorEquivalencia::when($compania > 0, fn ($q) => $q->where('compania', $compania))
             ->where('activo', true)
             ->get(['asesor_id', 'cod_vendedor_siesa']);
     }
@@ -35,7 +35,7 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
 
         return DB::connection('erp_contiflex')
             ->table('vw_CRM_Ventas_Vendedor_Periodo')
-            ->where('COMPANIA', $compania)
+            ->when($compania > 0, fn ($q) => $q->where('COMPANIA', $compania))
             ->where('ANIO', $anio)
             ->whereIn('MES', $mesesNum)
             ->select(DB::raw('LTRIM(RTRIM(COD_VENDEDOR)) AS COD_VENDEDOR'), DB::raw('SUM(VLR_NETO_FACTURADO) AS logrado'))
@@ -111,7 +111,7 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
 
         return DB::connection('erp_contiflex')
             ->table('dbo.vw_CRM_Clientes_Prioritarios')
-            ->where('COMPANIA', $compania)
+            ->when($compania > 0, fn ($q) => $q->where('COMPANIA', $compania))
             ->select(
                 DB::raw("$banda AS banda"),
                 DB::raw('COUNT(*) AS num_clientes'),

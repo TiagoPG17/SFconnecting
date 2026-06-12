@@ -82,10 +82,11 @@ class DashboardWebController extends Controller
 
     public function gerencial(Request $request): View
     {
-        $anio     = (int) $request->input('anio', now()->year);
-        $periodo  = $request->input('periodo', 'anio');
-        $compania = (int) config('crm.compania', 2);
-        $meses    = $this->mesesDelPeriodo($periodo, $anio);
+        $anio        = (int) $request->input('anio', now()->year);
+        $periodo     = $request->input('periodo', 'anio');
+        $companiaErp = in_array((int) $request->input('cia'), [0, 1, 2]) ? (int) $request->input('cia') : 0;
+        $compania    = $companiaErp;
+        $meses       = $this->mesesDelPeriodo($periodo, $anio);
 
         $svc = new DashboardGerencialService($this->gerencialRepo, $compania, $anio, $meses);
 
@@ -99,10 +100,11 @@ class DashboardWebController extends Controller
             'actividad'            => $svc->actividadEquipo(),
             'topAsesores'          => $this->service->topAsesores(),
             'integrales'           => $safe(fn () => $this->erp->clientesIntegrales(50)),
-            'panoramaGerencial'    => $safe(fn () => $this->erp->panoramaGerencial()),
-            'panoramaPresupuestal' => $safe(fn () => $this->erp->panoramaPresupuestal()),
+            'panoramaGerencial'    => $safe(fn () => $this->erp->panoramaGerencial($companiaErp)),
+            'panoramaPresupuestal' => $safe(fn () => $this->erp->panoramaPresupuestal($companiaErp)),
             'anio'                 => $anio,
             'periodo'              => $periodo,
+            'cia'                  => $companiaErp,
         ]);
     }
 }

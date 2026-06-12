@@ -31,17 +31,19 @@ class ClientesHuerfanosWebController extends Controller
 
         $nitsEnCrm = \App\Domain\Clientes\Models\Cliente::pluck('nit')->toArray();
 
-        $huerfanos     = [];
-        $erpDisponible = false;
+        $huerfanos      = [];
+        $totalHuerfanos = 0;
+        $erpDisponible  = false;
 
         try {
             if ($this->erp->isAvailable()) {
-                $erpDisponible = true;
-                $huerfanos = $this->erp->clientesHuerfanos($compania, $nitsEnCrm, 150);
+                $erpDisponible  = true;
+                $totalHuerfanos = $this->erp->countClientesHuerfanos($compania, $nitsEnCrm);
+                $huerfanos      = $this->erp->clientesHuerfanos($compania, $nitsEnCrm, 150);
             }
         } catch (\Throwable) {}
 
-        return view('clientes.huerfanos', compact('huerfanos', 'erpDisponible', 'compania', 'esAsesor'));
+        return view('clientes.huerfanos', compact('huerfanos', 'totalHuerfanos', 'erpDisponible', 'compania', 'esAsesor'));
     }
 
     public function reclamar(Request $request, string $nit): RedirectResponse

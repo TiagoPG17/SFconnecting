@@ -114,9 +114,11 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
-    public function panoramaGerencial(): array
+    public function panoramaGerencial(int $compania = 0): array
     {
         try {
+            $whereCompania = $compania > 0 ? "WHERE COMPANIA = {$compania}" : '';
+
             $sql = "
                 SELECT
                     COMPANIA,
@@ -146,6 +148,7 @@ class ContiflexERPRepository implements ERPRepositoryInterface
                                  THEN 1.0 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0)
                     AS decimal(5,2)) AS porc_riesgo
                 FROM dbo.vw_CRM_Clientes_Prioritarios
+                {$whereCompania}
                 GROUP BY COMPANIA, NOMBRE_VENDEDOR
                 HAVING MIN(DIAS_DESDE_ULTIMA_COMPRA) <= 365
                   AND SUM(FACTURADO_ANIO_ACTUAL) + SUM(FACTURADO_ANIO_ANTERIOR) > 0
@@ -344,38 +347,68 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
-    public function panoramaPresupuestal(): array
+    public function panoramaPresupuestal(int $compania = 0): array
     {
         try {
+            $whereCompania       = $compania > 0 ? "AND COMPANIA = {$compania}" : '';
+            $whereCompaniaCartera = $compania > 0 ? "WHERE COMPANIA = {$compania}" : '';
+
             $sql = "
+                WITH ventas_reales AS (
+                    SELECT
+                        COMPANIA,
+                        NOMBRE_VENDEDOR,
+                        SUM(CASE WHEN LEFT(ANIO_MES, 4) = CAST(YEAR(GETDATE())     AS varchar) THEN VALOR ELSE 0 END) AS facturado_anio_actual,
+                        SUM(CASE WHEN LEFT(ANIO_MES, 4) = CAST(YEAR(GETDATE()) - 1 AS varchar) THEN VALOR ELSE 0 END) AS facturado_anio_anterior
+                    FROM dbo.vw_CRM_Detalle_Mensual_Vendedor
+                    WHERE LEFT(ANIO_MES, 4) IN (
+                        CAST(YEAR(GETDATE()) AS varchar),
+                        CAST(YEAR(GETDATE()) - 1 AS varchar)
+                    )
+                      AND NOMBRE_VENDEDOR IS NOT NULL
+                      AND LTRIM(RTRIM(NOMBRE_VENDEDOR)) <> ''
+                      {$whereCompania}
+                    GROUP BY COMPANIA, NOMBRE_VENDEDOR
+                    HAVING SUM(VALOR) > 0
+                ),
+                cartera AS (
+                    SELECT
+                        COMPANIA,
+                        NOMBRE_VENDEDOR,
+                        SUM(CASE WHEN HORIZONTE_PRESUPUESTO = 'P1 - PRESUPUESTO ACTIVO'            THEN 1 ELSE 0 END) AS p1_activos,
+                        SUM(CASE WHEN HORIZONTE_PRESUPUESTO = 'P2 - PRESUPUESTO EN RIESGO'         THEN 1 ELSE 0 END) AS p2_en_riesgo,
+                        SUM(CASE WHEN HORIZONTE_PRESUPUESTO = 'P3 - PRESUPUESTO PASADO (RECUPERAR)' THEN 1 ELSE 0 END) AS p3_recuperar,
+                        SUM(CASE WHEN HORIZONTE_PRESUPUESTO = 'P4 - FUERA DE PRESUPUESTO'          THEN 1 ELSE 0 END) AS p4_largo_plazo,
+                        SUM(CASE WHEN HORIZONTE_PRESUPUESTO = 'P2 - PRESUPUESTO EN RIESGO'
+                                 THEN IMPACTO_PRESUPUESTO_ESTIMADO ELSE 0 END) AS valor_a_rescatar_p2,
+                        SUM(CASE WHEN HORIZONTE_PRESUPUESTO = 'P3 - PRESUPUESTO PASADO (RECUPERAR)'
+                                 THEN FACTURADO_ANIO_ANTERIOR ELSE 0 END) AS valor_potencial_p3
+                    FROM dbo.vw_CRM_Clientes_Prioritarios
+                    {$whereCompaniaCartera}
+                    GROUP BY COMPANIA, NOMBRE_VENDEDOR
+                )
                 SELECT
-                    COMPANIA,
-                    NOMBRE_VENDEDOR,
-                    SUM(FACTURADO_ANIO_ACTUAL)   AS facturado_anio_actual,
-                    SUM(FACTURADO_ANIO_ANTERIOR)  AS facturado_anio_anterior,
-                    CASE WHEN SUM(FACTURADO_ANIO_ANTERIOR) > 0
+                    v.COMPANIA,
+                    v.NOMBRE_VENDEDOR,
+                    v.facturado_anio_actual,
+                    v.facturado_anio_anterior,
+                    CASE WHEN v.facturado_anio_anterior > 0
                          THEN CAST(
-                             (SUM(FACTURADO_ANIO_ACTUAL) - SUM(FACTURADO_ANIO_ANTERIOR)) * 100.0 /
-                              SUM(FACTURADO_ANIO_ANTERIOR)
+                             (v.facturado_anio_actual - v.facturado_anio_anterior) * 100.0 /
+                              v.facturado_anio_anterior
                          AS decimal(8,2))
                          ELSE NULL END AS variacion_porc,
-                    SUM(CASE WHEN HORIZONTE_PRESUPUESTO = 'P1 - PRESUPUESTO ACTIVO'
-                             THEN 1 ELSE 0 END) AS p1_activos,
-                    SUM(CASE WHEN HORIZONTE_PRESUPUESTO = 'P2 - PRESUPUESTO EN RIESGO'
-                             THEN 1 ELSE 0 END) AS p2_en_riesgo,
-                    SUM(CASE WHEN HORIZONTE_PRESUPUESTO = 'P3 - PRESUPUESTO PASADO (RECUPERAR)'
-                             THEN 1 ELSE 0 END) AS p3_recuperar,
-                    SUM(CASE WHEN HORIZONTE_PRESUPUESTO = 'P4 - FUERA DE PRESUPUESTO'
-                             THEN 1 ELSE 0 END) AS p4_largo_plazo,
-                    SUM(CASE WHEN HORIZONTE_PRESUPUESTO = 'P2 - PRESUPUESTO EN RIESGO'
-                             THEN IMPACTO_PRESUPUESTO_ESTIMADO ELSE 0 END) AS valor_a_rescatar_p2,
-                    SUM(CASE WHEN HORIZONTE_PRESUPUESTO = 'P3 - PRESUPUESTO PASADO (RECUPERAR)'
-                             THEN FACTURADO_ANIO_ANTERIOR ELSE 0 END) AS valor_potencial_p3
-                FROM dbo.vw_CRM_Clientes_Prioritarios
-                GROUP BY COMPANIA, NOMBRE_VENDEDOR
-                HAVING MIN(DIAS_DESDE_ULTIMA_COMPRA) <= 365
-                  AND SUM(FACTURADO_ANIO_ACTUAL) + SUM(FACTURADO_ANIO_ANTERIOR) > 0
-                ORDER BY COMPANIA, SUM(FACTURADO_ANIO_ACTUAL) DESC
+                    ISNULL(c.p1_activos,        0) AS p1_activos,
+                    ISNULL(c.p2_en_riesgo,      0) AS p2_en_riesgo,
+                    ISNULL(c.p3_recuperar,      0) AS p3_recuperar,
+                    ISNULL(c.p4_largo_plazo,    0) AS p4_largo_plazo,
+                    ISNULL(c.valor_a_rescatar_p2, 0) AS valor_a_rescatar_p2,
+                    ISNULL(c.valor_potencial_p3,  0) AS valor_potencial_p3
+                FROM ventas_reales v
+                LEFT JOIN cartera c
+                    ON  c.COMPANIA = v.COMPANIA
+                    AND UPPER(LTRIM(RTRIM(c.NOMBRE_VENDEDOR))) = UPPER(LTRIM(RTRIM(v.NOMBRE_VENDEDOR)))
+                ORDER BY v.COMPANIA, v.facturado_anio_actual DESC
             ";
 
             return collect(DB::connection('erp_contiflex')->select($sql))
@@ -383,6 +416,26 @@ class ContiflexERPRepository implements ERPRepositoryInterface
                 ->toArray();
         } catch (Throwable $e) {
             throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
+    public function countClientesHuerfanos(int $compania, array $nitsExcluir = []): int
+    {
+        try {
+            return DB::connection('erp_contiflex')
+                ->table('dbo.CRM_Consolidado_Ventas_cliente')
+                ->where('COMPANIA', $compania)
+                ->where(fn ($q) => $q
+                    ->whereNull('NOMBRE_VENDEDOR')
+                    ->orWhereRaw("LTRIM(RTRIM(NOMBRE_VENDEDOR)) = ''")
+                    ->orWhere('NOMBRE_VENDEDOR', 'like', '%VACANTE%')
+                )
+                ->where('DIAS_DESDE_ULTIMA_COMPRA', '>=', 365)
+                ->where('VLR_NETO_FACTURADO', '>', 0)
+                ->when($nitsExcluir, fn ($q) => $q->whereNotIn('NIT', $nitsExcluir))
+                ->count();
+        } catch (Throwable $e) {
+            return 0;
         }
     }
 

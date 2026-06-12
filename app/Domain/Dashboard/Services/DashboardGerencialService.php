@@ -19,8 +19,16 @@ class DashboardGerencialService
 
     public function presupuestoPorVendedor(): Collection
     {
-        $presupuestos  = $this->repo->presupuestoPorAsesor($this->compania, $this->anio);
-        $codsPorAsesor = $this->repo->codsPorAsesor($this->compania)->keyBy('asesor_id');
+        $presupuestos = $this->repo->presupuestoPorAsesor($this->compania, $this->anio);
+
+        // Un asesor puede tener equivalencias en varias compañías; agrupamos todos sus códigos
+        $codsPorAsesor = $this->repo->codsPorAsesor($this->compania)
+            ->groupBy('asesor_id')
+            ->map(fn ($rows) => $rows->pluck('cod_vendedor_siesa')
+                ->map(fn ($c) => trim($c))
+                ->filter()
+                ->values()
+            );
 
         try {
             $logrado = $this->repo->logradoVendedoresYtd($this->compania, $this->meses)->keyBy('COD_VENDEDOR');
@@ -31,11 +39,12 @@ class DashboardGerencialService
         $forecast = $this->repo->forecastPipelineAsesor()->pluck('forecast', 'asesor_id');
 
         return $presupuestos->map(function ($p) use ($codsPorAsesor, $logrado, $forecast) {
-            $cod = trim($codsPorAsesor[$p->asesor_id]?->cod_vendedor_siesa ?? '');
+            $codes = $codsPorAsesor[$p->asesor_id] ?? collect();
 
-            $log = (float) ($logrado[$cod]?->logrado ?? 0);
-            $prsup          = (float) $p->presupuesto;
-            $cumpl          = $prsup > 0 ? (int) round($log * 100 / $prsup) : 0;
+            // Suma logrado de todos los códigos del asesor (puede tener uno por compañía)
+            $log   = $codes->sum(fn ($cod) => (float) ($logrado[$cod]?->logrado ?? 0));
+            $prsup = (float) $p->presupuesto;
+            $cumpl = $prsup > 0 ? (int) round($log * 100 / $prsup) : 0;
 
             return [
                 'asesor_id'         => $p->asesor_id,

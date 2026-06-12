@@ -59,7 +59,7 @@ class FakeERPRepository implements ERPRepositoryInterface
         return [];
     }
 
-    public function panoramaGerencial(): array
+    public function panoramaGerencial(int $compania = 0): array
     {
         $this->checkAvailability();
         return [];
@@ -107,7 +107,7 @@ class FakeERPRepository implements ERPRepositoryInterface
         return [];
     }
 
-    public function panoramaPresupuestal(): array
+    public function panoramaPresupuestal(int $compania = 0): array
     {
         $this->checkAvailability();
         return [];

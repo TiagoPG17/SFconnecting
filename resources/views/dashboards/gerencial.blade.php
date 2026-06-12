@@ -1,4 +1,4 @@
-<x-layouts.app title="Visión ejecutiva · CRM">
+<x-layouts.app title="Gerencial · CRM">
 
 <style>
 :root{
@@ -15,22 +15,37 @@
   {{-- ===== Encabezado ===== --}}
   <div class="flex items-end justify-between mb-7">
     <div>
-      <p class="text-xs uppercase tracking-widest text-slate-400">Dashboard gerencial</p>
-      <h1 class="text-2xl font-bold text-slate-900 mt-1">
-        Visión ejecutiva {{ $anio }}
+      <h1 class="text-2xl font-bold text-slate-900">
+        Visión gerencial {{ $anio }}
         @if($periodo !== 'anio')
-          · {{ $periodo === 'mes' ? 'Mes actual' : 'Trimestre actual' }}
+          <span class="text-slate-400 font-normal text-lg">· {{ $periodo === 'mes' ? 'Mes actual' : 'Trimestre actual' }}</span>
         @endif
       </h1>
     </div>
-    <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200">
-      @foreach(['mes' => 'Mes', 'trimestre' => 'Trimestre', 'anio' => 'Año'] as $key => $label)
-        <a href="{{ route('dash.gerencial', ['periodo' => $key, 'anio' => $anio]) }}"
-           class="px-3 py-1.5 text-sm rounded-lg transition {{ $periodo === $key ? 'text-white' : '' }}"
-           style="{{ $periodo === $key ? 'background:var(--accent)' : 'color:var(--muted)' }}">
-          {{ $label }}
-        </a>
-      @endforeach
+    <div class="flex items-center gap-3">
+      {{-- Selector compañía --}}
+      @php
+        $ciaColors = [0 => '#7c3aed', 1 => '#b91c1c', 2 => '#1d4ed8'];
+      @endphp
+      <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200">
+        @foreach([0 => 'Ambas', 1 => 'Formacol', 2 => 'Contiflex'] as $ciaKey => $ciaLabel)
+          <a href="{{ route('dash.gerencial', ['periodo' => $periodo, 'anio' => $anio, 'cia' => $ciaKey]) }}"
+             class="px-3 py-1.5 text-sm rounded-lg transition {{ $cia === $ciaKey ? 'text-white' : '' }}"
+             style="{{ $cia === $ciaKey ? 'background:'.$ciaColors[$ciaKey] : 'color:var(--muted)' }}">
+            {{ $ciaLabel }}
+          </a>
+        @endforeach
+      </div>
+      {{-- Selector período --}}
+      <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200">
+        @foreach(['mes' => 'Mes', 'trimestre' => 'Trimestre', 'anio' => 'Año'] as $key => $label)
+          <a href="{{ route('dash.gerencial', ['periodo' => $key, 'anio' => $anio, 'cia' => $cia]) }}"
+             class="px-3 py-1.5 text-sm rounded-lg transition {{ $periodo === $key ? 'text-white' : '' }}"
+             style="{{ $periodo === $key ? 'background:var(--accent)' : 'color:var(--muted)' }}">
+            {{ $label }}
+          </a>
+        @endforeach
+      </div>
     </div>
   </div>
 
