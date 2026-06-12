@@ -19,57 +19,74 @@ class MapeoVendedorWebController extends Controller
         private readonly VendedorEquivalenciaRepositoryInterface $repo,
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $compania = (int) config('crm.compania', 1);
-        $mapeos   = $this->repo->todos($compania);
-        $asesores = User::role('comercial')
-            ->whereDoesntHave('equivalencia', fn ($q) => $q->where('compania', $compania))
-            ->orderBy('name')
-            ->get(['id', 'name', 'email']);
-        $vendedoresSiesa = $this->repo->vendedoresSiesa($compania);
+        $compania          = in_array((int) $request->input('cia'), [1, 2]) ? (int) $request->input('cia') : 1;
+        $mapeos            = $this->repo->todos($compania);
+        $asesores          = User::role('comercial')->orderBy('name')->get(['id', 'name', 'email']);
+        $vendedoresSiesa1  = $this->repo->vendedoresSiesa(1);
+        $vendedoresSiesa2  = $this->repo->vendedoresSiesa(2);
 
-        return view('mapeo-vendedores.index', compact('mapeos', 'asesores', 'vendedoresSiesa', 'compania'));
+        return view('mapeo-vendedores.index', compact(
+            'mapeos', 'asesores', 'vendedoresSiesa1', 'vendedoresSiesa2', 'compania'
+        ));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $data     = $request->validate([
-            'asesor_id'          => ['required', 'exists:users,id'],
-            'cod_vendedor_siesa' => ['required', 'string', 'max:20'],
-            'nombre_vendedor'    => ['required', 'string', 'max:200'],
+        $request->validate([
+            'asesor_id' => ['required', 'exists:users,id'],
+            'compania'  => ['required', 'integer', 'in:0,1,2'],
         ]);
 
-        $compania = (int) config('crm.compania', 1);
+        $asesorId = (int) $request->input('asesor_id');
+        $compania = (int) $request->input('compania');
+        $creados  = 0;
+        $errores  = [];
 
-        if ($this->repo->existe((int) $data['asesor_id'], $compania)) {
-            return back()->withErrors(['asesor_id' => 'Este asesor ya tiene un mapeo activo.'])->withInput();
+        $companias = $compania === 0 ? [1, 2] : [$compania];
+
+        foreach ($companias as $cia) {
+            $cod    = trim($request->input("cod_vendedor_siesa_{$cia}", ''));
+            $nombre = trim($request->input("nombre_vendedor_{$cia}", ''));
+
+            if ($cod === '' || $nombre === '') {
+                continue;
+            }
+
+            if ($this->repo->existe($asesorId, $cia)) {
+                $errores[] = ($cia === 1 ? 'Formacol' : 'Contiflex') . ': ya existe un mapeo para este asesor.';
+                continue;
+            }
+
+            $this->repo->crear([
+                'asesor_id'          => $asesorId,
+                'compania'           => $cia,
+                'cod_vendedor_siesa' => $cod,
+                'nombre_vendedor'    => $nombre,
+                'activo'             => true,
+            ]);
+            $creados++;
         }
 
-        $this->repo->crear([
-            'asesor_id'          => $data['asesor_id'],
-            'compania'           => $compania,
-            'cod_vendedor_siesa' => $data['cod_vendedor_siesa'],
-            'nombre_vendedor'    => $data['nombre_vendedor'],
-            'activo'             => true,
-        ]);
+        if (!empty($errores)) {
+            return back()->withErrors(['asesor_id' => implode(' | ', $errores)])->withInput();
+        }
 
-        // Si viene de la creación de usuario, redirigir a presupuestos
         if ($request->boolean('desde_usuario')) {
             return redirect()->route('presupuestos.index')
                 ->with('success', 'Vendedor mapeado. Ahora asígnale un presupuesto.');
         }
 
-        return redirect()->route('mapeo-vendedores.index')
-            ->with('success', 'Mapeo creado correctamente.');
+        return redirect()->route('mapeo-vendedores.index', ['cia' => $compania === 0 ? 1 : $compania])
+            ->with('success', $creados . ' mapeo(s) creado(s) correctamente.');
     }
 
     public function update(Request $request, VendedorEquivalencia $mapeoVendedor): RedirectResponse
     {
         Log::info('[MapeoVendedor] update() recibido', [
-            'mapeo_id'    => $mapeoVendedor->id,
-            'all_input'   => $request->all(),
-            'method'      => $request->method(),
+            'mapeo_id'  => $mapeoVendedor->id,
+            'all_input' => $request->all(),
         ]);
 
         $data = $request->validate([
@@ -78,19 +95,10 @@ class MapeoVendedorWebController extends Controller
             'activo'             => ['boolean'],
         ]);
 
-        Log::info('[MapeoVendedor] validación OK, actualizando', [
-            'mapeo_id' => $mapeoVendedor->id,
-            'data'     => $data,
-        ]);
-
         try {
             $this->repo->actualizar($mapeoVendedor, $data);
-            Log::info('[MapeoVendedor] actualizado correctamente', ['mapeo_id' => $mapeoVendedor->id]);
         } catch (\Throwable $e) {
-            Log::error('[MapeoVendedor] error al actualizar', [
-                'mapeo_id' => $mapeoVendedor->id,
-                'error'    => $e->getMessage(),
-            ]);
+            Log::error('[MapeoVendedor] error al actualizar', ['mapeo_id' => $mapeoVendedor->id, 'error' => $e->getMessage()]);
             return back()->withErrors(['general' => 'Error al guardar: ' . $e->getMessage()]);
         }
 

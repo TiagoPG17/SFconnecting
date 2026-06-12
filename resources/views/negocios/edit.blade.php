@@ -11,7 +11,12 @@
                 <h2 class="text-base font-semibold text-slate-900 mb-6">Editar negocio</h2>
 
                 <form
-                    x-data="{ loading: false }"
+                    x-data="{
+                        loading: false,
+                        estadoId: {{ $negocio->pipeline_estado_id ?? 'null' }},
+                        estadosPerdidos: @js($estadosPerdidoIds),
+                        get esPerdido() { return this.estadosPerdidos.includes(parseInt(this.estadoId)); }
+                    }"
                     @submit.prevent="
                         loading = true;
                         const fd = new FormData($el);
@@ -33,7 +38,7 @@
                     <x-ui.input name="nombre_negocio" label="Nombre del negocio" :value="$negocio->nombre_negocio" required/>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <x-ui.select name="pipeline_estado_id" label="Estado pipeline" required>
+                        <x-ui.select name="pipeline_estado_id" label="Estado pipeline" required x-model="estadoId">
                             @foreach($estados as $e)
                                 <option value="{{ $e->id }}" {{ $negocio->pipeline_estado_id == $e->id ? 'selected' : '' }}>
                                     {{ $e->nombre }}
@@ -60,25 +65,26 @@
                     <x-ui.input name="fecha_estimada_cierre" type="date" label="Fecha estimada de cierre"
                         :value="$negocio->fecha_estimada_cierre?->format('Y-m-d')"/>
 
-                    @if($negocio->pipelineEstado?->es_perdido || $negocio->estaPerdido())
-                    <x-ui.select name="motivo_perdida_id" label="Motivo de pérdida">
-                        <option value="">Sin motivo</option>
-                        @foreach($motivos as $m)
-                            <option value="{{ $m->id }}" {{ $negocio->motivo_perdida_id == $m->id ? 'selected' : '' }}>
-                                {{ $m->nombre }}
-                            </option>
-                        @endforeach
-                    </x-ui.select>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">¿Por qué se perdió? <span class="text-slate-400 font-normal">(opcional)</span></label>
-                        <textarea
-                            name="observacion_perdida"
-                            rows="3"
-                            placeholder="Describe aquí el detalle de por qué se perdió el negocio..."
-                            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
-                        >{{ old('observacion_perdida', $negocio->observacion_perdida) }}</textarea>
+                    <div x-show="esPerdido" x-cloak class="space-y-4 p-4 rounded-xl border border-red-200 bg-red-50/50">
+                        <p class="text-xs font-semibold text-red-600 uppercase tracking-wide">Información de cierre perdido</p>
+                        <x-ui.select name="motivo_perdida_id" label="Motivo de pérdida">
+                            <option value="">Sin motivo</option>
+                            @foreach($motivos as $m)
+                                <option value="{{ $m->id }}" {{ $negocio->motivo_perdida_id == $m->id ? 'selected' : '' }}>
+                                    {{ $m->nombre }}
+                                </option>
+                            @endforeach
+                        </x-ui.select>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">¿Por qué se perdió? <span class="text-slate-400 font-normal">(opcional)</span></label>
+                            <textarea
+                                name="observacion_perdida"
+                                rows="3"
+                                placeholder="Describe aquí el detalle de por qué se perdió el negocio..."
+                                class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
+                            >{{ old('observacion_perdida', $negocio->observacion_perdida) }}</textarea>
+                        </div>
                     </div>
-                    @endif
 
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Descripción</label>

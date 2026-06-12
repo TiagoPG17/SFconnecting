@@ -67,6 +67,11 @@
         <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
 
 
+            @role('comercial|admin')
+            <x-ui.nav-item href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')" icon="home">
+                Dashboard
+            </x-ui.nav-item>
+            @endrole
             @role('comercial')
             <x-ui.nav-item href="{{ route('dash.vendedor') }}" :active="request()->routeIs('dash.vendedor')" icon="trending-up">
                 Mi desempeño

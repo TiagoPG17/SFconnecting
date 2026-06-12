@@ -63,11 +63,12 @@ class NegocioWebController extends Controller
     {
         $this->authorize('update', $negocio);
 
-        $estados  = $this->maestros->pipelineEstadosPorTipo('negocio');
-        $tipos    = $this->maestros->porTipo('tipo_negocio');
-        $motivos  = $this->maestros->porTipo('motivo_perdida');
+        $estados           = $this->maestros->pipelineEstadosPorTipo('negocio');
+        $tipos             = $this->maestros->porTipo('tipo_negocio');
+        $motivos           = $this->maestros->porTipo('motivo_perdida');
+        $estadosPerdidoIds = $estados->where('es_perdido', true)->pluck('id')->values()->toArray();
 
-        return view('negocios.edit', compact('negocio', 'estados', 'tipos', 'motivos'));
+        return view('negocios.edit', compact('negocio', 'estados', 'tipos', 'motivos', 'estadosPerdidoIds'));
     }
 
     public function kanban(): View

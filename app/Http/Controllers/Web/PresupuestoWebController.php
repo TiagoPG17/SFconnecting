@@ -20,49 +20,75 @@ class PresupuestoWebController extends Controller
 
     public function index(Request $request): View
     {
-        $anio        = (int) $request->input('anio', now()->year);
-        $compania    = (int) config('crm.compania', 1);
-        $presupuestos = $this->repo->todos($anio);
-        $asesores    = User::role('comercial')->orderBy('name')->get(['id', 'name']);
-        $anios       = range(now()->year + 1, now()->year - 3);
+        $anio     = (int) $request->input('anio', now()->year);
+        $todos    = $this->repo->todos($anio);
+        $asesores = User::role('comercial')->orderBy('name')->get(['id', 'name']);
+        $anios    = range(now()->year + 1, now()->year - 3);
 
-        return view('presupuestos.index', compact('presupuestos', 'asesores', 'anio', 'anios', 'compania'));
+        // Agrupa por asesor: cada entrada tiene cia1 y cia2 (o null si no existe)
+        $porAsesor = $todos->groupBy('asesor_id')->map(fn ($rows) => [
+            'asesor' => $rows->first()->asesor,
+            'cia1'   => $rows->firstWhere('compania', 1),
+            'cia2'   => $rows->firstWhere('compania', 2),
+            'anio'   => $anio,
+        ])->values();
+
+        return view('presupuestos.index', compact('porAsesor', 'asesores', 'anio', 'anios'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'asesor_id'   => ['required', 'exists:users,id'],
-            'anio'        => ['required', 'integer', 'min:2020', 'max:2030'],
-            'presupuesto' => ['required', 'numeric', 'min:0'],
+            'asesor_id'     => ['required', 'exists:users,id'],
+            'anio'          => ['required', 'integer', 'min:2020', 'max:2030'],
+            'compania'      => ['required', 'integer', 'in:0,1,2'],
+            'presupuesto'   => ['required_if:compania,1,2', 'nullable', 'numeric', 'min:0'],
+            'presupuesto_1' => ['required_if:compania,0', 'nullable', 'numeric', 'min:0'],
+            'presupuesto_2' => ['required_if:compania,0', 'nullable', 'numeric', 'min:0'],
         ]);
 
-        $compania = (int) config('crm.compania', 1);
+        $asesorId = (int) $data['asesor_id'];
+        $anio     = (int) $data['anio'];
 
-        if ($this->repo->existe((int) $data['asesor_id'], $compania, (int) $data['anio'])) {
-            return back()->withErrors(['asesor_id' => 'Ya existe un presupuesto para ese asesor en ese año.'])->withInput();
+        if ((int) $data['compania'] === 0) {
+            $this->repo->upsert($asesorId, 1, $anio, (float) $data['presupuesto_1']);
+            $this->repo->upsert($asesorId, 2, $anio, (float) $data['presupuesto_2']);
+        } else {
+            $this->repo->upsert($asesorId, (int) $data['compania'], $anio, (float) $data['presupuesto']);
         }
 
-        $this->repo->crear([
-            'asesor_id'   => $data['asesor_id'],
-            'compania'    => $compania,
-            'anio'        => $data['anio'],
-            'presupuesto' => $data['presupuesto'],
-        ]);
-
-        return redirect()->route('presupuestos.index', ['anio' => $data['anio']])
-            ->with('success', 'Presupuesto creado correctamente.');
+        return redirect()->route('presupuestos.index', ['anio' => $anio])
+            ->with('success', 'Presupuesto guardado correctamente.');
     }
 
+    // Edición de uno o ambos presupuestos de un asesor a la vez
     public function update(Request $request, Presupuesto $presupuesto): RedirectResponse
     {
         $data = $request->validate([
-            'presupuesto' => ['required', 'numeric', 'min:0'],
+            'asesor_id'     => ['required', 'exists:users,id'],
+            'anio'          => ['required', 'integer'],
+            'presupuesto_1' => ['nullable', 'numeric', 'min:0'],
+            'presupuesto_2' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        $this->repo->actualizar($presupuesto, ['presupuesto' => $data['presupuesto']]);
+        $asesorId = (int) $data['asesor_id'];
+        $anio     = (int) $data['anio'];
 
-        return redirect()->route('presupuestos.index', ['anio' => $presupuesto->anio])
+        foreach ([1 => $data['presupuesto_1'], 2 => $data['presupuesto_2']] as $cia => $valor) {
+            if ($valor !== null && $valor !== '') {
+                $this->repo->upsert($asesorId, $cia, $anio, (float) $valor);
+            } else {
+                $existing = Presupuesto::where('asesor_id', $asesorId)
+                    ->where('compania', $cia)
+                    ->where('anio', $anio)
+                    ->first();
+                if ($existing) {
+                    $this->repo->eliminar($existing);
+                }
+            }
+        }
+
+        return redirect()->route('presupuestos.index', ['anio' => $anio])
             ->with('success', 'Presupuesto actualizado correctamente.');
     }
 

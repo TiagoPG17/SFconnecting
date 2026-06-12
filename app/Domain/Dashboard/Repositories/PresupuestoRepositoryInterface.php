@@ -20,4 +20,6 @@ interface PresupuestoRepositoryInterface
     public function buscarPorId(int $id): ?Presupuesto;
 
     public function existe(int $asesorId, int $compania, int $anio, ?int $exceptoId = null): bool;
+
+    public function upsert(int $asesorId, int $compania, int $anio, float $presupuesto): Presupuesto;
 }

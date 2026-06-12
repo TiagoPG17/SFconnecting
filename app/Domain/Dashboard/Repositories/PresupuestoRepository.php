@@ -47,4 +47,12 @@ class PresupuestoRepository implements PresupuestoRepositoryInterface
             ->when($exceptoId, fn ($q) => $q->where('id', '!=', $exceptoId))
             ->exists();
     }
+
+    public function upsert(int $asesorId, int $compania, int $anio, float $presupuesto): Presupuesto
+    {
+        return Presupuesto::updateOrCreate(
+            ['asesor_id' => $asesorId, 'compania' => $compania, 'anio' => $anio],
+            ['presupuesto' => $presupuesto]
+        );
+    }
 }

@@ -29,14 +29,15 @@ Route::middleware(['auth'])->group(function () {
 
     $homeRedirect = function (\Illuminate\Http\Request $req) {
         $user = $req->user();
-        if ($user->hasRole('gerente') || $user->hasRole('admin')) {
+        if ($user->hasRole('gerente')) {
             return redirect()->route('dash.gerencial');
         }
         return redirect()->route('dash.vendedor');
     };
 
     Route::get('/', $homeRedirect);
-    Route::get('/dashboard', $homeRedirect)->name('dashboard');
+    Route::get('/dashboard', [DashboardWebController::class, 'index'])->name('dashboard')->middleware('role:admin|comercial');
+    Route::get('/dash-comercial', [DashboardWebController::class, 'index'])->name('dash.comercial')->middleware('role:admin|comercial');
 
     // Dashboards especializados
     Route::get('/mi-desempeno', [DashboardWebController::class, 'vendedor'])->name('dash.vendedor')->middleware('role:comercial|admin');

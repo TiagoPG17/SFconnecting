@@ -8,17 +8,27 @@
             <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Mapeo vendedores SIESA</h2>
             <p class="text-xs text-slate-400 mt-0.5">Vincula cada asesor del CRM con su código en Contiflex</p>
         </div>
-        @if($asesores->isNotEmpty())
-        <button @click="modalCrear = true"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">
-            <x-ui.icon name="plus" class="w-4 h-4"/>
-            Nuevo mapeo
-        </button>
-        @endif
+        <div class="flex items-center gap-3">
+            {{-- Selector de compañía --}}
+            <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200">
+                @foreach([1 => 'Formacol', 2 => 'Contiflex'] as $ciaKey => $ciaLabel)
+                    <a href="{{ route('mapeo-vendedores.index', ['cia' => $ciaKey]) }}"
+                       class="px-3 py-1.5 text-sm rounded-lg transition {{ $compania === $ciaKey ? 'text-white' : '' }}"
+                       style="{{ $compania === $ciaKey ? 'background:'.($ciaKey===1?'#b91c1c':'#1d4ed8') : 'color:var(--muted)' }}">
+                        {{ $ciaLabel }}
+                    </a>
+                @endforeach
+            </div>
+            <button @click="modalCrear = true"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">
+                <x-ui.icon name="plus" class="w-4 h-4"/>
+                Nuevo mapeo
+            </button>
+        </div>
     </div>
 
     {{-- ===== Alerta sin ERP ===== --}}
-    @if(empty($vendedoresSiesa))
+    @if(empty($vendedoresSiesa1) && empty($vendedoresSiesa2))
     <div class="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl text-sm">
         ⚠️ No se pudo conectar con SIESA. Los vendedores deberán ingresarse manualmente.
     </div>
@@ -118,16 +128,28 @@
     </x-ui.card>
 
     {{-- ===== Modal Crear ===== --}}
+    @php
+        $vSiesa1Json = collect($vendedoresSiesa1)->map(fn($v) => ['cod' => $v->cod, 'nombre' => $v->nombre])->values()->toJson();
+        $vSiesa2Json = collect($vendedoresSiesa2)->map(fn($v) => ['cod' => $v->cod, 'nombre' => $v->nombre])->values()->toJson();
+    @endphp
     <div x-show="modalCrear" x-cloak
          class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
          @keydown.escape.window="modalCrear = false">
+        <template x-if="modalCrear">
         <div @click.outside="modalCrear = false"
-             class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
-            <h3 class="text-base font-bold text-slate-900 mb-1">Nuevo mapeo</h3>
-            <p class="text-xs text-slate-400 mb-5">Vincula un asesor del CRM con su vendedor en SIESA</p>
-            <form method="POST" action="{{ route('mapeo-vendedores.store') }}" class="space-y-4"
-                  x-data="{ codSel: '', nombreSel: '' }">
+             class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6"
+             x-data="{
+                cia: '',
+                siesa1: {{ $vSiesa1Json }},
+                siesa2: {{ $vSiesa2Json }},
+                cod1: '', nombre1: '',
+                cod2: '', nombre2: '',
+             }">
+            <h3 class="text-base font-bold text-slate-900 mb-5">Nuevo mapeo</h3>
+            <form method="POST" action="{{ route('mapeo-vendedores.store') }}" class="space-y-4">
                 @csrf
+                <input type="hidden" name="compania" :value="cia"/>
+
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1.5">Asesor CRM</label>
                     <select name="asesor_id" required
@@ -139,34 +161,46 @@
                     </select>
                 </div>
 
-                @if(!empty($vendedoresSiesa))
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Vendedor SIESA</label>
-                    <select required
-                            @change="const v = JSON.parse($event.target.value); codSel = v.cod; nombreSel = v.nombre"
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Compañía</label>
+                    <select x-model="cia" required
                             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Selecciona...</option>
+                        <option value="1">Formacol</option>
+                        <option value="2">Contiflex</option>
+                        <option value="0">Ambas</option>
+                    </select>
+                </div>
+
+                {{-- Vendedor Formacol --}}
+                <div x-show="cia === '1' || cia === '0'">
+                    <label class="block text-xs font-semibold text-red-600 mb-1.5">Vendedor Formacol</label>
+                    <select :required="cia === '1' || cia === '0'"
+                            @change="const v = siesa1[$event.target.value]; cod1 = v?.cod ?? ''; nombre1 = v?.nombre ?? ''"
+                            class="w-full border border-red-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400">
                         <option value="">Selecciona un vendedor...</option>
-                        @foreach($vendedoresSiesa as $v)
-                            <option value='{"cod":"{{ $v->cod }}","nombre":"{{ addslashes($v->nombre) }}"}'>
-                                {{ $v->cod }} — {{ $v->nombre }}
-                            </option>
+                        @foreach($vendedoresSiesa1 as $i => $v)
+                            <option value="{{ $i }}">{{ $v->cod }} — {{ $v->nombre }}</option>
                         @endforeach
                     </select>
-                    <input type="hidden" name="cod_vendedor_siesa" :value="codSel"/>
-                    <input type="hidden" name="nombre_vendedor" :value="nombreSel"/>
+                    <input type="hidden" name="cod_vendedor_siesa_1" :value="cod1"/>
+                    <input type="hidden" name="nombre_vendedor_1" :value="nombre1"/>
                 </div>
-                @else
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Código vendedor SIESA</label>
-                    <input type="text" name="cod_vendedor_siesa" required placeholder="Ej: JAC"
-                           class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+
+                {{-- Vendedor Contiflex --}}
+                <div x-show="cia === '2' || cia === '0'">
+                    <label class="block text-xs font-semibold text-blue-600 mb-1.5">Vendedor Contiflex</label>
+                    <select :required="cia === '2'"
+                            @change="const v = siesa2[$event.target.value]; cod2 = v?.cod ?? ''; nombre2 = v?.nombre ?? ''"
+                            class="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <option value="">Selecciona un vendedor...</option>
+                        @foreach($vendedoresSiesa2 as $i => $v)
+                            <option value="{{ $i }}">{{ $v->cod }} — {{ $v->nombre }}</option>
+                        @endforeach
+                    </select>
+                    <input type="hidden" name="cod_vendedor_siesa_2" :value="cod2"/>
+                    <input type="hidden" name="nombre_vendedor_2" :value="nombre2"/>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nombre vendedor SIESA</label>
-                    <input type="text" name="nombre_vendedor" required placeholder="Ej: CHAMORRO GUERRERO JAIRO"
-                           class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                </div>
-                @endif
 
                 <div class="flex gap-3 pt-2">
                     <button type="button" @click="modalCrear = false"
@@ -180,13 +214,14 @@
                 </div>
             </form>
         </div>
+        </template>
     </div>
 
     {{-- ===== Modal Editar ===== --}}
     <div x-show="modalEditar" x-cloak
          class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-         @keydown.escape.window="modalEditar = false">
-        <div @click.outside="modalEditar = false"
+         @keydown.escape.window="modalEditar = false; editando = null; editandoOriginal = null">
+        <div @click.outside="modalEditar = false; editando = null; editandoOriginal = null"
              class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
             <h3 class="text-base font-bold text-slate-900 mb-1">Editar mapeo</h3>
             <p class="text-sm text-slate-400 mb-5" x-text="editando?.asesor?.name ?? ''"></p>
@@ -194,17 +229,26 @@
                 <form :action="`/mapeo-vendedores/${editando.id}`" method="POST" class="space-y-4"
                       @submit="const fd = new FormData($event.target); console.log('[MapeoVendedor] submit form (alpine)', {id: editando.id, cod: editando.cod_vendedor_siesa, nombre: editando.nombre_vendedor}); console.log('[MapeoVendedor] submit form (DOM real)', {_method: fd.get('_method'), cod: fd.get('cod_vendedor_siesa'), nombre: fd.get('nombre_vendedor'), activo: fd.get('activo')})">
                     @csrf @method('PUT')
-                    @if(!empty($vendedoresSiesa))
+                    @if(!empty($vendedoresSiesa1) || !empty($vendedoresSiesa2))
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1.5">Vendedor SIESA</label>
                         <select name="_vendedor_select"
                                 x-model="codVendedorEditando"
-                                @change="editando.cod_vendedor_siesa = $event.target.value; editando.nombre_vendedor = $event.target.selectedOptions[0].dataset.nombre; console.log('[MapeoVendedor] cambió select', {cod: editando.cod_vendedor_siesa, nombre: editando.nombre_vendedor})"
+                                @change="editando.cod_vendedor_siesa = $event.target.value; editando.nombre_vendedor = $event.target.selectedOptions[0].dataset.nombre"
                                 class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            @foreach($vendedoresSiesa as $v)
-                                <option value="{{ trim($v->cod) }}" data-nombre="{{ $v->nombre }}">
-                                    {{ trim($v->cod) }} — {{ $v->nombre }}
-                                </option>
+                            @foreach($vendedoresSiesa1 as $v)
+                                <template x-if="editando.compania == 1">
+                                    <option value="{{ trim($v->cod) }}" data-nombre="{{ $v->nombre }}">
+                                        {{ trim($v->cod) }} — {{ $v->nombre }}
+                                    </option>
+                                </template>
+                            @endforeach
+                            @foreach($vendedoresSiesa2 as $v)
+                                <template x-if="editando.compania == 2">
+                                    <option value="{{ trim($v->cod) }}" data-nombre="{{ $v->nombre }}">
+                                        {{ trim($v->cod) }} — {{ $v->nombre }}
+                                    </option>
+                                </template>
                             @endforeach
                         </select>
                         <p class="text-xs text-slate-400 mt-1">
@@ -224,7 +268,7 @@
                         </label>
                     </div>
                     <div class="flex gap-3 pt-2">
-                        <button type="button" @click="modalEditar = false"
+                        <button type="button" @click="modalEditar = false; editando = null; editandoOriginal = null"
                                 class="flex-1 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
                             Cancelar
                         </button>
