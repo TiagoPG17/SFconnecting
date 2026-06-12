@@ -9,6 +9,10 @@
     @endauth
     <title>{{ $title ?? 'SFconnecting CRM' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        @keyframes sfblink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.2;transform:scale(0.85)} }
+        .notif-dot { animation: sfblink 1.1s ease-in-out infinite; }
+    </style>
     {{-- Anti-flash: aplica preferencias guardadas antes de que cargue Alpine --}}
     <script>
         try {
@@ -48,10 +52,11 @@
     >
         {{-- Logo --}}
         <div class="flex h-16 items-center gap-3 px-6 border-b border-slate-800 shrink-0">
-            <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            <div class="w-11 h-11 rounded-xl bg-blue-500 flex items-center justify-center shadow-md shadow-blue-700/40">
+                <svg class="w-8 h-8" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="1.6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+                    <text x="12" y="17.5" text-anchor="middle" font-size="8.5" font-weight="bold" font-family="Arial,sans-serif" fill="white" stroke="none">$</text>
                 </svg>
             </div>
             <span class="text-white font-semibold text-sm tracking-wide">SFconnecting</span>
@@ -68,7 +73,7 @@
 
 
             @role('comercial|admin')
-            <x-ui.nav-item href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')" icon="home">
+            <x-ui.nav-item href="{{ route('dash.comercial') }}" :active="request()->routeIs('dash.comercial')" icon="home">
                 Dashboard
             </x-ui.nav-item>
             @endrole
@@ -168,39 +173,140 @@
     {{-- Main --}}
     <div class="flex-1 lg:pl-64 flex flex-col min-h-screen">
 
-        {{-- Topbar móvil --}}
-        <header class="sticky top-0 z-20 flex h-12 items-center gap-3 bg-white border-b border-slate-200 px-4 lg:hidden">
+        {{-- Topbar global --}}
+        <header class="sticky top-0 z-20 flex h-12 items-center bg-white border-b border-slate-200 px-4 shrink-0">
+            {{-- Hamburger (solo móvil) --}}
             <button
                 @click="sidebarOpen = true"
-                class="text-slate-500 hover:text-slate-700 transition-colors p-1 -ml-1 rounded-lg hover:bg-slate-100"
+                class="lg:hidden text-slate-500 hover:text-slate-700 transition-colors p-1 -ml-1 rounded-lg hover:bg-slate-100 mr-2"
                 aria-label="Abrir menú"
             >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                 </svg>
             </button>
-            <span class="text-sm font-semibold text-slate-900 truncate">{{ $title ?? 'SFconnecting' }}</span>
+            {{-- Título (solo móvil) --}}
+            <span class="lg:hidden text-sm font-semibold text-slate-900 truncate flex-1">{{ $title ?? 'SFconnecting' }}</span>
+            {{-- Reloj Colombia (desktop) --}}
+            <div class="hidden lg:flex items-center gap-2 flex-1"
+                 x-data="{
+                    hora: '',
+                    fecha: '',
+                    init() {
+                        this.tick();
+                        setInterval(() => this.tick(), 1000);
+                    },
+                    tick() {
+                        const n = new Date();
+                        this.hora  = n.toLocaleTimeString('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+                        this.fecha = n.toLocaleDateString('es-CO', { timeZone: 'America/Bogota', weekday: 'short', day: 'numeric', month: 'short' });
+                    }
+                 }">
+                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                    <circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/>
+                </svg>
+                <span class="text-sm font-medium text-slate-700 tnum" x-text="hora"></span>
+                <span class="text-xs text-slate-400" x-text="fecha"></span>
+            </div>
+            {{-- Botones derechos --}}
+            <div class="flex items-center gap-1">
+                {{-- Notificaciones --}}
+                <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
+                    <div class="relative">
+                        <button @click="open = !open" title="Notificaciones"
+                                class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors">
+                            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                        </button>
+                        @if($notificaciones->isNotEmpty())
+                        <span class="notif-dot pointer-events-none"
+                              style="position:absolute;top:4px;left:4px;width:9px;height:9px;background:#ef4444;border-radius:50%;border:2px solid white;display:inline-block"></span>
+                        @endif
+                    </div>
+                    {{-- Panel dropdown --}}
+                    <div x-show="open"
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100 scale-100"
+                         x-transition:leave-end="opacity-0 scale-95"
+                         x-cloak
+                         class="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden origin-top-right">
+                        {{-- Cabecera --}}
+                        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                            <span class="text-sm font-semibold text-slate-900">Notificaciones</span>
+                            @if($notificaciones->isNotEmpty())
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
+                                {{ $notificaciones->count() }} pendiente{{ $notificaciones->count() > 1 ? 's' : '' }}
+                            </span>
+                            @endif
+                        </div>
+                        {{-- Lista --}}
+                        @if($notificaciones->isNotEmpty())
+                        <ul class="divide-y divide-slate-50 max-h-72 overflow-y-auto">
+                            @foreach($notificaciones as $noti)
+                            <li class="hover:bg-slate-50 transition-colors">
+                                <a href="{{ route('seguimientos.index') }}" class="flex items-start gap-3 px-4 py-3">
+                                    <div class="mt-0.5 w-7 h-7 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                                        <svg class="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-slate-900 truncate">
+                                            {{ $noti->cliente?->razon_social ?? $noti->prospecto?->empresa ?? 'Sin entidad' }}
+                                        </p>
+                                        <p class="text-xs text-slate-500 truncate">{{ Str::limit($noti->descripcion, 55) }}</p>
+                                        <p class="text-xs text-red-600 font-medium mt-0.5 capitalize">
+                                            {{ $noti->tipo }} · {{ ($noti->proxima_fecha ?? $noti->fecha_seguimiento)->diffForHumans() }}
+                                        </p>
+                                    </div>
+                                </a>
+                            </li>
+                            @endforeach
+                        </ul>
+                        @else
+                        <div class="px-4 py-8 text-center text-sm text-slate-400">
+                            Sin seguimientos pendientes
+                        </div>
+                        @endif
+                        {{-- Pie --}}
+                        <div class="px-4 py-2.5 border-t border-slate-100 bg-slate-50">
+                            <a href="{{ route('seguimientos.index') }}"
+                               class="text-xs font-medium text-teal-700 hover:text-teal-900 transition-colors">
+                                Ver todos los seguimientos →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {{-- Accesibilidad --}}
+                <button
+                    @click="$store.ui.a11yOpen = true"
+                    title="Opciones de accesibilidad (Alt+A)"
+                    class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                >
+                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a1 1 0 100 2 1 1 0 000-2zM12 5v4m0 0l-3 3m3-3l3 3M9 12v5a3 3 0 006 0v-5"/>
+                    </svg>
+                </button>
+            </div>
         </header>
 
         {{-- Content --}}
         <main class="flex-1 p-4 sm:p-6">
             {{-- Page header --}}
+            @if(!($hidePageTitle ?? false) || isset($actions))
             <div class="flex items-center justify-between mb-6">
+                @unless($hidePageTitle ?? false)
                 <h1 class="text-xl font-bold text-slate-900 hidden lg:block">{{ $title ?? 'SFconnecting' }}</h1>
-                <div class="flex items-center gap-2 ml-auto">
-                    @if(isset($actions)){{ $actions }}@endif
-                    {{-- Botón de accesibilidad --}}
-                    <button
-                        @click="$store.ui.a11yOpen = true"
-                        title="Opciones de accesibilidad (Alt+A)"
-                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-                    >
-                        <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a1 1 0 100 2 1 1 0 000-2zM12 5v4m0 0l-3 3m3-3l3 3M9 12v5a3 3 0 006 0v-5"/>
-                        </svg>
-                    </button>
-                </div>
+                @endunless
+                @if(isset($actions))
+                <div class="flex items-center gap-2 ml-auto">{{ $actions }}</div>
+                @endif
             </div>
+            @endif
             {{ $slot }}
         </main>
     </div>
