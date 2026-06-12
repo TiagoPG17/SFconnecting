@@ -44,6 +44,7 @@ use App\Domain\Seguimientos\Repositories\SeguimientoRepository;
 use App\Domain\Seguimientos\Repositories\SeguimientoRepositoryInterface;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -83,5 +84,26 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Seguimiento::class, SeguimientoPolicy::class);
         Gate::policy(Prospecto::class, ProspectoPolicy::class);
         Gate::policy(Negocio::class, NegocioPolicy::class);
+
+        View::composer('components.layouts.app', function ($view) {
+            if (auth()->check()) {
+                $notificaciones = Seguimiento::where('user_id', auth()->id())
+                    ->where('resultado', 'pendiente')
+                    ->where(function ($q) {
+                        $q->whereDate('fecha_seguimiento', '<=', now())
+                          ->orWhere(function ($q2) {
+                              $q2->whereNotNull('proxima_fecha')
+                                 ->whereDate('proxima_fecha', '<=', now());
+                          });
+                    })
+                    ->with(['cliente:id,razon_social', 'prospecto:id,empresa'])
+                    ->orderByRaw('COALESCE(proxima_fecha, fecha_seguimiento)')
+                    ->limit(15)
+                    ->get();
+            } else {
+                $notificaciones = collect();
+            }
+            $view->with('notificaciones', $notificaciones);
+        });
     }
 }

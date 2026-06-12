@@ -168,25 +168,36 @@
     </div>
 
     {{-- ===== Clientes sin contacto ===== --}}
-    <div class="dash-card p-5">
+    <div class="dash-card p-5" x-data="scPager(@json($sinContacto))">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-semibold text-slate-800">Clientes sin contacto</h2>
         <span class="text-xs px-2 py-0.5 rounded-full font-medium"
-              style="background:var(--red-bg);color:var(--red)" x-text="sinContacto.length"></span>
+              style="background:var(--red-bg);color:var(--red)" x-text="total"></span>
       </div>
       <ul class="space-y-2.5">
-        <template x-for="c in sinContacto" :key="c.id">
+        <template x-for="c in pagina" :key="c.id">
           <li class="flex items-center justify-between">
             <div class="min-w-0">
               <p class="text-sm truncate text-slate-900" x-text="c.razon_social"></p>
-              <p class="text-xs text-slate-400" x-text="money(c.vlr_neto_facturado)"></p>
+              <p class="text-xs text-slate-400" x-text="new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(c.vlr_neto_facturado||0)"></p>
             </div>
             <span class="text-xs tnum font-semibold" style="color:var(--red)"
                   x-text="c.dias_sin_contacto ? c.dias_sin_contacto+'d' : 'nunca'"></span>
           </li>
         </template>
-        <li x-show="sinContacto.length === 0" class="text-center text-sm text-slate-400 py-4">Todos los clientes tienen contacto reciente.</li>
+        <li x-show="total === 0" class="text-center text-sm text-slate-400 py-4">Todos los clientes tienen contacto reciente.</li>
       </ul>
+      <div x-show="totalPags > 1" class="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
+        <button @click="pag--" :disabled="pag === 1"
+                class="px-3 py-1 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition">
+          ← Anterior
+        </button>
+        <span class="text-xs text-slate-400" x-text="`${pag} / ${totalPags}`"></span>
+        <button @click="pag++" :disabled="pag === totalPags"
+                class="px-3 py-1 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition">
+          Siguiente →
+        </button>
+      </div>
     </div>
 
   </div>
@@ -194,6 +205,17 @@
 
 @push('scripts')
 <script>
+function scPager(items, porPagina = 8) {
+  return {
+    items,
+    pag: 1,
+    porPagina,
+    get total()     { return this.items.length },
+    get totalPags() { return Math.max(1, Math.ceil(this.total / this.porPagina)) },
+    get pagina()    { return this.items.slice((this.pag - 1) * this.porPagina, this.pag * this.porPagina) },
+  }
+}
+
 function dashVendedor(){
   return {
     kpi:          @json($kpi),

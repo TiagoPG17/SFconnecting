@@ -1,4 +1,4 @@
-<x-layouts.app title="Gerencial · CRM">
+<x-layouts.app title="Gerencial · CRM" :hide-page-title="true">
 
 <style>
 :root{
@@ -13,40 +13,80 @@
 <div x-data="dashGerencial()" x-init="init()">
 
   {{-- ===== Encabezado ===== --}}
-  <div class="flex items-end justify-between mb-7">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-900">
-        Visión gerencial {{ $anio }}
-        @if($periodo !== 'anio')
-          <span class="text-slate-400 font-normal text-lg">· {{ $periodo === 'mes' ? 'Mes actual' : 'Trimestre actual' }}</span>
-        @endif
-      </h1>
-    </div>
-    <div class="flex items-center gap-3">
-      {{-- Selector compañía --}}
-      @php
-        $ciaColors = [0 => '#7c3aed', 1 => '#b91c1c', 2 => '#1d4ed8'];
-      @endphp
-      <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200">
-        @foreach([0 => 'Ambas', 1 => 'Formacol', 2 => 'Contiflex'] as $ciaKey => $ciaLabel)
-          <a href="{{ route('dash.gerencial', ['periodo' => $periodo, 'anio' => $anio, 'cia' => $ciaKey]) }}"
-             class="px-3 py-1.5 text-sm rounded-lg transition {{ $cia === $ciaKey ? 'text-white' : '' }}"
-             style="{{ $cia === $ciaKey ? 'background:'.$ciaColors[$ciaKey] : 'color:var(--muted)' }}">
-            {{ $ciaLabel }}
-          </a>
-        @endforeach
+  @php
+    $ciaColors  = [0 => '#7c3aed', 1 => '#b91c1c', 2 => '#1d4ed8'];
+    $ciaActual  = [0 => 'Ambas compañías', 1 => 'Formacol', 2 => 'Contiflex'][$cia];
+    $periodoActual = ['mes' => 'Mes actual', 'trimestre' => 'Trimestre actual', 'anio' => 'Año completo'][$periodo];
+  @endphp
+
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm px-6 pt-5 pb-4 mb-8">
+    {{-- Fila principal --}}
+    <div class="flex items-start justify-between gap-6">
+
+      {{-- Título --}}
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-1">Dashboard ejecutivo</p>
+        <h1 class="text-2xl font-bold text-slate-900 leading-tight">Visión gerencial <span class="text-slate-400 font-semibold">{{ $anio }}</span></h1>
+        <div class="flex items-center gap-2 mt-1.5">
+          <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
+            <span class="w-1.5 h-1.5 rounded-full inline-block" style="background:{{ $ciaColors[$cia] }}"></span>
+            {{ $ciaActual }}
+          </span>
+          <span class="text-slate-300">·</span>
+          <span class="text-xs font-medium text-slate-500">{{ $periodoActual }}</span>
+          <span class="text-slate-300">·</span>
+          <span class="text-xs text-slate-400">Al {{ now()->translatedFormat('j \d\e F, Y') }}</span>
+        </div>
       </div>
-      {{-- Selector período --}}
-      <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200">
-        @foreach(['mes' => 'Mes', 'trimestre' => 'Trimestre', 'anio' => 'Año'] as $key => $label)
-          <a href="{{ route('dash.gerencial', ['periodo' => $key, 'anio' => $anio, 'cia' => $cia]) }}"
-             class="px-3 py-1.5 text-sm rounded-lg transition {{ $periodo === $key ? 'text-white' : '' }}"
-             style="{{ $periodo === $key ? 'background:var(--accent)' : 'color:var(--muted)' }}">
-            {{ $label }}
-          </a>
-        @endforeach
+
+      {{-- Filtros --}}
+      <div class="flex items-end gap-5 shrink-0">
+        {{-- Compañía --}}
+        <div>
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 text-center">Compañía</p>
+          <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200 shadow-sm">
+            @foreach([0 => 'Ambas', 1 => 'Formacol', 2 => 'Contiflex'] as $ciaKey => $ciaLabel)
+              <a href="{{ route('dash.gerencial', ['periodo' => $periodo, 'anio' => $anio, 'cia' => $ciaKey]) }}"
+                 class="px-3 py-1.5 text-sm rounded-lg transition-all font-medium {{ $cia === $ciaKey ? 'text-white shadow-sm' : 'text-slate-500 hover:text-slate-700' }}"
+                 style="{{ $cia === $ciaKey ? 'background:'.$ciaColors[$ciaKey] : '' }}">
+                {{ $ciaLabel }}
+              </a>
+            @endforeach
+          </div>
+        </div>
+
+        {{-- Separador vertical --}}
+        <div class="w-px h-8 bg-slate-200 mb-1.5"></div>
+
+        {{-- Período --}}
+        <div>
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 text-center">Período</p>
+          <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200 shadow-sm">
+            @foreach(['mes' => 'Mes', 'trimestre' => 'Trimestre', 'anio' => 'Año'] as $key => $label)
+              <a href="{{ route('dash.gerencial', ['periodo' => $key, 'anio' => $anio, 'cia' => $cia]) }}"
+                 class="px-3 py-1.5 text-sm rounded-lg transition-all font-medium {{ $periodo === $key ? 'text-white shadow-sm' : 'text-slate-500 hover:text-slate-700' }}"
+                 style="{{ $periodo === $key ? 'background:var(--accent)' : '' }}">
+                {{ $label }}
+              </a>
+            @endforeach
+          </div>
+        </div>
+
+        {{-- Año --}}
+        <div>
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 text-center">Año</p>
+          <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200 shadow-sm">
+            @foreach([now()->year + 1, now()->year, now()->year - 1] as $y)
+              <a href="{{ route('dash.gerencial', ['periodo' => $periodo, 'anio' => $y, 'cia' => $cia]) }}"
+                 class="px-3 py-1.5 text-sm rounded-lg transition-all font-medium {{ $anio === $y ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
+                {{ $y }}
+              </a>
+            @endforeach
+          </div>
+        </div>
       </div>
     </div>
+
   </div>
 
   {{-- ===== KPIs globales ===== --}}
@@ -73,21 +113,29 @@
   <div class="grid lg:grid-cols-3 gap-5 mb-5">
 
     {{-- ===== Presupuesto por vendedor ===== --}}
-    <div class="dash-card p-5 lg:col-span-2">
+    <div class="dash-card p-5 lg:col-span-2" x-data="sortableTable(vendedores, 8)">
       <h2 class="font-semibold text-slate-800 mb-4">Presupuesto por vendedor</h2>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="text-left text-slate-400">
-              <th class="font-medium pb-2">Vendedor</th>
-              <th class="font-medium pb-2 text-right">Presupuesto</th>
-              <th class="font-medium pb-2 text-right">Logrado</th>
-              <th class="font-medium pb-2 text-right">Cumpl.</th>
+              <th @click="sortOn('vendedor')" class="font-medium pb-2 cursor-pointer select-none hover:text-slate-600 transition-colors">
+                <span class="flex items-center gap-1">Vendedor <span x-text="arrow('vendedor')" class="opacity-40"></span></span>
+              </th>
+              <th @click="sortOn('presupuesto_anual')" class="font-medium pb-2 text-right cursor-pointer select-none hover:text-slate-600 transition-colors">
+                <span class="flex items-center justify-end gap-1">Presupuesto <span x-text="arrow('presupuesto_anual')" class="opacity-40"></span></span>
+              </th>
+              <th @click="sortOn('logrado_ytd')" class="font-medium pb-2 text-right cursor-pointer select-none hover:text-slate-600 transition-colors">
+                <span class="flex items-center justify-end gap-1">Logrado <span x-text="arrow('logrado_ytd')" class="opacity-40"></span></span>
+              </th>
+              <th @click="sortOn('cumpl')" class="font-medium pb-2 text-right cursor-pointer select-none hover:text-slate-600 transition-colors">
+                <span class="flex items-center justify-end gap-1">Cumpl. <span x-text="arrow('cumpl')" class="opacity-40"></span></span>
+              </th>
               <th class="font-medium pb-2 w-28">Avance</th>
             </tr>
           </thead>
           <tbody>
-            <template x-for="v in vendedores" :key="v.asesor_id">
+            <template x-for="v in paged" :key="v.asesor_id">
               <tr class="border-t border-slate-100">
                 <td class="py-2.5 text-slate-800" x-text="v.vendedor"></td>
                 <td class="py-2.5 text-right tnum text-slate-400" x-text="moneyShort(v.presupuesto_anual)"></td>
@@ -103,11 +151,22 @@
                 </td>
               </tr>
             </template>
-            <tr x-show="vendedores.length === 0">
+            <tr x-show="all.length === 0">
               <td colspan="5" class="py-6 text-center text-sm text-slate-400">Sin datos de presupuesto para este año.</td>
             </tr>
           </tbody>
         </table>
+      </div>
+      <div class="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-slate-100" x-show="pageCount > 1">
+        <p class="text-xs text-slate-400 mr-1">
+          <span x-text="(page-1)*pageSize+1"></span>–<span x-text="Math.min(page*pageSize, all.length)"></span>
+          de <span x-text="all.length"></span>
+        </p>
+        <button @click="prevPage()" :disabled="page===1"
+                class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 text-slate-600 disabled:opacity-30 hover:bg-slate-50 transition">‹</button>
+        <span class="text-xs text-slate-500 px-1" x-text="page + ' / ' + pageCount"></span>
+        <button @click="nextPage()" :disabled="page===pageCount"
+                class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 text-slate-600 disabled:opacity-30 hover:bg-slate-50 transition">›</button>
       </div>
     </div>
 
