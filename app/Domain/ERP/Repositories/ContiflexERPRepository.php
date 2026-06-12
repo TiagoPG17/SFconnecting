@@ -574,27 +574,23 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         return compact('mensual', 'trimestral', 'anual');
     }
 
-    public function facturasPorNit(string $nit, int $limite = 20): array
+    public function facturasPorNit(string $nit, int $limite = 60): array
     {
         try {
             $sql = "
                 SELECT TOP {$limite}
-                    f.ROWID_FACTURA,
-                    f.COMPANIA,
-                    f.CONCEPTO,
-                    f.TIPO,
-                    f.NUM_DOCTO,
-                    CONVERT(varchar(10), f.FECHA, 23) AS FECHA,
-                    f.COD_VENDEDOR,
-                    COUNT(d.RENGLON)       AS NUM_ITEMS,
-                    ISNULL(SUM(d.VLR_NETO), 0) AS VLR_NETO
-                FROM dbo.CRM_stg_facturas_venta f
-                INNER JOIN clientes c ON c.NIT = f.NIT
-                LEFT JOIN dbo.CRM_stg_facturas_venta_detalle d ON d.ROWID_FACTURA = f.ROWID_FACTURA
-                WHERE f.NIT = ?
-                GROUP BY f.ROWID_FACTURA, f.COMPANIA, f.CONCEPTO, f.TIPO,
-                         f.NUM_DOCTO, f.FECHA, f.COD_VENDEDOR
-                ORDER BY f.FECHA DESC
+                    ROWID_FACTURA,
+                    COMPANIA,
+                    CONCEPTO,
+                    TIPO_DOCTO                       AS TIPO,
+                    CONVERT(varchar(10), FECHA, 23)  AS FECHA,
+                    COD_VENDEDOR,
+                    COUNT(*)                         AS NUM_ITEMS,
+                    SUM(VLR_NETO)                    AS VLR_NETO
+                FROM dbo.vw_CRM_Detalle_Ventas_Cliente_Linea
+                WHERE NIT = ?
+                GROUP BY ROWID_FACTURA, COMPANIA, CONCEPTO, TIPO_DOCTO, FECHA, COD_VENDEDOR
+                ORDER BY FECHA DESC
             ";
 
             return collect(DB::connection('erp_contiflex')->select($sql, [$nit]))
@@ -610,21 +606,18 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         try {
             $sql = "
                 SELECT
-                    d.RENGLON,
-                    d.COD_PRODUCTO,
-                    i.NOMBRE_PRODUCTO,
-                    d.REFERENCIA,
-                    d.UNIDAD,
-                    d.CANTIDAD,
-                    d.PRECIO_UNIT,
-                    d.VLR_BRUTO,
-                    d.VLR_DSCTO,
-                    d.VLR_IMP,
-                    d.VLR_NETO
-                FROM dbo.CRM_stg_facturas_venta_detalle d
-                INNER JOIN dbo.CRM_dim_item i ON i.COD_PRODUCTO = d.COD_PRODUCTO
-                WHERE d.ROWID_FACTURA = ?
-                ORDER BY d.RENGLON
+                    COD_PRODUCTO,
+                    NOMBRE_PRODUCTO,
+                    REFERENCIA,
+                    UNIDAD,
+                    CANTIDAD,
+                    PRECIO_UNIT,
+                    VLR_BRUTO,
+                    VLR_IMP,
+                    VLR_NETO
+                FROM dbo.vw_CRM_Detalle_Ventas_Cliente_Linea
+                WHERE ROWID_FACTURA = ?
+                ORDER BY COD_PRODUCTO
             ";
 
             return collect(DB::connection('erp_contiflex')->select($sql, [$rowidFactura]))

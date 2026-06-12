@@ -59,7 +59,7 @@ interface ERPRepositoryInterface
     public function ventasMensualesPorNit(string $nit): array;
 
     /** Retorna las últimas facturas del cliente por NIT (maestro). */
-    public function facturasPorNit(string $nit, int $limite = 20): array;
+    public function facturasPorNit(string $nit, int $limite = 60): array;
 
     /** Retorna el detalle de ítems de una factura por ROWID_FACTURA. */
     public function detalleFactura(int $rowidFactura): array;

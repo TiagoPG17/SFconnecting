@@ -385,70 +385,134 @@
 
             {{-- Historial de compras --}}
             @if(!empty($facturas))
-            <x-ui.card class="p-5" x-data="historialCompras()">
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Historial de compras</p>
-                <div class="space-y-1">
-                    @foreach($facturas as $i => $fac)
-                    @php
-                        $rowid = $fac['ROWID_FACTURA'] ?? null;
-                        $fecha = $fac['FECHA'] ?? null;
-                        $num   = $fac['NUM_DOCTO'] ?? '—';
-                        $items = $fac['NUM_ITEMS'] ?? 0;
-                        $vlr   = $fac['VLR_NETO'] ?? 0;
-                    @endphp
-                    <div>
+            <x-ui.card class="p-5"
+                x-data="historialCompras({{ json_encode(array_values($facturas)) }})">
+
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Historial de compras</p>
+                    <span class="text-xs text-slate-400" x-text="`${total} facturas`"></span>
+                </div>
+
+                {{-- Lista de facturas --}}
+                <div class="divide-y divide-slate-100">
+                    <template x-for="fac in paginadas" :key="fac.ROWID_FACTURA">
                         <button
-                            @click="toggle({{ $i }}, {{ $rowid }})"
-                            class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors text-left gap-2"
+                            @click="abrirModal(fac)"
+                            class="w-full flex items-center justify-between py-2.5 px-1 hover:bg-slate-50 rounded-lg transition-colors text-left gap-3 group"
                         >
-                            <div class="flex items-center gap-2 min-w-0 overflow-hidden">
-                                <span class="text-xs font-mono text-slate-400 shrink-0">
-                                    {{ $fecha ? \Carbon\Carbon::parse($fecha)->format('d/m/Y') : '—' }}
-                                </span>
-                                <span class="text-xs font-semibold text-slate-700 truncate">{{ $num }}</span>
-                                <span class="text-xs text-slate-400 shrink-0">{{ $items }} ítem(s)</span>
+                            <div class="flex flex-col min-w-0">
+                                <span class="text-xs font-medium text-slate-800 truncate"
+                                      x-text="(fac.CONCEPTO || '') + ' ' + (fac.TIPO || '')"></span>
+                                <span class="text-xs text-slate-400 mt-0.5"
+                                      x-text="fac.FECHA + ' · ' + fac.NUM_ITEMS + ' ítems'"></span>
                             </div>
-                            <div class="flex items-center gap-1.5 shrink-0">
-                                <span class="text-xs font-bold text-slate-900">
-                                    ${{ number_format((float)$vlr, 0, ',', '.') }}
-                                </span>
-                                <svg class="w-3 h-3 text-slate-400 transition-transform duration-200"
-                                     :class="abierta === {{ $i }} ? 'rotate-180' : ''"
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span class="text-sm font-semibold text-slate-900"
+                                      x-text="fmtCOP(fac.VLR_NETO)"></span>
+                                <svg class="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 transition-colors"
                                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                                 </svg>
                             </div>
                         </button>
-                        <div x-show="abierta === {{ $i }}" x-cloak class="px-3 pb-2">
-                            <div x-show="cargando === {{ $i }}" class="text-xs text-slate-400 py-2 text-center">Cargando...</div>
-                            <template x-if="cargando !== {{ $i }} && detalles[{{ $i }}] !== undefined">
-                                <table class="w-full text-xs mt-1">
-                                    <thead>
-                                        <tr class="border-b border-slate-100">
-                                            <th class="text-left py-1 font-medium text-slate-500 pr-2">Producto</th>
-                                            <th class="text-right py-1 font-medium text-slate-500 w-8">Cant</th>
-                                            <th class="text-right py-1 font-medium text-slate-500 w-20">Neto</th>
+                    </template>
+                </div>
+
+                {{-- Paginación --}}
+                <template x-if="totalPaginas > 1">
+                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                        <button @click="irA(pagina - 1)" :disabled="pagina === 1"
+                                class="px-3 py-1.5 text-xs rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                            ← Anterior
+                        </button>
+                        <span class="text-xs text-slate-400" x-text="`${pagina} / ${totalPaginas}`"></span>
+                        <button @click="irA(pagina + 1)" :disabled="pagina === totalPaginas"
+                                class="px-3 py-1.5 text-xs rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                            Siguiente →
+                        </button>
+                    </div>
+                </template>
+
+                {{-- Modal detalle --}}
+                <div x-show="modal" x-cloak
+                     class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="transition ease-in duration-100"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0">
+                    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="modal = false"></div>
+                    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col"
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100">
+
+                        {{-- Header modal --}}
+                        <div class="flex items-start justify-between p-5 border-b border-slate-100 shrink-0">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Detalle de factura</p>
+                                <h3 class="text-base font-bold text-slate-900"
+                                    x-text="(facActiva?.CONCEPTO || '') + ' ' + (facActiva?.TIPO || '')"></h3>
+                                <p class="text-sm text-slate-500 mt-0.5"
+                                   x-text="facActiva?.FECHA + ' · ' + facActiva?.NUM_ITEMS + ' ítems'"></p>
+                            </div>
+                            <button @click="modal = false"
+                                    class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors ml-4 shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {{-- Loader --}}
+                        <div x-show="cargando" class="flex items-center justify-center py-12">
+                            <svg class="w-6 h-6 animate-spin text-slate-400" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                            </svg>
+                        </div>
+
+                        {{-- Tabla de ítems --}}
+                        <div x-show="!cargando && facActiva" class="overflow-y-auto flex-1 px-5">
+                            <template x-if="itemsActivos.length === 0">
+                                <p class="text-sm text-slate-400 text-center py-8">Sin ítems registrados</p>
+                            </template>
+                            <template x-if="itemsActivos.length > 0">
+                                <table class="w-full text-sm">
+                                    <thead class="sticky top-0 bg-white">
+                                        <tr class="border-b border-slate-200">
+                                            <th class="text-left py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Producto</th>
+                                            <th class="text-right py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide w-14">Cant</th>
+                                            <th class="text-right py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide w-24">Neto</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        <template x-if="detalles[{{ $i }}].length === 0">
-                                            <tr><td colspan="3" class="py-2 text-center text-slate-400">Sin ítems</td></tr>
-                                        </template>
-                                        <template x-for="item in detalles[{{ $i }}]" :key="item.RENGLON">
-                                            <tr class="border-b border-slate-50">
-                                                <td class="py-1 text-slate-700 pr-2" x-text="item.NOMBRE_PRODUCTO || item.COD_PRODUCTO"></td>
-                                                <td class="py-1 text-right text-slate-600" x-text="item.CANTIDAD"></td>
-                                                <td class="py-1 text-right font-medium text-slate-900"
-                                                    x-text="'$' + Number(item.VLR_NETO).toLocaleString('es-CO', {maximumFractionDigits:0})"></td>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <template x-for="item in itemsActivos" :key="item.COD_PRODUCTO">
+                                            <tr>
+                                                <td class="py-3 pr-3">
+                                                    <p class="font-medium text-slate-800 leading-snug" x-text="item.NOMBRE_PRODUCTO || item.COD_PRODUCTO"></p>
+                                                    <p class="text-xs text-slate-400 mt-0.5" x-text="item.COD_PRODUCTO + (item.UNIDAD ? ' · ' + item.UNIDAD : '')"></p>
+                                                </td>
+                                                <td class="py-3 text-right text-slate-600" x-text="item.CANTIDAD"></td>
+                                                <td class="py-3 text-right font-semibold text-slate-900" x-text="fmtCOP(item.VLR_NETO)"></td>
                                             </tr>
                                         </template>
                                     </tbody>
                                 </table>
                             </template>
                         </div>
+
+                        {{-- Footer modal --}}
+                        <div x-show="!cargando && itemsActivos.length > 0"
+                             class="flex items-center justify-between px-5 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl shrink-0">
+                            <span class="text-sm text-slate-500">Total factura</span>
+                            <span class="text-lg font-bold text-slate-900"
+                                  x-text="fmtCOP(itemsActivos.reduce((s,i)=>s+Number(i.VLR_NETO),0))"></span>
+                        </div>
                     </div>
-                    @endforeach
                 </div>
+
             </x-ui.card>
             @endif
         </div>
@@ -456,23 +520,47 @@
 
 
     <script>
-    function historialCompras() {
+    function historialCompras(data) {
         return {
-            abierta: null,
-            cargando: null,
+            todas: data,
+            pagina: 1,
+            porPagina: 12,
+            modal: false,
+            cargando: false,
+            facActiva: null,
             detalles: {},
-            async toggle(idx, rowid) {
-                if (this.abierta === idx) { this.abierta = null; return; }
-                this.abierta = idx;
-                if (this.detalles[idx] === undefined) {
-                    this.cargando = idx;
+            get total()        { return this.todas.length; },
+            get totalPaginas() { return Math.ceil(this.total / this.porPagina); },
+            get paginadas() {
+                const ini = (this.pagina - 1) * this.porPagina;
+                return this.todas.slice(ini, ini + this.porPagina);
+            },
+            get itemsActivos() {
+                return this.facActiva ? (this.detalles[this.facActiva.ROWID_FACTURA] || []) : [];
+            },
+            fmtCOP(v) {
+                const n = Number(v);
+                if (n >= 1_000_000_000) return '$' + (n / 1_000_000_000).toFixed(1) + 'B';
+                if (n >= 1_000_000)     return '$' + (n / 1_000_000).toFixed(1) + 'M';
+                if (n >= 1_000)         return '$' + Math.round(n / 1_000) + 'K';
+                return '$' + n.toLocaleString('es-CO', {maximumFractionDigits: 0});
+            },
+            irA(p) {
+                if (p < 1 || p > this.totalPaginas) return;
+                this.pagina = p;
+            },
+            async abrirModal(fac) {
+                this.facActiva = fac;
+                this.modal     = true;
+                if (this.detalles[fac.ROWID_FACTURA] === undefined) {
+                    this.cargando = true;
                     try {
-                        const r = await this.$api('GET', `/api/erp/facturas/${rowid}/detalle`);
-                        this.detalles[idx] = r.data || [];
+                        const r = await this.$api('GET', `/api/erp/facturas/${fac.ROWID_FACTURA}/detalle`);
+                        this.detalles[fac.ROWID_FACTURA] = r.data || [];
                     } catch {
-                        this.detalles[idx] = [];
+                        this.detalles[fac.ROWID_FACTURA] = [];
                     }
-                    this.cargando = null;
+                    this.cargando = false;
                 }
             },
         };

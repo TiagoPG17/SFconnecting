@@ -181,11 +181,10 @@ class ClienteWebController extends Controller
 
     private function consultarFacturas(string $nit): array
     {
-        try {
-            return $this->erp->isAvailable() ? $this->erp->facturasPorNit($nit) : [];
-        } catch (\Throwable) {
+        if (! $this->erp->isAvailable()) {
             return [];
         }
+        return $this->erp->facturasPorNit($nit);
     }
 
     private function calcularActividad(Collection $todos): array
