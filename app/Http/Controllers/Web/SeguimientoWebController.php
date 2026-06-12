@@ -8,6 +8,7 @@ use App\Domain\Clientes\Repositories\ClienteRepositoryInterface;
 use App\Domain\Seguimientos\Models\Seguimiento;
 use App\Domain\Seguimientos\Repositories\SeguimientoRepositoryInterface;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -22,7 +23,7 @@ class SeguimientoWebController extends Controller
     {
         $this->authorize('viewAny', Seguimiento::class);
 
-        $filtros = $request->only(['cliente_id', 'tipo', 'resultado', 'fecha_desde', 'fecha_hasta']);
+        $filtros = $request->only(['cliente_id', 'tipo', 'resultado', 'fecha_desde', 'fecha_hasta', 'sort', 'dir']);
 
         if (auth()->user()->hasRole('comercial')) {
             $filtros['user_id'] = auth()->id();
@@ -37,5 +38,18 @@ class SeguimientoWebController extends Controller
         }
 
         return view('seguimientos.index', compact('seguimientos', 'clienteSeleccionado'));
+    }
+
+    public function actualizarResultado(Request $request, Seguimiento $seguimiento): RedirectResponse
+    {
+        $this->authorize('update', $seguimiento);
+
+        $request->validate([
+            'resultado' => ['required', 'in:exitoso,no_contactado,pendiente,cancelado'],
+        ]);
+
+        $this->repo->actualizar($seguimiento, ['resultado' => $request->resultado]);
+
+        return back()->with('success', 'Estado actualizado correctamente.');
     }
 }

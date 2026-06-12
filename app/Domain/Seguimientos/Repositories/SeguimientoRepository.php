@@ -83,7 +83,16 @@ class SeguimientoRepository implements SeguimientoRepositoryInterface
             $query->whereDate('fecha_seguimiento', '<=', $filtros['fecha_hasta']);
         }
 
-        return $query->orderByDesc('fecha_seguimiento')->paginate($porPagina);
+        $sortMap = [
+            'tipo'     => 'tipo',
+            'resultado'=> 'resultado',
+            'fecha'    => 'fecha_seguimiento',
+            'proxima'  => 'proxima_fecha',
+        ];
+        $sortCol = $sortMap[$filtros['sort'] ?? ''] ?? 'fecha_seguimiento';
+        $sortDir = ($filtros['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+        return $query->orderBy($sortCol, $sortDir)->paginate($porPagina);
     }
 
     public function porProspecto(int $prospectoId, int $limite = 20): Collection

@@ -1,26 +1,33 @@
-<x-layouts.app title="Mapeo vendedores · CRM">
+<x-layouts.app title="Mapeo vendedores · CRM" :hide-page-title="true">
 
 <div x-data="{ modalCrear: false, modalEditar: false, editando: null, editandoOriginal: null, codVendedorEditando: '' }">
 
     {{-- ===== Cabecera ===== --}}
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Mapeo vendedores SIESA</h2>
-            <p class="text-xs text-slate-400 mt-0.5">Vincula cada asesor del CRM con su código en Contiflex</p>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4 mb-5 flex items-center justify-between gap-4 flex-wrap">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-base font-semibold text-slate-900 leading-tight">Mapeo de vendedores</h1>
+                <p class="text-xs text-slate-400 mt-0.5">Vincula cada asesor del CRM con su código en {{ $compania === 1 ? 'Formacol' : 'Contiflex' }}</p>
+            </div>
         </div>
         <div class="flex items-center gap-3">
             {{-- Selector de compañía --}}
-            <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200">
+            <div class="flex gap-1 p-1 rounded-xl bg-slate-100">
                 @foreach([1 => 'Formacol', 2 => 'Contiflex'] as $ciaKey => $ciaLabel)
                     <a href="{{ route('mapeo-vendedores.index', ['cia' => $ciaKey]) }}"
-                       class="px-3 py-1.5 text-sm rounded-lg transition {{ $compania === $ciaKey ? 'text-white' : '' }}"
-                       style="{{ $compania === $ciaKey ? 'background:'.($ciaKey===1?'#b91c1c':'#1d4ed8') : 'color:var(--muted)' }}">
+                       class="px-3 py-1.5 text-sm rounded-lg font-medium transition {{ $compania === $ciaKey ? 'text-white shadow-sm' : 'text-slate-500 hover:text-slate-700' }}"
+                       style="{{ $compania === $ciaKey ? 'background:'.($ciaKey===1?'#b91c1c':'#1d4ed8') : '' }}">
                         {{ $ciaLabel }}
                     </a>
                 @endforeach
             </div>
             <button @click="modalCrear = true"
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm">
                 <x-ui.icon name="plus" class="w-4 h-4"/>
                 Nuevo mapeo
             </button>

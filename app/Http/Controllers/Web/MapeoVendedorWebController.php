@@ -23,7 +23,11 @@ class MapeoVendedorWebController extends Controller
     {
         $compania          = in_array((int) $request->input('cia'), [1, 2]) ? (int) $request->input('cia') : 1;
         $mapeos            = $this->repo->todos($compania);
-        $asesores          = User::role('comercial')->orderBy('name')->get(['id', 'name', 'email']);
+        $todosMapadosIds   = VendedorEquivalencia::pluck('asesor_id')->unique()->toArray();
+        $asesores          = User::role('comercial')
+                                ->whereNotIn('id', $todosMapadosIds)
+                                ->orderBy('name')
+                                ->get(['id', 'name', 'email']);
         $vendedoresSiesa1  = $this->repo->vendedoresSiesa(1);
         $vendedoresSiesa2  = $this->repo->vendedoresSiesa(2);
 

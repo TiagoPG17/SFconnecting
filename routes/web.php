@@ -36,7 +36,7 @@ Route::middleware(['auth'])->group(function () {
     };
 
     Route::get('/', $homeRedirect);
-    Route::get('/dashboard', [DashboardWebController::class, 'index'])->name('dashboard')->middleware('role:admin|comercial');
+    Route::get('/dashboard', $homeRedirect)->name('dashboard');
     Route::get('/dash-comercial', [DashboardWebController::class, 'index'])->name('dash.comercial')->middleware('role:admin|comercial');
 
     // Dashboards especializados
@@ -71,6 +71,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Seguimientos
     Route::get('/seguimientos', [SeguimientoWebController::class, 'index'])->name('seguimientos.index');
+    Route::patch('/seguimientos/{seguimiento}/resultado', [SeguimientoWebController::class, 'actualizarResultado'])->name('seguimientos.resultado');
 
     // Maestros y Reportes reales
     Route::get('/maestros', [MaestroWebController::class, 'index'])->name('maestros.index');
