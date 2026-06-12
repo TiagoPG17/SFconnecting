@@ -382,9 +382,102 @@
                 </div>
             </x-ui.card>
             @endcan
+
+            {{-- Historial de compras --}}
+            @if(!empty($facturas))
+            <x-ui.card class="p-5" x-data="historialCompras()">
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Historial de compras</p>
+                <div class="space-y-1">
+                    @foreach($facturas as $i => $fac)
+                    @php
+                        $rowid = $fac['ROWID_FACTURA'] ?? null;
+                        $fecha = $fac['FECHA'] ?? null;
+                        $num   = $fac['NUM_DOCTO'] ?? '—';
+                        $items = $fac['NUM_ITEMS'] ?? 0;
+                        $vlr   = $fac['VLR_NETO'] ?? 0;
+                    @endphp
+                    <div>
+                        <button
+                            @click="toggle({{ $i }}, {{ $rowid }})"
+                            class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors text-left gap-2"
+                        >
+                            <div class="flex items-center gap-2 min-w-0 overflow-hidden">
+                                <span class="text-xs font-mono text-slate-400 shrink-0">
+                                    {{ $fecha ? \Carbon\Carbon::parse($fecha)->format('d/m/Y') : '—' }}
+                                </span>
+                                <span class="text-xs font-semibold text-slate-700 truncate">{{ $num }}</span>
+                                <span class="text-xs text-slate-400 shrink-0">{{ $items }} ítem(s)</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <span class="text-xs font-bold text-slate-900">
+                                    ${{ number_format((float)$vlr, 0, ',', '.') }}
+                                </span>
+                                <svg class="w-3 h-3 text-slate-400 transition-transform duration-200"
+                                     :class="abierta === {{ $i }} ? 'rotate-180' : ''"
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </div>
+                        </button>
+                        <div x-show="abierta === {{ $i }}" x-cloak class="px-3 pb-2">
+                            <div x-show="cargando === {{ $i }}" class="text-xs text-slate-400 py-2 text-center">Cargando...</div>
+                            <template x-if="cargando !== {{ $i }} && detalles[{{ $i }}] !== undefined">
+                                <table class="w-full text-xs mt-1">
+                                    <thead>
+                                        <tr class="border-b border-slate-100">
+                                            <th class="text-left py-1 font-medium text-slate-500 pr-2">Producto</th>
+                                            <th class="text-right py-1 font-medium text-slate-500 w-8">Cant</th>
+                                            <th class="text-right py-1 font-medium text-slate-500 w-20">Neto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-if="detalles[{{ $i }}].length === 0">
+                                            <tr><td colspan="3" class="py-2 text-center text-slate-400">Sin ítems</td></tr>
+                                        </template>
+                                        <template x-for="item in detalles[{{ $i }}]" :key="item.RENGLON">
+                                            <tr class="border-b border-slate-50">
+                                                <td class="py-1 text-slate-700 pr-2" x-text="item.NOMBRE_PRODUCTO || item.COD_PRODUCTO"></td>
+                                                <td class="py-1 text-right text-slate-600" x-text="item.CANTIDAD"></td>
+                                                <td class="py-1 text-right font-medium text-slate-900"
+                                                    x-text="'$' + Number(item.VLR_NETO).toLocaleString('es-CO', {maximumFractionDigits:0})"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </template>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </x-ui.card>
+            @endif
         </div>
     </div>
 
+
+    <script>
+    function historialCompras() {
+        return {
+            abierta: null,
+            cargando: null,
+            detalles: {},
+            async toggle(idx, rowid) {
+                if (this.abierta === idx) { this.abierta = null; return; }
+                this.abierta = idx;
+                if (this.detalles[idx] === undefined) {
+                    this.cargando = idx;
+                    try {
+                        const r = await this.$api('GET', `/api/erp/facturas/${rowid}/detalle`);
+                        this.detalles[idx] = r.data || [];
+                    } catch {
+                        this.detalles[idx] = [];
+                    }
+                    this.cargando = null;
+                }
+            },
+        };
+    }
+    </script>
 
     <script>
         function actividadChart(datasets, tipo = 'seguimientos') {

@@ -31,6 +31,17 @@ class ERPController extends Controller
         }
     }
 
+    public function detalleFactura(int $rowid): JsonResponse
+    {
+        try {
+            $detalle = $this->erp->detalleFactura($rowid);
+
+            return ApiResponse::success($detalle);
+        } catch (ERPConnectionException $e) {
+            return ApiResponse::serverError('ERP no disponible temporalmente.');
+        }
+    }
+
     public function disponible(): JsonResponse
     {
         return ApiResponse::success(['disponible' => $this->erp->isAvailable()]);

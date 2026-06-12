@@ -52,8 +52,9 @@ class ClienteWebController extends Controller
         $actividad      = $this->calcularActividad($cliente->seguimientos);
         $datosErp       = $this->consultarErp($cliente->nit);
         $actividadSiesa = $this->consultarVentasSiesa($cliente->nit);
+        $facturas       = $this->consultarFacturas($cliente->nit);
 
-        return view('clientes.show', compact('cliente', 'seguimientos', 'actividad', 'datosErp', 'actividadSiesa'));
+        return view('clientes.show', compact('cliente', 'seguimientos', 'actividad', 'datosErp', 'actividadSiesa', 'facturas'));
     }
 
     public function showErp(Request $request, string $nit): View
@@ -87,7 +88,9 @@ class ClienteWebController extends Controller
             $actividad    = $this->calcularActividad($cliente->seguimientos);
         }
 
-        return view('clientes.show', compact('cliente', 'seguimientos', 'actividad', 'datosErp', 'actividadSiesa'));
+        $facturas = $this->consultarFacturas($nit);
+
+        return view('clientes.show', compact('cliente', 'seguimientos', 'actividad', 'datosErp', 'actividadSiesa', 'facturas'));
     }
 
     public function create(): View
@@ -171,6 +174,15 @@ class ClienteWebController extends Controller
     {
         try {
             return $this->erp->isAvailable() ? $this->erp->ventasMensualesPorNit($nit) : [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    private function consultarFacturas(string $nit): array
+    {
+        try {
+            return $this->erp->isAvailable() ? $this->erp->facturasPorNit($nit) : [];
         } catch (\Throwable) {
             return [];
         }

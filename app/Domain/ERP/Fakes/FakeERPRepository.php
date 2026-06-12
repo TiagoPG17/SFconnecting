@@ -155,6 +155,27 @@ class FakeERPRepository implements ERPRepositoryInterface
         return ['mensual' => [], 'trimestral' => [], 'anual' => []];
     }
 
+    public function facturasPorNit(string $nit, int $limite = 20): array
+    {
+        $this->checkAvailability();
+
+        return [];
+    }
+
+    public function detalleFactura(int $rowidFactura): array
+    {
+        $this->checkAvailability();
+
+        return [];
+    }
+
+    public function countClientesHuerfanos(int $compania, array $nitsExcluir = []): int
+    {
+        $this->checkAvailability();
+
+        return 0;
+    }
+
     public function agregarClientesDeVendedor(string $nombreVendedor, array $clientes): void
     {
         $this->clientesVendedor[$nombreVendedor] = $clientes;

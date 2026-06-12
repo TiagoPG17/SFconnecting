@@ -47,6 +47,7 @@ Route::middleware('auth:sanctum')->name('api.')->group(function () {
     Route::prefix('erp')->group(function () {
         Route::get('estado', [ERPController::class, 'disponible'])->name('erp.estado');
         Route::get('clientes/{nit}', [ERPController::class, 'buscarPorNit'])->name('erp.clientes.nit');
+        Route::get('facturas/{rowid}/detalle', [ERPController::class, 'detalleFactura'])->name('erp.facturas.detalle');
     });
 
     // Clientes

@@ -574,6 +574,67 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         return compact('mensual', 'trimestral', 'anual');
     }
 
+    public function facturasPorNit(string $nit, int $limite = 20): array
+    {
+        try {
+            $sql = "
+                SELECT TOP {$limite}
+                    f.ROWID_FACTURA,
+                    f.COMPANIA,
+                    f.CONCEPTO,
+                    f.TIPO,
+                    f.NUM_DOCTO,
+                    CONVERT(varchar(10), f.FECHA, 23) AS FECHA,
+                    f.COD_VENDEDOR,
+                    COUNT(d.RENGLON)       AS NUM_ITEMS,
+                    ISNULL(SUM(d.VLR_NETO), 0) AS VLR_NETO
+                FROM dbo.CRM_stg_facturas_venta f
+                INNER JOIN clientes c ON c.NIT = f.NIT
+                LEFT JOIN dbo.CRM_stg_facturas_venta_detalle d ON d.ROWID_FACTURA = f.ROWID_FACTURA
+                WHERE f.NIT = ?
+                GROUP BY f.ROWID_FACTURA, f.COMPANIA, f.CONCEPTO, f.TIPO,
+                         f.NUM_DOCTO, f.FECHA, f.COD_VENDEDOR
+                ORDER BY f.FECHA DESC
+            ";
+
+            return collect(DB::connection('erp_contiflex')->select($sql, [$nit]))
+                ->map(fn ($r) => (array) $r)
+                ->toArray();
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
+    public function detalleFactura(int $rowidFactura): array
+    {
+        try {
+            $sql = "
+                SELECT
+                    d.RENGLON,
+                    d.COD_PRODUCTO,
+                    i.NOMBRE_PRODUCTO,
+                    d.REFERENCIA,
+                    d.UNIDAD,
+                    d.CANTIDAD,
+                    d.PRECIO_UNIT,
+                    d.VLR_BRUTO,
+                    d.VLR_DSCTO,
+                    d.VLR_IMP,
+                    d.VLR_NETO
+                FROM dbo.CRM_stg_facturas_venta_detalle d
+                INNER JOIN dbo.CRM_dim_item i ON i.COD_PRODUCTO = d.COD_PRODUCTO
+                WHERE d.ROWID_FACTURA = ?
+                ORDER BY d.RENGLON
+            ";
+
+            return collect(DB::connection('erp_contiflex')->select($sql, [$rowidFactura]))
+                ->map(fn ($r) => (array) $r)
+                ->toArray();
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
     public function isAvailable(): bool
     {
         try {
