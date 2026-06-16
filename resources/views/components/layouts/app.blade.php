@@ -52,14 +52,13 @@
     >
         {{-- Logo --}}
         <div class="flex h-16 items-center gap-3 px-6 border-b border-slate-800 shrink-0">
-            <div class="w-11 h-11 rounded-xl bg-blue-500 flex items-center justify-center shadow-md shadow-blue-700/40 relative">
-                <svg class="w-7 h-7" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="1.7">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
-                </svg>
-                <span class="absolute bottom-1 right-1.5 text-white font-black leading-none" style="font-size:9px">$</span>
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); box-shadow: 0 4px 12px rgba(79,70,229,0.4)">
+                <span class="text-white font-black tracking-tight select-none" style="font-size:15px; letter-spacing:-0.5px">SF</span>
             </div>
-            <span class="text-white font-semibold text-sm tracking-wide">SFconnecting</span>
+            <div class="flex flex-col leading-tight">
+                <span class="text-white font-bold text-sm tracking-wide">SFconnecting</span>
+                <span class="text-slate-400 font-normal" style="font-size:10px">CRM Comercial</span>
+            </div>
             {{-- Cerrar en móvil --}}
             <button @click="sidebarOpen = false" class="ml-auto text-slate-400 hover:text-white lg:hidden">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
