@@ -32,15 +32,17 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/sfconnecting
 
-# Composer primero para aprovechar caché de capas
+# Composer primero para aprovechar caché de capas (sin scripts porque artisan no existe aún)
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --no-scripts --no-autoloader
 
 # Código fuente y assets compilados
 COPY . .
 COPY --from=assets /app/public/build ./public/build
 
-RUN chown -R www-data:www-data /var/www/sfconnecting \
+# Ahora sí generamos el autoloader optimizado con todo el código disponible
+RUN composer dump-autoload --no-dev --optimize \
+    && chown -R www-data:www-data /var/www/sfconnecting \
     && chmod -R 755 storage bootstrap/cache
 
 COPY docker/entrypoint.sh /entrypoint.sh
