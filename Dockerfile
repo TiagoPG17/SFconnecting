@@ -32,14 +32,20 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/sfconnecting
 
-COPY . .
+# Composer primero para aprovechar caché de capas
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader
 
-# Copiar assets compilados del stage 1
+# Código fuente y assets compilados
+COPY . .
 COPY --from=assets /app/public/build ./public/build
 
-RUN composer install --no-dev --optimize-autoloader \
-    && chown -R www-data:www-data /var/www/sfconnecting \
+RUN chown -R www-data:www-data /var/www/sfconnecting \
     && chmod -R 755 storage bootstrap/cache
 
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 9000
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["php-fpm"]
