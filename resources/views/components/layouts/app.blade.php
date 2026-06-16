@@ -52,12 +52,12 @@
     >
         {{-- Logo --}}
         <div class="flex h-16 items-center gap-3 px-6 border-b border-slate-800 shrink-0">
-            <div class="w-11 h-11 rounded-xl bg-blue-500 flex items-center justify-center shadow-md shadow-blue-700/40">
-                <svg class="w-8 h-8" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="1.6">
+            <div class="w-11 h-11 rounded-xl bg-blue-500 flex items-center justify-center shadow-md shadow-blue-700/40 relative">
+                <svg class="w-7 h-7" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="1.7">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
-                    <text x="12" y="17.5" text-anchor="middle" font-size="8.5" font-weight="bold" font-family="Arial,sans-serif" fill="white" stroke="none">$</text>
                 </svg>
+                <span class="absolute bottom-1 right-1.5 text-white font-black leading-none" style="font-size:9px">$</span>
             </div>
             <span class="text-white font-semibold text-sm tracking-wide">SFconnecting</span>
             {{-- Cerrar en móvil --}}
