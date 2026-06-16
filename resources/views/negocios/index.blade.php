@@ -3,9 +3,6 @@
         <x-ui.button href="{{ route('negocios.kanban') }}" variant="secondary" size="sm">
             <x-ui.icon name="layout" class="w-4 h-4"/> Kanban
         </x-ui.button>
-        <x-ui.button href="{{ route('reportes.index') }}" variant="secondary" size="sm">
-            <x-ui.icon name="trending-up" class="w-4 h-4"/> Forecast
-        </x-ui.button>
         <x-ui.button href="{{ route('negocios.create') }}" variant="primary" size="sm">
             <x-ui.icon name="plus" class="w-4 h-4"/> Nuevo negocio
         </x-ui.button>

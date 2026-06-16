@@ -76,7 +76,7 @@
         <div>
           <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 text-center">Año</p>
           <div class="flex gap-1 p-1 rounded-xl bg-white border border-slate-200 shadow-sm">
-            @foreach([now()->year + 1, now()->year, now()->year - 1] as $y)
+            @foreach([now()->year - 1, now()->year, now()->year + 1] as $y)
               <a href="{{ route('dash.gerencial', ['periodo' => $periodo, 'anio' => $y, 'cia' => $cia]) }}"
                  class="px-3 py-1.5 text-sm rounded-lg transition-all font-medium {{ $anio === $y ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
                 {{ $y }}

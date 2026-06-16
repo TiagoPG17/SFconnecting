@@ -251,6 +251,62 @@
                 @endif
             </x-ui.card>
 
+            {{-- KPIs de ventas ERP --}}
+            @if(!empty($actividadSiesa['anual'] ?? []))
+            @php
+                $kpiAnio      = (int) date('Y');
+                $kpiAnterior  = $kpiAnio - 1;
+                $kpiActual    = (float) (collect($actividadSiesa['anual'])->firstWhere('label', (string) $kpiAnio)['total'] ?? 0);
+                $kpiPasado    = (float) (collect($actividadSiesa['anual'])->firstWhere('label', (string) $kpiAnterior)['total'] ?? 0);
+                $kpiVariacion = $kpiPasado > 0 ? (($kpiActual - $kpiPasado) / $kpiPasado) * 100 : null;
+                $kpiNFacturas = count($facturas);
+                $kpiUltima    = !empty($facturas) ? collect($facturas)->max('FECHA') : null;
+                $fmtK = fn(float $v): string => $v >= 1_000_000_000 ? '$'.number_format($v/1_000_000_000,1).'B'
+                    : ($v >= 1_000_000 ? '$'.number_format($v/1_000_000,1).'M'
+                    : ($v >= 1_000 ? '$'.number_format($v/1_000,0).'K'
+                    : '$'.number_format($v,0,'.',',')));
+            @endphp
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <x-ui.card class="p-4">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Facturado {{ $kpiAnio }}</p>
+                    <p class="text-xl font-bold text-slate-900">{{ $fmtK($kpiActual) }}</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Año en curso</p>
+                </x-ui.card>
+
+                <x-ui.card class="p-4">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Vs {{ $kpiAnterior }}</p>
+                    @if($kpiVariacion !== null)
+                        @php $sube = $kpiVariacion >= 0; @endphp
+                        <p class="text-xl font-bold {{ $sube ? 'text-green-600' : 'text-red-600' }}">
+                            {{ $sube ? '+' : '' }}{{ number_format($kpiVariacion, 1) }}%
+                        </p>
+                        <p class="text-xs text-slate-400 mt-0.5">{{ $fmtK($kpiPasado) }} el año pasado</p>
+                    @else
+                        <p class="text-xl font-bold text-slate-400">—</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Sin datos previos</p>
+                    @endif
+                </x-ui.card>
+
+                <x-ui.card class="p-4">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Nº facturas</p>
+                    <p class="text-xl font-bold text-slate-900">{{ $kpiNFacturas }}</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Historial cargado</p>
+                </x-ui.card>
+
+                <x-ui.card class="p-4">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Última compra</p>
+                    <p class="text-xl font-bold text-slate-900">
+                        {{ $kpiUltima ? \Carbon\Carbon::parse($kpiUltima)->format('d/m/Y') : '—' }}
+                    </p>
+                    @if($kpiUltima)
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            Hace {{ \Carbon\Carbon::parse($kpiUltima)->diffForHumans(null, true) }}
+                        </p>
+                    @endif
+                </x-ui.card>
+            </div>
+            @endif
+
             {{-- Gráfica de actividad / ventas SIESA --}}
             @php
                 $usarSiesa     = !empty($actividadSiesa['mensual'] ?? []);
@@ -261,81 +317,105 @@
 
             <x-ui.card x-data="actividadChart(window['_chart_{{ $cliente->id }}'], '{{ $chartTipo }}')">
                 <div class="p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            {{ $usarSiesa ? 'Ventas SIESA' : 'Actividad' }}
-                        </p>
+
+                    {{-- Header --}}
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                {{ $usarSiesa ? 'Ventas ERP' : 'Actividad de seguimientos' }}
+                            </p>
+                            <p class="text-xs text-slate-400 mt-0.5" x-text="hovered !== null
+                                ? (puntos[hovered]?.label + ' · ' + formatTotal(puntos[hovered]?.total))
+                                : 'Pasa el cursor sobre la gráfica'">
+                            </p>
+                        </div>
                         <div class="flex gap-0.5 bg-slate-100 rounded-lg p-0.5">
                             @foreach(['mensual' => 'Mes', 'trimestral' => 'Trim.', 'anual' => 'Año'] as $key => $lbl)
                             <button @click="periodo = '{{ $key }}'; hovered = null"
                                     :class="periodo === '{{ $key }}' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'"
-                                    class="px-2 py-0.5 rounded-md text-xs font-medium transition-all">
+                                    class="px-3 py-1 rounded-md text-xs font-medium transition-all">
                                 {{ $lbl }}
                             </button>
                             @endforeach
                         </div>
                     </div>
 
-                    {{-- Tooltip --}}
-                    <div class="h-5 mb-1 flex items-center justify-center">
-                        <template x-if="hovered !== null">
-                            <span class="text-xs font-semibold text-blue-600"
-                                  x-text="puntos[hovered]?.label + ' · ' + formatTotal(puntos[hovered]?.total)">
-                            </span>
-                        </template>
-                    </div>
+                    {{-- Área gráfica: eje Y + SVG --}}
+                    <div class="flex gap-2">
 
-                    {{-- SVG sin x-for + overlay HTML --}}
-                    <div class="relative w-full" style="padding-bottom: 18%">
-                        <svg viewBox="0 0 800 170" preserveAspectRatio="none"
-                             class="absolute inset-0 w-full h-full" style="overflow:visible">
-                            <defs>
-                                <linearGradient id="act-grad-{{ $cliente->id }}" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
-                                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
-                                </linearGradient>
-                            </defs>
-                            <line x1="10" y1="158" x2="790" y2="158" stroke="#e2e8f0" stroke-width="1"/>
-                            <line x1="10" y1="87"  x2="790" y2="87"  stroke="#e2e8f0" stroke-width="0.75" stroke-dasharray="4 3"/>
-                            <line x1="10" y1="16"  x2="790" y2="16"  stroke="#e2e8f0" stroke-width="0.75" stroke-dasharray="4 3"/>
-                            <path :d="area" :fill="'url(#act-grad-{{ $cliente->id }})'" :opacity="hayDatos ? 1 : 0"/>
-                            <polyline :points="linea" fill="none" stroke="#3b82f6" stroke-width="2"
-                                      stroke-linejoin="round" stroke-linecap="round" :opacity="hayDatos ? 1 : 0"/>
-                            <path :d="dotsPath" fill="white" stroke="#3b82f6" stroke-width="2" :opacity="hayDatos ? 1 : 0"/>
-                            <line :x1="hovered !== null ? puntos[hovered]?.x : -999"
-                                  :x2="hovered !== null ? puntos[hovered]?.x : -999"
-                                  y1="16" :y2="hovered !== null ? (puntos[hovered]?.y ?? 0) - 7 : 0"
-                                  stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4 3"
-                                  :opacity="hovered !== null ? 1 : 0"/>
-                            <circle :cx="hovered !== null ? puntos[hovered]?.x : -999"
-                                    :cy="hovered !== null ? puntos[hovered]?.y : 0"
-                                    r="5" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"
-                                    :opacity="hovered !== null ? 1 : 0"/>
-                            <text x="400" y="92" text-anchor="middle" fill="#cbd5e1" font-size="14"
-                                  :opacity="hayDatos ? 0 : 1">Sin datos en este período</text>
-                        </svg>
-                        <template x-for="p in puntos">
-                            <div :style="`position:absolute; left:${(p.x/800*100).toFixed(2)}%; top:${(p.y/170*100).toFixed(2)}%; transform:translate(-50%,-50%); width:32px; height:32px;`"
-                                 @mouseover="hovered = p.idx" @mouseleave="hovered = null">
+                        {{-- Eje Y --}}
+                        <div class="flex flex-col justify-between shrink-0 text-right pb-1" style="width:46px; height:160px">
+                            <span class="text-xs text-slate-400 leading-none" x-text="fmtY(max)"></span>
+                            <span class="text-xs text-slate-400 leading-none" x-text="fmtY(max * 0.5)"></span>
+                            <span class="text-xs text-slate-400 leading-none">$0</span>
+                        </div>
+
+                        {{-- SVG + labels X --}}
+                        <div class="flex-1 min-w-0">
+                            <div class="relative w-full" style="height:160px">
+                                <svg viewBox="0 0 800 160" preserveAspectRatio="none"
+                                     class="absolute inset-0 w-full h-full" style="overflow:visible">
+                                    <defs>
+                                        <linearGradient id="act-grad-{{ $cliente->id }}" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.18"/>
+                                            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+                                        </linearGradient>
+                                    </defs>
+                                    {{-- Líneas guía --}}
+                                    <line x1="0" y1="150" x2="800" y2="150" stroke="#e2e8f0" stroke-width="1"/>
+                                    <line x1="0" y1="80"  x2="800" y2="80"  stroke="#e2e8f0" stroke-width="0.75" stroke-dasharray="4 3"/>
+                                    <line x1="0" y1="10"  x2="800" y2="10"  stroke="#e2e8f0" stroke-width="0.75" stroke-dasharray="4 3"/>
+                                    {{-- Área y línea --}}
+                                    <path :d="area" :fill="'url(#act-grad-{{ $cliente->id }})'" :opacity="hayDatos ? 1 : 0"/>
+                                    <polyline :points="linea" fill="none" stroke="#3b82f6" stroke-width="2.5"
+                                              stroke-linejoin="round" stroke-linecap="round" :opacity="hayDatos ? 1 : 0"/>
+                                    <path :d="dotsPath" fill="white" stroke="#3b82f6" stroke-width="2" :opacity="hayDatos ? 1 : 0"/>
+                                    {{-- Crosshair hover --}}
+                                    <line :x1="hovered !== null ? puntos[hovered]?.x : -999"
+                                          :x2="hovered !== null ? puntos[hovered]?.x : -999"
+                                          y1="10" :y2="hovered !== null ? (puntos[hovered]?.y ?? 0) - 7 : 0"
+                                          stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4 3"
+                                          :opacity="hovered !== null ? 0.6 : 0"/>
+                                    <circle :cx="hovered !== null ? puntos[hovered]?.x : -999"
+                                            :cy="hovered !== null ? puntos[hovered]?.y : 0"
+                                            r="5" fill="#2563eb" stroke="white" stroke-width="2"
+                                            :opacity="hovered !== null ? 1 : 0"/>
+                                    {{-- Sin datos --}}
+                                    <text x="400" y="85" text-anchor="middle" fill="#cbd5e1" font-size="13"
+                                          :opacity="hayDatos ? 0 : 1">Sin datos en este período</text>
+                                </svg>
+                                {{-- Zonas hover invisibles --}}
+                                <template x-for="p in puntos">
+                                    <div :style="`position:absolute;left:${(p.x/800*100).toFixed(2)}%;top:${(p.y/160*100).toFixed(2)}%;transform:translate(-50%,-50%);width:32px;height:32px;`"
+                                         @mouseover="hovered = p.idx" @mouseleave="hovered = null">
+                                    </div>
+                                </template>
                             </div>
-                        </template>
+
+                            {{-- Labels eje X --}}
+                            <div class="relative w-full mt-1.5" style="height:16px">
+                                <template x-for="p in puntos">
+                                    <span :style="`position:absolute;left:${(p.x/800*100).toFixed(2)}%;transform:translateX(-50%);font-size:10px;white-space:nowrap;`"
+                                          :class="hovered === p.idx ? 'text-blue-600 font-semibold' : 'text-slate-400'"
+                                          x-text="p.shortLabel">
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
                     </div>
 
-                    {{-- Labels eje X --}}
-                    <div class="relative w-full mt-1" style="height:18px">
-                        <template x-for="p in puntos">
-                            <span :style="`position:absolute; left:${(p.x/800*100).toFixed(2)}%; transform:translateX(-50%); font-size:10px; white-space:nowrap;`"
-                                  :class="hovered === p.idx ? 'text-blue-600 font-semibold' : 'text-slate-400'"
-                                  x-text="p.shortLabel">
-                            </span>
-                        </template>
-                    </div>
-
-                    {{-- Total --}}
-                    <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                        <span class="text-xs text-slate-400">Total período</span>
-                        <span class="text-xs font-bold text-slate-700"
-                              x-text="formatTotal(data.reduce((s, d) => s + d.total, 0))"></span>
+                    {{-- Footer: total + pico --}}
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-slate-400">Total período</span>
+                            <span class="ml-2 text-xs font-bold text-slate-700"
+                                  x-text="formatTotal(data.reduce((s, d) => s + d.total, 0))"></span>
+                        </div>
+                        <div x-show="hayDatos">
+                            <span class="text-xs text-slate-400">Pico</span>
+                            <span class="ml-2 text-xs font-bold text-slate-700"
+                                  x-text="formatTotal(max)"></span>
+                        </div>
                     </div>
                 </div>
             </x-ui.card>
@@ -443,59 +523,109 @@
                      x-transition:leave-start="opacity-100"
                      x-transition:leave-end="opacity-0">
                     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="modal = false"></div>
-                    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col"
+                    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[88vh] flex flex-col"
                          x-transition:enter="transition ease-out duration-150"
                          x-transition:enter-start="opacity-0 scale-95"
                          x-transition:enter-end="opacity-100 scale-100">
 
                         {{-- Header modal --}}
-                        <div class="flex items-start justify-between p-5 border-b border-slate-100 shrink-0">
-                            <div>
-                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Detalle de factura</p>
-                                <h3 class="text-base font-bold text-slate-900"
-                                    x-text="(facActiva?.CONCEPTO || '') + ' ' + (facActiva?.TIPO || '')"></h3>
-                                <p class="text-sm text-slate-500 mt-0.5"
-                                   x-text="facActiva?.FECHA + ' · ' + facActiva?.NUM_ITEMS + ' ítems'"></p>
+                        <div class="px-6 pt-5 pb-4 border-b border-slate-100 shrink-0">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-xs font-semibold"
+                                          x-text="facActiva?.TIPO || 'DOC'"></span>
+                                    <h3 class="text-base font-bold text-slate-900"
+                                        x-text="'Concepto ' + (facActiva?.CONCEPTO || '')"></h3>
+                                </div>
+                                <button @click="modal = false"
+                                        class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors shrink-0">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
                             </div>
-                            <button @click="modal = false"
-                                    class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors ml-4 shrink-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                </svg>
-                            </button>
+
+                            {{-- Info rápida --}}
+                            <div class="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
+                                <div class="flex items-center gap-1.5 text-xs text-slate-500">
+                                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    <span x-text="facActiva?.FECHA"></span>
+                                </div>
+                                <div class="flex items-center gap-1.5 text-xs text-slate-500">
+                                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
+                                    </svg>
+                                    <span x-text="(facActiva?.NUM_ITEMS || 0) + ' ítems'"></span>
+                                </div>
+                                <div class="flex items-center gap-1.5 text-xs text-slate-500">
+                                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                    </svg>
+                                    <span x-text="'Compañía ' + (facActiva?.COMPANIA || '')"></span>
+                                </div>
+                                <div class="flex items-center gap-1.5 text-xs text-slate-500">
+                                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    </svg>
+                                    <span x-text="'Vendedor: ' + (facActiva?.COD_VENDEDOR || '—')"></span>
+                                </div>
+                            </div>
                         </div>
 
                         {{-- Loader --}}
-                        <div x-show="cargando" class="flex items-center justify-center py-12">
-                            <svg class="w-6 h-6 animate-spin text-slate-400" fill="none" viewBox="0 0 24 24">
+                        <div x-show="cargando" class="flex flex-col items-center justify-center py-16 gap-3">
+                            <svg class="w-6 h-6 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                             </svg>
+                            <p class="text-xs text-slate-400">Cargando productos...</p>
                         </div>
 
                         {{-- Tabla de ítems --}}
-                        <div x-show="!cargando && facActiva" class="overflow-y-auto flex-1 px-5">
+                        <div x-show="!cargando && facActiva" class="overflow-y-auto flex-1">
                             <template x-if="itemsActivos.length === 0">
-                                <p class="text-sm text-slate-400 text-center py-8">Sin ítems registrados</p>
+                                <div class="flex flex-col items-center justify-center py-16 text-center">
+                                    <svg class="w-8 h-8 text-slate-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                    </svg>
+                                    <p class="text-sm text-slate-400">Sin ítems registrados para esta factura</p>
+                                </div>
                             </template>
                             <template x-if="itemsActivos.length > 0">
                                 <table class="w-full text-sm">
-                                    <thead class="sticky top-0 bg-white">
-                                        <tr class="border-b border-slate-200">
-                                            <th class="text-left py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Producto</th>
-                                            <th class="text-right py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide w-14">Cant</th>
-                                            <th class="text-right py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide w-24">Neto</th>
+                                    <thead class="sticky top-0 bg-white border-b border-slate-200 z-10">
+                                        <tr>
+                                            <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Producto</th>
+                                            <th class="text-center px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide w-20">Cant.</th>
+                                            <th class="text-right px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide w-28">Precio unit.</th>
+                                            <th class="text-right px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide w-28">Vlr. neto</th>
                                         </tr>
                                     </thead>
-                                    <tbody class="divide-y divide-slate-100">
-                                        <template x-for="item in itemsActivos" :key="item.COD_PRODUCTO">
-                                            <tr>
-                                                <td class="py-3 pr-3">
-                                                    <p class="font-medium text-slate-800 leading-snug" x-text="item.NOMBRE_PRODUCTO || item.COD_PRODUCTO"></p>
-                                                    <p class="text-xs text-slate-400 mt-0.5" x-text="item.COD_PRODUCTO + (item.UNIDAD ? ' · ' + item.UNIDAD : '')"></p>
+                                    <tbody>
+                                        <template x-for="(item, idx) in itemsActivos" :key="item.COD_PRODUCTO + idx">
+                                            <tr :class="idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'">
+                                                <td class="px-6 py-3">
+                                                    <p class="font-medium text-slate-800 leading-snug"
+                                                       x-text="item.NOMBRE_PRODUCTO || item.COD_PRODUCTO"></p>
+                                                    <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                                                        <span class="text-xs text-slate-400" x-text="item.COD_PRODUCTO"></span>
+                                                        <template x-if="item.REFERENCIA && item.REFERENCIA !== item.COD_PRODUCTO">
+                                                            <span class="text-xs text-slate-400" x-text="'· Ref: ' + item.REFERENCIA"></span>
+                                                        </template>
+                                                        <template x-if="item.UNIDAD">
+                                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-xs"
+                                                                  x-text="item.UNIDAD"></span>
+                                                        </template>
+                                                    </div>
                                                 </td>
-                                                <td class="py-3 text-right text-slate-600" x-text="item.CANTIDAD"></td>
-                                                <td class="py-3 text-right font-semibold text-slate-900" x-text="fmtCOP(item.VLR_NETO)"></td>
+                                                <td class="px-3 py-3 text-center text-slate-700 font-medium tabular-nums"
+                                                    x-text="Number(item.CANTIDAD).toLocaleString('es-CO')"></td>
+                                                <td class="px-3 py-3 text-right text-slate-500 tabular-nums"
+                                                    x-text="fmtCOP(item.PRECIO_UNIT)"></td>
+                                                <td class="px-6 py-3 text-right font-semibold text-slate-900 tabular-nums"
+                                                    x-text="fmtCOP(item.VLR_NETO)"></td>
                                             </tr>
                                         </template>
                                     </tbody>
@@ -503,12 +633,26 @@
                             </template>
                         </div>
 
-                        {{-- Footer modal --}}
+                        {{-- Footer: desglose financiero --}}
                         <div x-show="!cargando && itemsActivos.length > 0"
-                             class="flex items-center justify-between px-5 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl shrink-0">
-                            <span class="text-sm text-slate-500">Total factura</span>
-                            <span class="text-lg font-bold text-slate-900"
-                                  x-text="fmtCOP(itemsActivos.reduce((s,i)=>s+Number(i.VLR_NETO),0))"></span>
+                             class="px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl shrink-0">
+                            <div class="flex flex-col gap-1.5 items-end">
+                                <div class="flex items-center justify-between w-56">
+                                    <span class="text-xs text-slate-500">Subtotal bruto</span>
+                                    <span class="text-xs text-slate-600 tabular-nums"
+                                          x-text="fmtCOP(itemsActivos.reduce((s,i)=>s+Number(i.VLR_BRUTO),0))"></span>
+                                </div>
+                                <div class="flex items-center justify-between w-56">
+                                    <span class="text-xs text-slate-500">Impuestos</span>
+                                    <span class="text-xs text-slate-600 tabular-nums"
+                                          x-text="fmtCOP(itemsActivos.reduce((s,i)=>s+Number(i.VLR_IMP),0))"></span>
+                                </div>
+                                <div class="flex items-center justify-between w-56 pt-2 mt-1 border-t border-slate-200">
+                                    <span class="text-sm font-semibold text-slate-700">Total neto</span>
+                                    <span class="text-base font-bold text-slate-900 tabular-nums"
+                                          x-text="fmtCOP(itemsActivos.reduce((s,i)=>s+Number(i.VLR_NETO),0))"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -540,10 +684,11 @@
             },
             fmtCOP(v) {
                 const n = Number(v);
+                if (isNaN(n)) return '—';
                 if (n >= 1_000_000_000) return '$' + (n / 1_000_000_000).toFixed(1) + 'B';
                 if (n >= 1_000_000)     return '$' + (n / 1_000_000).toFixed(1) + 'M';
                 if (n >= 1_000)         return '$' + Math.round(n / 1_000) + 'K';
-                return '$' + n.toLocaleString('es-CO', {maximumFractionDigits: 0});
+                return '$' + n.toLocaleString('es-CO', {minimumFractionDigits: 0, maximumFractionDigits: 2});
             },
             irA(p) {
                 if (p < 1 || p > this.totalPaginas) return;
@@ -569,28 +714,28 @@
 
     <script>
         function actividadChart(datasets, tipo = 'seguimientos') {
-            const mensualSum = (datasets?.mensual || []).reduce((s, d) => s + d.total, 0);
             return {
                 periodo: 'mensual',
                 hovered: null,
                 datasets,
                 tipo,
-                formatTotal(v) {
-                    if (this.tipo !== 'ventas') {
-                        return v + (v === 1 ? ' seg.' : ' segs.');
-                    }
+                fmtY(v) {
                     if (v >= 1_000_000_000) return '$' + (v / 1_000_000_000).toFixed(1) + 'B';
                     if (v >= 1_000_000)     return '$' + (v / 1_000_000).toFixed(1) + 'M';
                     if (v >= 1_000)         return '$' + Math.round(v / 1_000) + 'K';
-                    return '$' + v.toFixed(0);
+                    return '$' + Math.round(v);
                 },
-                get data()   { return this.datasets[this.periodo] || []; },
-                get max()    { return Math.max(...this.data.map(d => d.total), 1); },
+                formatTotal(v) {
+                    if (this.tipo !== 'ventas') return v + (v === 1 ? ' seg.' : ' segs.');
+                    return this.fmtY(v);
+                },
+                get data()     { return this.datasets[this.periodo] || []; },
+                get max()      { return Math.max(...this.data.map(d => d.total), 1); },
                 get hayDatos() { return this.data.some(d => d.total > 0); },
                 get puntos() {
                     const n = this.data.length;
                     if (n === 0) return [];
-                    const xA = 10, xB = 790, yT = 16, yB = 158;
+                    const xA = 0, xB = 800, yT = 10, yB = 150;
                     return this.data.map((d, i) => ({
                         idx: i,
                         x: n === 1 ? (xA + xB) / 2 : xA + i * (xB - xA) / (n - 1),
@@ -611,15 +756,15 @@
                     const pts = this.puntos;
                     if (pts.length < 2) return '';
                     const f = pts[0], l = pts[pts.length - 1];
-                    return `M${f.x.toFixed(1)},158 ` +
+                    return `M${f.x.toFixed(1)},150 ` +
                            pts.map(p => `L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') +
-                           ` L${l.x.toFixed(1)},158 Z`;
+                           ` L${l.x.toFixed(1)},150 Z`;
                 },
                 get dotsPath() {
                     const r = 4;
                     return this.puntos
                         .filter(p => p.total > 0)
-                        .map(p => `M ${(p.x - r).toFixed(1)} ${p.y.toFixed(1)} a ${r} ${r} 0 1 0 ${r * 2} 0 a ${r} ${r} 0 1 0 ${-r * 2} 0`)
+                        .map(p => `M ${(p.x-r).toFixed(1)} ${p.y.toFixed(1)} a ${r} ${r} 0 1 0 ${r*2} 0 a ${r} ${r} 0 1 0 ${-r*2} 0`)
                         .join(' ');
                 },
             };

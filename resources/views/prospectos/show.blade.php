@@ -117,7 +117,13 @@
             >
                 <div class="p-4 border-b border-slate-100 flex items-center justify-between">
                     <h3 class="text-sm font-semibold text-slate-900">Seguimientos</h3>
-                    <x-ui.button variant="ghost" size="xs" @click="open = true">+ Nuevo</x-ui.button>
+                    <button @click="open = true"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Registrar seguimiento
+                    </button>
                 </div>
 
                 @if($seguimientos->isEmpty())

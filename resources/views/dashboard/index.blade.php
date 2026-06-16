@@ -11,60 +11,56 @@
     ══════════════════════════════════════════════ --}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
 
-        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 p-5 shadow-lg shadow-blue-200/60">
-            <div class="pointer-events-none absolute -right-5 -top-5 h-28 w-28 rounded-full bg-white/10"></div>
-            <div class="pointer-events-none absolute -bottom-8 -right-3 h-20 w-20 rounded-full bg-white/5"></div>
-            <div class="relative">
-                <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/25 backdrop-blur-sm">
-                    <svg class="h-4.5 w-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        {{-- Azul: Total en negociación --}}
+        <div class="bg-blue-50 border-2 border-blue-400 rounded-2xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100">
+                    <svg class="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                     </svg>
                 </div>
-                <p class="text-2xl font-extrabold text-white tracking-tight">${{ number_format($kpis['forecast']['total_pipeline'], 0, ',', '.') }}</p>
-                <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-blue-100">Total en negociación</p>
+                <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide">Total en negociación</p>
             </div>
+            <p class="text-2xl font-bold text-blue-700 tabular-nums">${{ number_format($kpis['forecast']['total_pipeline'], 0, ',', '.') }}</p>
         </div>
 
-        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 p-5 shadow-lg shadow-emerald-200/60">
-            <div class="pointer-events-none absolute -right-5 -top-5 h-28 w-28 rounded-full bg-white/10"></div>
-            <div class="pointer-events-none absolute -bottom-8 -right-3 h-20 w-20 rounded-full bg-white/5"></div>
-            <div class="relative">
-                <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/25">
-                    <svg class="h-4.5 w-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        {{-- Esmeralda: Valor esperado --}}
+        <div class="bg-emerald-50 border-2 border-emerald-400 rounded-2xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100">
+                    <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                     </svg>
                 </div>
-                <p class="text-2xl font-extrabold text-white tracking-tight">${{ number_format($kpis['forecast']['total_forecast'], 0, ',', '.') }}</p>
-                <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-emerald-100">Valor esperado del pipeline</p>
+                <p class="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Valor esperado</p>
             </div>
+            <p class="text-2xl font-bold text-emerald-700 tabular-nums">${{ number_format($kpis['forecast']['total_forecast'], 0, ',', '.') }}</p>
         </div>
 
-        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 p-5 shadow-lg shadow-orange-200/60">
-            <div class="pointer-events-none absolute -right-5 -top-5 h-28 w-28 rounded-full bg-white/10"></div>
-            <div class="pointer-events-none absolute -bottom-8 -right-3 h-20 w-20 rounded-full bg-white/5"></div>
-            <div class="relative">
-                <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/25">
-                    <svg class="h-4.5 w-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        {{-- Naranja: Negocios abiertos --}}
+        <div class="bg-orange-50 border-2 border-orange-400 rounded-2xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-100">
+                    <svg class="h-4 w-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                     </svg>
                 </div>
-                <p class="text-2xl font-extrabold text-white tracking-tight">{{ $kpis['pipeline']['negocios']['abiertos'] }}</p>
-                <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-orange-100">Negocios Abiertos</p>
+                <p class="text-xs font-semibold text-orange-600 uppercase tracking-wide">Negocios abiertos</p>
             </div>
+            <p class="text-2xl font-bold text-orange-700 tabular-nums">{{ $kpis['pipeline']['negocios']['abiertos'] }}</p>
         </div>
 
-        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 to-violet-700 p-5 shadow-lg shadow-violet-200/60">
-            <div class="pointer-events-none absolute -right-5 -top-5 h-28 w-28 rounded-full bg-white/10"></div>
-            <div class="pointer-events-none absolute -bottom-8 -right-3 h-20 w-20 rounded-full bg-white/5"></div>
-            <div class="relative">
-                <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/25">
-                    <svg class="h-4.5 w-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        {{-- Violeta: Tasa de conversión --}}
+        <div class="bg-violet-50 border-2 border-violet-400 rounded-2xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100">
+                    <svg class="h-4 w-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
-                <p class="text-2xl font-extrabold text-white tracking-tight">{{ $kpis['conversion']['tasa'] }}%</p>
-                <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-violet-100">Tasa Conversión</p>
+                <p class="text-xs font-semibold text-violet-600 uppercase tracking-wide">Tasa de conversión</p>
             </div>
+            <p class="text-2xl font-bold text-violet-700 tabular-nums">{{ $kpis['conversion']['tasa'] }}%</p>
         </div>
 
     </div>

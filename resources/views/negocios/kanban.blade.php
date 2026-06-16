@@ -1,14 +1,31 @@
-<x-layouts.app title="Pipeline">
-    <x-slot name="actions">
-        <x-ui.button href="{{ route('negocios.index') }}" variant="secondary" size="sm">
-            <x-ui.icon name="list" class="w-4 h-4"/> Lista
-        </x-ui.button>
+<x-layouts.app title="Pipeline" :hide-page-title="true">
+
+    {{-- Encabezado --}}
+    <div class="flex items-center gap-4 mb-5">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-0.5">Comercial</p>
+            <h1 class="text-2xl font-bold text-slate-900">Pipeline Kanban</h1>
+        </div>
+        <div class="flex items-center gap-3 mt-4">
         @unlessrole('gerente')
-        <x-ui.button href="{{ route('negocios.create') }}" variant="primary" size="sm">
-            <x-ui.icon name="plus" class="w-4 h-4"/> Nuevo negocio
-        </x-ui.button>
+        <a href="{{ route('negocios.create') }}"
+           class="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-xl text-white shadow-sm transition-opacity hover:opacity-90"
+           style="background:#0f766e">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nuevo negocio
+        </a>
         @endunlessrole
-    </x-slot>
+        <a href="{{ route('negocios.index') }}"
+           class="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+            </svg>
+            Ver lista
+        </a>
+        </div>
+    </div>
 
     <div
         class="flex gap-4 overflow-x-auto pb-6"
