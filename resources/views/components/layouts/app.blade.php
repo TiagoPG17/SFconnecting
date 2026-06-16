@@ -52,13 +52,21 @@
     >
         {{-- Logo --}}
         <div class="flex h-16 items-center gap-3 px-6 border-b border-slate-800 shrink-0">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); box-shadow: 0 4px 12px rgba(79,70,229,0.4)">
-                <span class="text-white font-black tracking-tight select-none" style="font-size:15px; letter-spacing:-0.5px">SF</span>
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background: linear-gradient(135deg, #1d4ed8 0%, #4f46e5 100%); box-shadow: 0 4px 14px rgba(79,70,229,0.45)">
+                <svg viewBox="0 0 24 24" fill="none" class="w-6 h-6">
+                    {{-- Líneas de conexión --}}
+                    <line x1="12" y1="12" x2="5"  y2="5"  stroke="white" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
+                    <line x1="12" y1="12" x2="19" y2="5"  stroke="white" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
+                    <line x1="12" y1="12" x2="12" y2="20" stroke="white" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
+                    {{-- Nodos satélite --}}
+                    <circle cx="5"  cy="5"  r="2.2" fill="white" opacity="0.6"/>
+                    <circle cx="19" cy="5"  r="2.2" fill="white" opacity="0.6"/>
+                    <circle cx="12" cy="20" r="2.2" fill="white" opacity="0.6"/>
+                    {{-- Nodo central --}}
+                    <circle cx="12" cy="12" r="3" fill="white"/>
+                </svg>
             </div>
-            <div class="flex flex-col leading-tight">
-                <span class="text-white font-bold text-sm tracking-wide">SFconnecting</span>
-                <span class="text-slate-400 font-normal" style="font-size:10px">CRM Comercial</span>
-            </div>
+            <span class="text-white font-semibold text-sm tracking-wide">SFconnecting</span>
             {{-- Cerrar en móvil --}}
             <button @click="sidebarOpen = false" class="ml-auto text-slate-400 hover:text-white lg:hidden">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
