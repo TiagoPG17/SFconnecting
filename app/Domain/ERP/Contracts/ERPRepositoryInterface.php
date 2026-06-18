@@ -40,6 +40,13 @@ interface ERPRepositoryInterface
 
     public function clientesHuerfanos(int $compania, array $nitsExcluir = [], int $limite = 100): array;
 
+    public function clientesPorVendedorYHorizonte(
+        string $vendedor,
+        string $horizonte,
+        int $compania = 0,
+        int $limite = 100
+    ): array;
+
     public function clientesPorVendedor(
         string $nombreVendedor,
         ?string $buscar = null,

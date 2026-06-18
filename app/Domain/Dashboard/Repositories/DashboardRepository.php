@@ -152,23 +152,27 @@ class DashboardRepository implements DashboardRepositoryInterface
 
     public function tasaConversion(?int $userId = null): array
     {
-        $base = Prospecto::query()
+        $baseNegocios = Negocio::query()
+            ->where('activo', true)
             ->when($userId, fn ($q) => $q->where('asesor_id', $userId));
 
-        $total      = (clone $base)->count();
-        $convertidos = (clone $base)->whereNotNull('convertido_cliente_id')->count();
+        $ganados  = (clone $baseNegocios)->whereHas('pipelineEstado', fn ($q) => $q->where('es_ganado', true))->count();
+        $perdidos = (clone $baseNegocios)->whereHas('pipelineEstado', fn ($q) => $q->where('es_perdido', true))->count();
+        $cerrados = $ganados + $perdidos;
 
-        $negociosGanados = Negocio::query()
-            ->where('activo', true)
-            ->when($userId, fn ($q) => $q->where('asesor_id', $userId))
-            ->whereHas('pipelineEstado', fn ($q) => $q->where('es_ganado', true))
-            ->count();
+        $baseProspectos = Prospecto::query()
+            ->when($userId, fn ($q) => $q->where('asesor_id', $userId));
+
+        $totalProspectos = (clone $baseProspectos)->count();
+        $convertidos     = (clone $baseProspectos)->whereNotNull('convertido_cliente_id')->count();
 
         return [
-            'total_prospectos' => $total,
+            'ganados'          => $ganados,
+            'perdidos'         => $perdidos,
+            'tasa'             => $cerrados > 0 ? round(($ganados / $cerrados) * 100, 1) : 0,
+            'total_prospectos' => $totalProspectos,
             'convertidos'      => $convertidos,
-            'negocios_ganados' => $negociosGanados,
-            'tasa'             => $total > 0 ? round(($convertidos / $total) * 100, 1) : 0,
+            'negocios_ganados' => $ganados,
         ];
     }
 

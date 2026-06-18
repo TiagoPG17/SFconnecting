@@ -258,6 +258,43 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
+    public function clientesPorVendedorYHorizonte(
+        string $vendedor,
+        string $horizonte,
+        int $compania = 0,
+        int $limite = 100
+    ): array {
+        $mapa = [
+            'P1' => 'P1 - PRESUPUESTO ACTIVO',
+            'P2' => 'P2 - PRESUPUESTO EN RIESGO',
+            'P3' => 'P3 - PRESUPUESTO PASADO (RECUPERAR)',
+            'P4' => 'P4 - FUERA DE PRESUPUESTO',
+        ];
+
+        if (!isset($mapa[$horizonte])) {
+            return [];
+        }
+
+        try {
+            return DB::connection('erp_contiflex')
+                ->table('dbo.vw_CRM_Clientes_Prioritarios')
+                ->where('NOMBRE_VENDEDOR', $vendedor)
+                ->where('HORIZONTE_PRESUPUESTO', $mapa[$horizonte])
+                ->when($compania > 0, fn ($q) => $q->where('COMPANIA', $compania))
+                ->orderByDesc('FACTURADO_ANIO_ACTUAL')
+                ->limit($limite)
+                ->get([
+                    'NIT', 'RAZON_SOCIAL', 'CIUDAD',
+                    'FACTURADO_ANIO_ACTUAL', 'FACTURADO_ANIO_ANTERIOR',
+                    'DIAS_DESDE_ULTIMA_COMPRA', 'ACCION_PRESUPUESTAL',
+                ])
+                ->map(fn ($r) => (array) $r)
+                ->toArray();
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
     public function clientesPresupuestoActivo(int $limite = 30, ?string $filtroVendedor = null): array
     {
         try {
@@ -422,18 +459,25 @@ class ContiflexERPRepository implements ERPRepositoryInterface
     public function countClientesHuerfanos(int $compania, array $nitsExcluir = []): int
     {
         try {
-            return DB::connection('erp_contiflex')
-                ->table('dbo.CRM_Consolidado_Ventas_cliente')
-                ->where('COMPANIA', $compania)
-                ->where(fn ($q) => $q
-                    ->whereNull('NOMBRE_VENDEDOR')
-                    ->orWhereRaw("LTRIM(RTRIM(NOMBRE_VENDEDOR)) = ''")
-                    ->orWhere('NOMBRE_VENDEDOR', 'like', '%VACANTE%')
-                )
-                ->where('DIAS_DESDE_ULTIMA_COMPRA', '>=', 365)
-                ->where('VLR_NETO_FACTURADO', '>', 0)
-                ->when($nitsExcluir, fn ($q) => $q->whereNotIn('NIT', $nitsExcluir))
-                ->count();
+            $excluir = implode("','", array_map('addslashes', $nitsExcluir));
+            $whereExcluir = $excluir ? "AND c.NIT NOT IN ('{$excluir}')" : '';
+
+            return (int) DB::connection('erp_contiflex')->selectOne("
+                SELECT COUNT(*) AS total
+                FROM dbo.CRM_Consolidado_Ventas_cliente c
+                LEFT JOIN dbo.vw_CRM_Ventas_por_Vendedor v
+                    ON v.NOMBRE_VENDEDOR = c.NOMBRE_VENDEDOR AND v.COMPANIA = c.COMPANIA
+                WHERE c.COMPANIA = {$compania}
+                  AND c.DIAS_DESDE_ULTIMA_COMPRA >= 365
+                  AND c.VLR_NETO_FACTURADO > 0
+                  {$whereExcluir}
+                  AND (
+                      c.NOMBRE_VENDEDOR IS NULL
+                      OR LTRIM(RTRIM(c.NOMBRE_VENDEDOR)) = ''
+                      OR c.NOMBRE_VENDEDOR LIKE '%VACANTE%'
+                      OR v.DIAS_DESDE_ULTIMA_VENTA > 150
+                  )
+            ")->total ?? 0;
         } catch (Throwable $e) {
             return 0;
         }
@@ -442,22 +486,36 @@ class ContiflexERPRepository implements ERPRepositoryInterface
     public function clientesHuerfanos(int $compania, array $nitsExcluir = [], int $limite = 100): array
     {
         try {
-            return DB::connection('erp_contiflex')
-                ->table('dbo.CRM_Consolidado_Ventas_cliente')
-                ->where('COMPANIA', $compania)
-                ->where(fn ($q) => $q
-                    ->whereNull('NOMBRE_VENDEDOR')
-                    ->orWhereRaw("LTRIM(RTRIM(NOMBRE_VENDEDOR)) = ''")
-                    ->orWhere('NOMBRE_VENDEDOR', 'like', '%VACANTE%')
-                )
-                ->where('DIAS_DESDE_ULTIMA_COMPRA', '>=', 365)
-                ->where('VLR_NETO_FACTURADO', '>', 0)
-                ->when($nitsExcluir, fn ($q) => $q->whereNotIn('NIT', $nitsExcluir))
-                ->orderByDesc('VLR_NETO_FACTURADO')
-                ->limit($limite)
-                ->get(['NIT', 'RAZON_SOCIAL', 'CIUDAD', 'VLR_NETO_FACTURADO', 'DIAS_DESDE_ULTIMA_COMPRA', 'ULTIMA_FACTURA'])
-                ->map(fn ($r) => (array) $r)
-                ->toArray();
+            $excluir = implode("','", array_map('addslashes', $nitsExcluir));
+            $whereExcluir = $excluir ? "AND c.NIT NOT IN ('{$excluir}')" : '';
+
+            return collect(DB::connection('erp_contiflex')->select("
+                SELECT TOP {$limite}
+                    c.NIT, c.RAZON_SOCIAL, c.CIUDAD,
+                    c.NOMBRE_VENDEDOR,
+                    c.VLR_NETO_FACTURADO, c.DIAS_DESDE_ULTIMA_COMPRA, c.ULTIMA_FACTURA,
+                    CASE
+                        WHEN c.NOMBRE_VENDEDOR IS NULL OR LTRIM(RTRIM(c.NOMBRE_VENDEDOR)) = '' OR c.NOMBRE_VENDEDOR LIKE '%VACANTE%'
+                            THEN 'Sin vendedor'
+                        ELSE 'Vendedor inactivo'
+                    END AS MOTIVO_HUERFANO
+                FROM dbo.CRM_Consolidado_Ventas_cliente c
+                LEFT JOIN dbo.vw_CRM_Ventas_por_Vendedor v
+                    ON v.NOMBRE_VENDEDOR = c.NOMBRE_VENDEDOR AND v.COMPANIA = c.COMPANIA
+                WHERE c.COMPANIA = {$compania}
+                  AND c.DIAS_DESDE_ULTIMA_COMPRA >= 365
+                  AND c.VLR_NETO_FACTURADO > 0
+                  {$whereExcluir}
+                  AND (
+                      c.NOMBRE_VENDEDOR IS NULL
+                      OR LTRIM(RTRIM(c.NOMBRE_VENDEDOR)) = ''
+                      OR c.NOMBRE_VENDEDOR LIKE '%VACANTE%'
+                      OR v.DIAS_DESDE_ULTIMA_VENTA > 150
+                  )
+                ORDER BY c.VLR_NETO_FACTURADO DESC
+            "))
+            ->map(fn ($r) => (array) $r)
+            ->toArray();
         } catch (Throwable $e) {
             throw ERPConnectionException::queryFailed($e->getMessage());
         }

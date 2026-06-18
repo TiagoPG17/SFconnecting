@@ -28,6 +28,7 @@ class Seguimiento extends Model
         'descripcion',
         'fecha_seguimiento',
         'proxima_fecha',
+        'proxima_tipo',
     ];
 
     protected $casts = [

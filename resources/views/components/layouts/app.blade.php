@@ -118,6 +118,9 @@
             <x-ui.nav-item href="{{ route('seguimientos.index') }}" :active="request()->routeIs('seguimientos.*')" icon="clock">
                 Seguimientos
             </x-ui.nav-item>
+            <x-ui.nav-item href="{{ route('calendario.index') }}" :active="request()->routeIs('calendario.*')" icon="calendar">
+                Calendario
+            </x-ui.nav-item>
 
             {{-- Análisis (admin + gerente) --}}
             @role('admin|gerente')
@@ -146,9 +149,9 @@
             <x-ui.nav-item href="{{ route('usuarios.index') }}" :active="request()->routeIs('usuarios.*')" icon="users">
                 Usuarios
             </x-ui.nav-item>
-            {{-- <x-ui.nav-item href="{{ route('auditoria.index') }}" :active="request()->routeIs('auditoria.*')" icon="shield">
+            <x-ui.nav-item href="{{ route('auditoria.index') }}" :active="request()->routeIs('auditoria.*')" icon="shield">
                 Auditoría
-            </x-ui.nav-item> --}}
+            </x-ui.nav-item>
             @endrole
 
         </nav>

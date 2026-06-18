@@ -50,7 +50,7 @@
             <p class="text-2xl font-bold text-orange-700 tabular-nums">{{ $kpis['pipeline']['negocios']['abiertos'] }}</p>
         </div>
 
-        {{-- Violeta: Tasa de conversión --}}
+        {{-- Violeta: Tasa de cierre --}}
         <div class="bg-violet-50 border-2 border-violet-400 rounded-2xl p-5">
             <div class="flex items-center gap-2 mb-3">
                 <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100">
@@ -58,9 +58,10 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
-                <p class="text-xs font-semibold text-violet-600 uppercase tracking-wide">Tasa de conversión</p>
+                <p class="text-xs font-semibold text-violet-600 uppercase tracking-wide">Tasa de cierre</p>
             </div>
             <p class="text-2xl font-bold text-violet-700 tabular-nums">{{ $kpis['conversion']['tasa'] }}%</p>
+            <p class="text-xs text-violet-400 mt-1">{{ $kpis['conversion']['ganados'] }} ganados / {{ $kpis['conversion']['ganados'] + $kpis['conversion']['perdidos'] }} cerrados</p>
         </div>
 
     </div>
@@ -118,7 +119,7 @@
             </div>
         </x-ui.card>
 
-        {{-- Conversión --}}
+        {{-- Conversión Lead → Cliente --}}
         <x-ui.card class="p-5">
             <h3 class="text-sm font-semibold text-slate-700 mb-4">Conversión Lead → Cliente</h3>
 
@@ -128,12 +129,12 @@
                     <svg class="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
                         <circle cx="50" cy="50" r="40" fill="none" stroke="#f1f5f9" stroke-width="12"/>
                         <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="12"
-                            stroke-dasharray="{{ round($kpis['conversion']['tasa'] * 2.513, 1) }} 251.3"
+                            stroke-dasharray="{{ $kpis['conversion']['total_prospectos'] > 0 ? round(($kpis['conversion']['convertidos'] / $kpis['conversion']['total_prospectos']) * 251.3, 1) : 0 }} 251.3"
                             stroke-linecap="round"
                             class="transition-all duration-700"/>
                     </svg>
                     <div class="absolute inset-0 flex flex-col items-center justify-center">
-                        <span class="text-2xl font-extrabold text-emerald-600">{{ $kpis['conversion']['tasa'] }}%</span>
+                        <span class="text-2xl font-extrabold text-emerald-600">{{ $kpis['conversion']['total_prospectos'] > 0 ? round(($kpis['conversion']['convertidos'] / $kpis['conversion']['total_prospectos']) * 100, 1) : 0 }}%</span>
                     </div>
                 </div>
             </div>

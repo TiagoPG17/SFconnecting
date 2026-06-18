@@ -1,5 +1,16 @@
 <x-layouts.app title="Pipeline" :hide-page-title="true">
 
+<style>
+.kanban-board::-webkit-scrollbar        { height: 10px; }
+.kanban-board::-webkit-scrollbar-track  { background: #e2e8f0; border-radius: 9999px; }
+.kanban-board::-webkit-scrollbar-thumb  { background: #64748b; border-radius: 9999px; }
+.kanban-board::-webkit-scrollbar-thumb:hover { background: #334155; }
+.kanban-board { scrollbar-width: thin; scrollbar-color: #64748b #e2e8f0; }
+#kanban-prev, #kanban-next {
+    transition: opacity .15s, box-shadow .15s;
+}
+</style>
+
     {{-- Encabezado --}}
     <div class="flex items-center gap-4 mb-5">
         <div>
@@ -27,8 +38,29 @@
         </div>
     </div>
 
+    <div class="relative">
+
+    {{-- Flecha izquierda --}}
+    <button id="kanban-prev"
+            style="display:none; position:absolute; left:0; top:120px; z-index:30; width:36px; height:36px; border-radius:50%; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.15); border:1px solid #e2e8f0; align-items:center; justify-content:center; color:#475569; cursor:pointer;"
+            onclick="document.getElementById('kanban-board').scrollBy({left:-320,behavior:'smooth'})">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+    </button>
+
+    {{-- Flecha derecha --}}
+    <button id="kanban-next"
+            style="display:none; position:absolute; right:0; top:120px; z-index:30; width:36px; height:36px; border-radius:50%; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.15); border:1px solid #e2e8f0; align-items:center; justify-content:center; color:#475569; cursor:pointer;"
+            onclick="document.getElementById('kanban-board').scrollBy({left:320,behavior:'smooth'})">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+    </button>
+
     <div
-        class="flex gap-4 overflow-x-auto pb-6"
+        id="kanban-board"
+        class="kanban-board flex gap-4 overflow-x-auto pb-6"
         style="min-height: calc(100vh - 9rem)"
         x-data="kanban()"
         x-init="init()"
@@ -156,6 +188,7 @@
         </div>
         @endforeach
     </div>
+    </div>{{-- /kanban-wrapper --}}
 
     {{-- Modal motivo de pérdida --}}
     <div x-data x-show="$store.kanban.modalPerdido" x-cloak
@@ -214,6 +247,23 @@
 
     @push('scripts')
     <script>
+    window.addEventListener('load', function () {
+        const board = document.getElementById('kanban-board');
+        const prev  = document.getElementById('kanban-prev');
+        const next  = document.getElementById('kanban-next');
+        if (!board || !prev || !next) return;
+
+        function updateArrows() {
+            const atStart = board.scrollLeft <= 4;
+            const atEnd   = board.scrollLeft + board.clientWidth >= board.scrollWidth - 4;
+            prev.style.display = atStart ? 'none' : 'flex';
+            next.style.display = atEnd   ? 'none' : 'flex';
+        }
+
+        board.addEventListener('scroll', updateArrows, { passive: true });
+        updateArrows();
+    });
+
     document.addEventListener('alpine:init', () => {
         Alpine.store('kanban', {
             modalPerdido: false,

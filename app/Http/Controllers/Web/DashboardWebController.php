@@ -11,6 +11,7 @@ use App\Domain\Dashboard\Services\DashboardService;
 use App\Domain\Dashboard\Services\DashboardVendedorService;
 use App\Domain\ERP\Contracts\ERPRepositoryInterface;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -78,6 +79,24 @@ class DashboardWebController extends Controller
                 ->map(fn ($m) => sprintf('%d-%02d', $anio, $m))
                 ->toArray(),
         };
+    }
+
+    public function clientesPanorama(Request $request): JsonResponse
+    {
+        $vendedor  = $request->input('vendedor', '');
+        $horizonte = strtoupper($request->input('horizonte', ''));
+        $compania  = in_array((int) $request->input('cia'), [0, 1, 2]) ? (int) $request->input('cia') : 0;
+
+        if (!$vendedor || !in_array($horizonte, ['P1', 'P2', 'P3', 'P4'])) {
+            return response()->json(['error' => 'Parámetros inválidos'], 422);
+        }
+
+        try {
+            $clientes = $this->erp->clientesPorVendedorYHorizonte($vendedor, $horizonte, $compania);
+            return response()->json($clientes);
+        } catch (\Throwable) {
+            return response()->json(['error' => 'No se pudo consultar el ERP'], 500);
+        }
     }
 
     public function gerencial(Request $request): View

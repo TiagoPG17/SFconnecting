@@ -398,10 +398,30 @@
               <tr class="hover:bg-slate-50 transition-colors">
                 <td class="py-2.5 pr-4 pl-3 font-semibold text-slate-800 whitespace-nowrap"><span x-text="fila.NOMBRE_VENDEDOR"></span><span x-show="fila.COMPANIA" class="text-slate-400 font-normal" x-text="' · Cía '+(fila.COMPANIA||'')"></span></td>
                 <td class="text-center py-2.5 px-2 text-slate-600 font-medium" x-text="fila.total_clientes"></td>
-                <td class="text-center py-2.5 px-2"><span class="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded" x-text="fila.vip_activos"></span></td>
-                <td class="text-center py-2.5 px-2"><span class="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded" x-text="fila.urgentes"></span></td>
-                <td class="text-center py-2.5 px-2"><span class="text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded" x-text="fila.rescate"></span></td>
-                <td class="text-center py-2.5 px-2"><span class="text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded" x-text="fila.reactivacion"></span></td>
+                <td class="text-center py-2.5 px-2">
+                  <button @click="$dispatch('abrir-panorama', {vendedor: fila.NOMBRE_VENDEDOR, horizonte: 'P1', cia: {{ $cia }}})"
+                          class="font-bold px-1.5 py-0.5 rounded transition cursor-pointer"
+                          :class="(fila.vip_activos||0)>0 ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100' : 'text-slate-300 bg-slate-50 hover:bg-slate-100'"
+                          x-text="fila.vip_activos ?? 0"></button>
+                </td>
+                <td class="text-center py-2.5 px-2">
+                  <button @click="$dispatch('abrir-panorama', {vendedor: fila.NOMBRE_VENDEDOR, horizonte: 'P2', cia: {{ $cia }}})"
+                          class="font-bold px-1.5 py-0.5 rounded transition cursor-pointer"
+                          :class="(fila.urgentes||0)>0 ? 'text-amber-700 bg-amber-50 hover:bg-amber-100' : 'text-slate-300 bg-slate-50 hover:bg-slate-100'"
+                          x-text="fila.urgentes ?? 0"></button>
+                </td>
+                <td class="text-center py-2.5 px-2">
+                  <button @click="$dispatch('abrir-panorama', {vendedor: fila.NOMBRE_VENDEDOR, horizonte: 'P3', cia: {{ $cia }}})"
+                          class="font-bold px-1.5 py-0.5 rounded transition cursor-pointer"
+                          :class="(fila.rescate||0)>0 ? 'text-red-600 bg-red-50 hover:bg-red-100' : 'text-slate-300 bg-slate-50 hover:bg-slate-100'"
+                          x-text="fila.rescate ?? 0"></button>
+                </td>
+                <td class="text-center py-2.5 px-2">
+                  <button @click="$dispatch('abrir-panorama', {vendedor: fila.NOMBRE_VENDEDOR, horizonte: 'P4', cia: {{ $cia }}})"
+                          class="font-bold px-1.5 py-0.5 rounded transition cursor-pointer"
+                          :class="(fila.reactivacion||0)>0 ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100' : 'text-slate-300 bg-slate-50 hover:bg-slate-100'"
+                          x-text="fila.reactivacion ?? 0"></button>
+                </td>
                 <td class="text-right py-2.5 pl-4 text-slate-600 whitespace-nowrap font-medium" x-text="fmt(fila.facturacion_total)"></td>
                 <td class="text-right py-2.5 pl-3 text-amber-600 whitespace-nowrap font-semibold" x-text="fmt(fila.valor_en_riesgo)"></td>
                 <td class="text-right py-2.5 pl-2 pr-3" :class="(parseFloat(fila.porc_riesgo)||0)>=40?'text-red-600 font-bold':((parseFloat(fila.porc_riesgo)||0)>=20?'text-amber-600 font-semibold':'text-slate-500')" x-text="(parseFloat(fila.porc_riesgo)||0).toFixed(1)+'%'"></td>
@@ -509,9 +529,227 @@
 
 </div>
 
+{{-- ===== Modal detalle clientes por vendedor/horizonte ===== --}}
+<div
+  x-data="panoramaModalCtrl()"
+  @abrir-panorama.window="abrir($event.detail)"
+  x-show="abierto"
+  x-transition:enter="transition ease-out duration-250"
+  x-transition:enter-start="opacity-0 scale-95"
+  x-transition:enter-end="opacity-100 scale-100"
+  x-transition:leave="transition ease-in duration-150"
+  x-transition:leave-start="opacity-100 scale-100"
+  x-transition:leave-end="opacity-0 scale-95"
+  class="fixed inset-0 z-50 flex items-center justify-center p-6"
+  style="display:none">
+
+  {{-- Fondo oscuro --}}
+  <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" @click="cerrar()"></div>
+
+  {{-- Panel --}}
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
+
+    {{-- Header con gradiente según categoría --}}
+    <div :class="{
+      'from-emerald-600 to-emerald-500': horizonte==='P1',
+      'from-amber-500   to-amber-400':   horizonte==='P2',
+      'from-red-600     to-red-500':     horizonte==='P3',
+      'from-indigo-600  to-indigo-500':  horizonte==='P4',
+    }" class="bg-gradient-to-r px-8 py-6 flex items-center justify-between gap-4">
+
+      {{-- Ícono + textos --}}
+      <div class="flex items-center gap-5 min-w-0">
+        <div class="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+          {{-- P1 VIP: estrella --}}
+          <svg x-show="horizonte==='P1'" class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          {{-- P2 Urgente: triángulo de alerta --}}
+          <svg x-show="horizonte==='P2'" class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
+          {{-- P3 Rescate: salvavidas --}}
+          <svg x-show="horizonte==='P3'" class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke-width="2"/>
+            <circle cx="12" cy="12" r="4"  stroke-width="2"/>
+            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" stroke-width="2" stroke-linecap="round"/>
+            <line x1="16.24" y1="16.24" x2="19.07" y2="19.07" stroke-width="2" stroke-linecap="round"/>
+            <line x1="4.93" y1="19.07" x2="7.76" y2="16.24" stroke-width="2" stroke-linecap="round"/>
+            <line x1="16.24" y1="7.76" x2="19.07" y2="4.93" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          {{-- P4 Reactivación: rayo --}}
+          <svg x-show="horizonte==='P4'" class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <p class="text-white/70 text-xs font-semibold uppercase tracking-widest"
+             x-text="etiquetas[horizonte]?.categoria ?? ''"></p>
+          <h3 class="text-white font-bold text-xl leading-tight truncate mt-0.5"
+              x-text="vendedor"></h3>
+          <div class="mt-2 flex items-center gap-2">
+            <span x-show="!cargando && !error"
+                  class="inline-flex items-center gap-1.5 bg-white/25 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20H7a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6M9 8h6M9 16h4"/>
+              </svg>
+              <span x-text="clientes.length + ' cliente' + (clientes.length !== 1 ? 's' : '')"></span>
+            </span>
+            <span x-show="cargando" class="text-white/70 text-sm">Cargando...</span>
+          </div>
+        </div>
+      </div>
+
+      {{-- Botón cerrar --}}
+      <button @click="cerrar()"
+              class="flex-shrink-0 text-white/70 hover:text-white hover:bg-white/15 transition p-2 rounded-xl">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    {{-- Cuerpo scrolleable --}}
+    <div class="flex-1 overflow-y-auto">
+
+      {{-- Spinner --}}
+      <div x-show="cargando" class="flex flex-col items-center justify-center py-24 gap-3">
+        <svg class="animate-spin w-9 h-9 text-slate-300" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+        </svg>
+        <p class="text-slate-400 text-sm">Consultando ERP...</p>
+      </div>
+
+      {{-- Error --}}
+      <div x-show="error && !cargando" class="flex flex-col items-center justify-center py-24 gap-3">
+        <svg class="w-10 h-10 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        <p class="text-red-400 text-sm font-medium" x-text="error"></p>
+      </div>
+
+      {{-- Tabla de clientes --}}
+      <div x-show="!cargando && !error && clientes.length > 0">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b-2 border-slate-100 bg-slate-50/80 sticky top-0">
+              <th class="text-left py-3.5 px-8 text-xs font-semibold text-slate-400 uppercase tracking-wider">Cliente</th>
+              <th class="text-right py-3.5 px-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Fact. {{ now()->year }}</th>
+              <th class="text-right py-3.5 px-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Fact. {{ now()->year - 1 }}</th>
+              <th class="text-center py-3.5 px-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Días sin comprar</th>
+              <th class="text-left py-3.5 px-5 pr-8 text-xs font-semibold text-slate-400 uppercase tracking-wider">Acción sugerida</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-50">
+            <template x-for="(c, i) in clientes" :key="i">
+              <tr class="hover:bg-slate-50/60 transition-colors">
+
+                {{-- Cliente: nombre + NIT + ciudad --}}
+                <td class="py-4 px-8">
+                  <p class="font-semibold text-slate-800 text-sm leading-snug" x-text="c.RAZON_SOCIAL"></p>
+                  <p class="text-slate-400 text-xs mt-0.5 font-mono">
+                    <span x-text="c.NIT"></span>
+                    <template x-if="c.CIUDAD">
+                      <span class="not-italic font-sans"> · <span x-text="c.CIUDAD"></span></span>
+                    </template>
+                  </p>
+                </td>
+
+                {{-- Facturado año actual --}}
+                <td class="py-4 px-5 text-right whitespace-nowrap">
+                  <p class="font-semibold text-slate-800 text-sm" x-text="fmt(c.FACTURADO_ANIO_ACTUAL)"></p>
+                  <p class="text-xs mt-0.5"
+                     :class="(parseFloat(c.FACTURADO_ANIO_ACTUAL)||0) >= (parseFloat(c.FACTURADO_ANIO_ANTERIOR)||0) ? 'text-emerald-500' : 'text-red-400'"
+                     x-text="(parseFloat(c.FACTURADO_ANIO_ACTUAL)||0) >= (parseFloat(c.FACTURADO_ANIO_ANTERIOR)||0) ? '▲ vs año ant.' : '▼ vs año ant.'">
+                  </p>
+                </td>
+
+                {{-- Facturado año anterior --}}
+                <td class="py-4 px-5 text-right whitespace-nowrap">
+                  <p class="text-slate-400 text-sm" x-text="fmt(c.FACTURADO_ANIO_ANTERIOR)"></p>
+                </td>
+
+                {{-- Días sin comprar --}}
+                <td class="py-4 px-5 text-center">
+                  <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold"
+                        :class="{
+                          'bg-red-50 text-red-600':     (c.DIAS_DESDE_ULTIMA_COMPRA||0) > 180,
+                          'bg-amber-50 text-amber-600': (c.DIAS_DESDE_ULTIMA_COMPRA||0) > 90 && (c.DIAS_DESDE_ULTIMA_COMPRA||0) <= 180,
+                          'bg-emerald-50 text-emerald-600': (c.DIAS_DESDE_ULTIMA_COMPRA||0) <= 90,
+                        }"
+                        x-text="c.DIAS_DESDE_ULTIMA_COMPRA != null ? c.DIAS_DESDE_ULTIMA_COMPRA + 'd' : '—'">
+                  </span>
+                </td>
+
+                {{-- Acción sugerida --}}
+                <td class="py-4 px-5 pr-8">
+                  <p class="text-slate-500 text-sm leading-snug" x-text="c.ACCION_PRESUPUESTAL || '—'"></p>
+                </td>
+
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+
+      {{-- Sin resultados --}}
+      <div x-show="!cargando && !error && clientes.length === 0"
+           class="flex flex-col items-center justify-center py-24 gap-3">
+        <svg class="w-10 h-10 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6M9 16h4M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z"/>
+        </svg>
+        <p class="text-slate-400 text-sm">No hay clientes en esta categoría.</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
+function panoramaModalCtrl() {
+  return {
+    abierto: false,
+    cargando: false,
+    vendedor: '',
+    horizonte: '',
+    cia: 0,
+    clientes: [],
+    error: null,
+    etiquetas: {
+      P1: { categoria: 'VIP · Presupuesto Activo'            },
+      P2: { categoria: 'Urgente · Presupuesto en Riesgo'     },
+      P3: { categoria: 'Rescate · Recuperar cliente'         },
+      P4: { categoria: 'Reactivación · Fuera de Presupuesto' },
+    },
+    async abrir({ vendedor, horizonte, cia }) {
+      this.vendedor  = vendedor;
+      this.horizonte = horizonte;
+      this.cia       = cia ?? 0;
+      this.abierto   = true;
+      this.cargando  = true;
+      this.clientes  = [];
+      this.error     = null;
+      try {
+        const url = `/gerencial/clientes-panorama?vendedor=${encodeURIComponent(vendedor)}&horizonte=${horizonte}&cia=${this.cia}`;
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        this.clientes = Array.isArray(data) ? data : [];
+      } catch {
+        this.error = 'No se pudo cargar la información. Intenta de nuevo.';
+      } finally {
+        this.cargando = false;
+      }
+    },
+    cerrar() { this.abierto = false; this.clientes = []; this.error = null; },
+    fmt(n)   { return '$' + (parseFloat(n) || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 }); },
+  };
+}
+
 function sortableTable(items, pageSize = 10) {
   return {
     all: items,

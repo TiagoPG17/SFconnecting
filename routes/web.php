@@ -6,6 +6,7 @@ use App\Http\Controllers\Web\AuditoriaWebController;
 use App\Http\Controllers\Web\AuthWebController;
 use App\Http\Controllers\Web\ClienteWebController;
 use App\Http\Controllers\Web\ClientesHuerfanosWebController;
+use App\Http\Controllers\Web\CalendarioWebController;
 use App\Http\Controllers\Web\DashboardWebController;
 use App\Http\Controllers\Web\MaestroWebController;
 use App\Http\Controllers\Web\NegocioWebController;
@@ -42,6 +43,11 @@ Route::middleware(['auth'])->group(function () {
     // Dashboards especializados
     Route::get('/mi-desempeno', [DashboardWebController::class, 'vendedor'])->name('dash.vendedor')->middleware('role:comercial|admin');
     Route::get('/gerencial',    [DashboardWebController::class, 'gerencial'])->name('dash.gerencial')->middleware('role:gerente|admin');
+    Route::get('/gerencial/clientes-panorama', [DashboardWebController::class, 'clientesPanorama'])->name('gerencial.clientes-panorama')->middleware('role:gerente|admin');
+
+    // Calendario
+    Route::get('/calendario', [CalendarioWebController::class, 'index'])->name('calendario.index');
+    Route::get('/calendario/eventos', [CalendarioWebController::class, 'eventos'])->name('calendario.eventos');
 
     // Prospectos — estáticas antes del wildcard
     Route::get('/prospectos/kanban',           [ProspectoWebController::class, 'kanban'])->name('prospectos.kanban');

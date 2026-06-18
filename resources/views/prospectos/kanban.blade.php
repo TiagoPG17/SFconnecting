@@ -1,4 +1,12 @@
 <x-layouts.app title="Pipeline de Prospectos">
+
+<style>
+.kanban-board::-webkit-scrollbar        { height: 12px; }
+.kanban-board::-webkit-scrollbar-track  { background: #e2e8f0; border-radius: 9999px; margin: 0 4px; }
+.kanban-board::-webkit-scrollbar-thumb  { background: #64748b; border-radius: 9999px; border: 2px solid #e2e8f0; }
+.kanban-board::-webkit-scrollbar-thumb:hover { background: #334155; }
+.kanban-board { scrollbar-width: auto; scrollbar-color: #64748b #e2e8f0; }
+</style>
     <x-slot name="actions">
         <x-ui.button href="{{ route('prospectos.index') }}" variant="ghost" size="sm">
             <x-ui.icon name="list" class="w-4 h-4"/> Lista
@@ -18,7 +26,7 @@
                 if (!r.success) $store.toast.error(r.message ?? 'Error al mover');
             }
         }"
-        class="flex gap-4 overflow-x-auto pb-4"
+        class="kanban-board flex gap-4 overflow-x-auto pb-4"
         style="min-height: calc(100vh - 10rem);"
     >
         @foreach($columnas as $columna)

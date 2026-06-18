@@ -46,12 +46,14 @@
 @php
     $huerfanosJs = array_map(function ($c) {
         return [
-            'NIT'                    => $c['NIT'] ?? '',
-            'RAZON_SOCIAL'           => $c['RAZON_SOCIAL'] ?? '',
-            'CIUDAD'                 => $c['CIUDAD'] ?? '',
-            'VLR_NETO_FACTURADO'     => (float) ($c['VLR_NETO_FACTURADO'] ?? 0),
+            'NIT'                      => $c['NIT'] ?? '',
+            'RAZON_SOCIAL'             => $c['RAZON_SOCIAL'] ?? '',
+            'CIUDAD'                   => $c['CIUDAD'] ?? '',
+            'NOMBRE_VENDEDOR'          => $c['NOMBRE_VENDEDOR'] ?? '',
+            'MOTIVO_HUERFANO'          => $c['MOTIVO_HUERFANO'] ?? 'Sin vendedor',
+            'VLR_NETO_FACTURADO'       => (float) ($c['VLR_NETO_FACTURADO'] ?? 0),
             'DIAS_DESDE_ULTIMA_COMPRA' => (int) ($c['DIAS_DESDE_ULTIMA_COMPRA'] ?? 0),
-            'ULTIMA_FACTURA'         => $c['ULTIMA_FACTURA'] ? \Carbon\Carbon::parse($c['ULTIMA_FACTURA'])->format('d/m/Y') : '',
+            'ULTIMA_FACTURA'           => $c['ULTIMA_FACTURA'] ? \Carbon\Carbon::parse($c['ULTIMA_FACTURA'])->format('d/m/Y') : '',
         ];
     }, $huerfanos);
 @endphp
@@ -82,6 +84,12 @@
                     <th class="px-5 py-3 text-right cursor-pointer select-none hover:text-slate-800 transition-colors" @click="sortOn('VLR_NETO_FACTURADO')">
                         Facturación histórica <span x-text="arrow('VLR_NETO_FACTURADO')"></span>
                     </th>
+                    <th class="px-5 py-3 cursor-pointer select-none hover:text-slate-800 transition-colors" @click="sortOn('NOMBRE_VENDEDOR')">
+                        Último vendedor <span x-text="arrow('NOMBRE_VENDEDOR')"></span>
+                    </th>
+                    <th class="px-5 py-3 cursor-pointer select-none hover:text-slate-800 transition-colors" @click="sortOn('MOTIVO_HUERFANO')">
+                        Motivo <span x-text="arrow('MOTIVO_HUERFANO')"></span>
+                    </th>
                     <th class="px-5 py-3 text-center cursor-pointer select-none hover:text-slate-800 transition-colors" @click="sortOn('DIAS_DESDE_ULTIMA_COMPRA')">
                         Días sin comprar <span x-text="arrow('DIAS_DESDE_ULTIMA_COMPRA')"></span>
                     </th>
@@ -94,7 +102,7 @@
             <tbody class="divide-y divide-slate-100">
                 <template x-if="filtered.length === 0">
                     <tr>
-                        <td colspan="6" class="px-5 py-10 text-center text-sm text-slate-400">
+                        <td colspan="8" class="px-5 py-10 text-center text-sm text-slate-400">
                             Sin resultados para "<span x-text="search"></span>"
                         </td>
                     </tr>
@@ -106,6 +114,16 @@
                             <p class="text-xs text-slate-400 font-mono mt-0.5" x-text="c.NIT"></p>
                         </td>
                         <td class="px-5 py-4 text-slate-500 text-xs" x-text="c.CIUDAD || '—'"></td>
+                        <td class="px-5 py-4 text-xs text-slate-500" x-text="c.NOMBRE_VENDEDOR || '—'"></td>
+                        <td class="px-5 py-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+                                  :class="{
+                                      'bg-red-100 text-red-700':    c.MOTIVO_HUERFANO === 'Sin vendedor',
+                                      'bg-amber-100 text-amber-700': c.MOTIVO_HUERFANO === 'Vendedor inactivo',
+                                  }"
+                                  x-text="c.MOTIVO_HUERFANO">
+                            </span>
+                        </td>
                         <td class="px-5 py-4 text-right font-semibold text-slate-800"
                             x-text="'$' + c.VLR_NETO_FACTURADO.toLocaleString('es-CO', {maximumFractionDigits:0})"></td>
                         <td class="px-5 py-4 text-center">
