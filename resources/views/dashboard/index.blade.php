@@ -119,9 +119,9 @@
             </div>
         </x-ui.card>
 
-        {{-- Conversión Lead → Cliente --}}
+        {{-- Conversión Prospecto → Cliente --}}
         <x-ui.card class="p-5">
-            <h3 class="text-sm font-semibold text-slate-700 mb-4">Conversión Lead → Cliente</h3>
+            <h3 class="text-sm font-semibold text-slate-700 mb-4">Conversión Prospecto → Cliente</h3>
 
             {{-- Donut visual --}}
             <div class="flex flex-col items-center py-2 mb-4">

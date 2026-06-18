@@ -72,7 +72,8 @@ class ProspectoWebController extends Controller
     {
         $this->authorize('viewAny', Prospecto::class);
 
-        $columnas = $this->repo->kanbanPorTipo('prospecto');
+        $asesorId = auth()->user()->hasRole('comercial') ? auth()->id() : null;
+        $columnas = $this->repo->kanbanPorTipo('prospecto', $asesorId);
 
         return view('prospectos.kanban', compact('columnas'));
     }

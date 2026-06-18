@@ -38,7 +38,7 @@ interface ERPRepositoryInterface
 
     public function countClientesHuerfanos(int $compania, array $nitsExcluir = []): int;
 
-    public function clientesHuerfanos(int $compania, array $nitsExcluir = [], int $limite = 100): array;
+    public function clientesHuerfanos(int $compania, array $nitsExcluir = [], int $porPagina = 50, int $offset = 0): array;
 
     public function clientesPorVendedorYHorizonte(
         string $vendedor,

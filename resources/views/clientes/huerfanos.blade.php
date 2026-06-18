@@ -5,7 +5,7 @@
         <div>
             <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Clientes huérfanos</h2>
             <p class="text-xs text-slate-400 mt-0.5">
-                Clientes de Contiflex sin asesor asignado · CIA {{ $compania }}
+                Clientes de Contiflex sin compra en más de 365 días · CIA {{ $compania }}
                 @if($esAsesor) <span class="text-blue-500">(solo tu compañía)</span> @endif
             </p>
         </div>
@@ -118,8 +118,8 @@
                         <td class="px-5 py-4">
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
                                   :class="{
-                                      'bg-red-100 text-red-700':    c.MOTIVO_HUERFANO === 'Sin vendedor',
-                                      'bg-amber-100 text-amber-700': c.MOTIVO_HUERFANO === 'Vendedor inactivo',
+                                      'bg-red-100 text-red-700':   c.MOTIVO_HUERFANO === 'Sin vendedor',
+                                      'bg-blue-100 text-blue-700': c.MOTIVO_HUERFANO === 'Con vendedor',
                                   }"
                                   x-text="c.MOTIVO_HUERFANO">
                             </span>
@@ -155,9 +155,84 @@
         </table>
 
         <div class="px-5 py-2 border-t border-slate-100 text-xs text-slate-400" x-show="search">
-            <span x-text="filtered.length"></span> resultado(s) encontrado(s)
+            <span x-text="filtered.length"></span> resultado(s) en esta página
         </div>
     </x-ui.card>
+
+    {{-- Paginación --}}
+    @if($totalPaginas > 1)
+    <div class="mt-4 flex items-center justify-between">
+        <p class="text-xs text-slate-400">
+            Página {{ $pagina }} de {{ $totalPaginas }}
+            · {{ $totalHuerfanos }} clientes en total
+        </p>
+        <div class="flex items-center gap-1">
+            {{-- Anterior --}}
+            @if($pagina > 1)
+                <a href="{{ request()->fullUrlWithQuery(['page' => $pagina - 1]) }}"
+                   class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    Anterior
+                </a>
+            @else
+                <span class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-100 text-slate-300 cursor-not-allowed">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    Anterior
+                </span>
+            @endif
+
+            {{-- Números de página --}}
+            @php
+                $desde = max(1, $pagina - 2);
+                $hasta = min($totalPaginas, $pagina + 2);
+            @endphp
+            @if($desde > 1)
+                <a href="{{ request()->fullUrlWithQuery(['page' => 1]) }}"
+                   class="inline-flex items-center justify-center w-8 h-8 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">1</a>
+                @if($desde > 2)
+                    <span class="px-1 text-slate-300 text-xs">…</span>
+                @endif
+            @endif
+            @for($i = $desde; $i <= $hasta; $i++)
+                @if($i === $pagina)
+                    <span class="inline-flex items-center justify-center w-8 h-8 text-xs rounded-lg bg-blue-600 text-white font-semibold">{{ $i }}</span>
+                @else
+                    <a href="{{ request()->fullUrlWithQuery(['page' => $i]) }}"
+                       class="inline-flex items-center justify-center w-8 h-8 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">{{ $i }}</a>
+                @endif
+            @endfor
+            @if($hasta < $totalPaginas)
+                @if($hasta < $totalPaginas - 1)
+                    <span class="px-1 text-slate-300 text-xs">…</span>
+                @endif
+                <a href="{{ request()->fullUrlWithQuery(['page' => $totalPaginas]) }}"
+                   class="inline-flex items-center justify-center w-8 h-8 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">{{ $totalPaginas }}</a>
+            @endif
+
+            {{-- Siguiente --}}
+            @if($pagina < $totalPaginas)
+                <a href="{{ request()->fullUrlWithQuery(['page' => $pagina + 1]) }}"
+                   class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                    Siguiente
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            @else
+                <span class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-100 text-slate-300 cursor-not-allowed">
+                    Siguiente
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </span>
+            @endif
+        </div>
+    </div>
+    @endif
 </div>
 
 <script>

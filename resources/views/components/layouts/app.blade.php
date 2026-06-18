@@ -80,7 +80,7 @@
                 Dashboard
             </x-ui.nav-item>
             @endrole
-            @role('comercial')
+            @role('comercial|admin')
             <x-ui.nav-item href="{{ route('dash.vendedor') }}" :active="request()->routeIs('dash.vendedor')" icon="trending-up">
                 Mi desempeño
             </x-ui.nav-item>
@@ -152,6 +152,9 @@
             <x-ui.nav-item href="{{ route('auditoria.index') }}" :active="request()->routeIs('auditoria.*')" icon="shield">
                 Auditoría
             </x-ui.nav-item>
+            <x-ui.nav-item href="{{ route('admin.gestion.index') }}" :active="request()->routeIs('admin.gestion.*')" icon="trash">
+                Gestión registros
+            </x-ui.nav-item>
             @endrole
 
         </nav>
@@ -220,8 +223,8 @@
                 <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
                     <div class="relative">
                         <button @click="open = !open" title="Notificaciones"
-                                class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors">
-                            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                                class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-500 hover:bg-amber-100 hover:text-amber-600 transition-colors">
+                            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                             </svg>
                         </button>

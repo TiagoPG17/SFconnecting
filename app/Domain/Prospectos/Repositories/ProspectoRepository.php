@@ -93,19 +93,26 @@ class ProspectoRepository implements ProspectoRepositoryInterface
             ->get();
     }
 
-    public function kanbanPorTipo(string $tipo): array
+    public function kanbanPorTipo(string $tipo, ?int $asesorId = null): array
     {
         $estados = PipelineEstado::where('tipo', $tipo)
             ->where('activo', true)
             ->orderBy('orden')
             ->get();
 
-        return $estados->map(function (PipelineEstado $estado) {
+        return $estados->map(function (PipelineEstado $estado) use ($asesorId) {
+            $prospectos = Prospecto::where('estado_pipeline_id', $estado->id)
+                ->where('activo', true)
+                ->when($asesorId, fn ($q) => $q->where('asesor_id', $asesorId))
+                ->with(['prioridad', 'asesor'])
+                ->orderBy('created_at')
+                ->get();
+
             return [
                 'estado'     => $estado,
-                'prospectos' => $this->porEstado($estado->id),
-                'total'      => $this->porEstado($estado->id)->count(),
-                'valor'      => $this->porEstado($estado->id)->sum('valor_estimado'),
+                'prospectos' => $prospectos,
+                'total'      => $prospectos->count(),
+                'valor'      => $prospectos->sum('valor_estimado'),
             ];
         })->toArray();
     }

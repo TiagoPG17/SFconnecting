@@ -27,7 +27,7 @@ class ClienteWebController extends Controller
         private readonly DashboardVendedorRepositoryInterface $vendedorRepo,
     ) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
         $this->authorize('viewAny', Cliente::class);
 
@@ -39,6 +39,10 @@ class ClienteWebController extends Controller
 
         $filtros  = $request->only(['estado', 'buscar']);
         $clientes = $this->repo->paginar($filtros);
+
+        if ($request->wantsJson()) {
+            return response()->json($this->clientesAJson($clientes));
+        }
 
         return view('clientes.index', ['clientes' => $clientes, 'esModoErp' => false]);
     }
@@ -146,12 +150,16 @@ class ClienteWebController extends Controller
         }
     }
 
-    private function indexComercial(Request $request, int $userId): View
+    private function indexComercial(Request $request, int $userId): View|JsonResponse
     {
         $nombreVendedor = $this->vendedorRepo->nombreVendedorSiesa($userId);
 
         $filtros  = array_merge($request->only(['buscar']), ['user_id' => $userId]);
         $clientes = $this->repo->paginar($filtros);
+
+        if ($request->wantsJson()) {
+            return response()->json($this->clientesAJson($clientes));
+        }
 
         return view('clientes.index', [
             'clientes'      => $clientes,
@@ -159,6 +167,30 @@ class ClienteWebController extends Controller
             'esComercial'   => true,
             'sinMapeoErp'   => $nombreVendedor === null,
         ]);
+    }
+
+    private function clientesAJson(\Illuminate\Pagination\LengthAwarePaginator $paginador): array
+    {
+        return [
+            'items' => $paginador->map(fn ($c) => [
+                'id'          => $c->id,
+                'razon_social'=> $c->razon_social,
+                'nit'         => $c->nit,
+                'email'       => $c->email ?? '',
+                'telefono'    => $c->telefono ?? '',
+                'ciudad'      => $c->ciudad ?? '',
+                'estado'      => $c->estado,
+                'asesor'      => $c->asesor?->name ?? '—',
+                'url_show'    => route('clientes.show', $c),
+                'url_edit'    => route('clientes.edit', $c),
+            ])->values()->toArray(),
+            'meta' => [
+                'total'        => $paginador->total(),
+                'current_page' => $paginador->currentPage(),
+                'last_page'    => $paginador->lastPage(),
+                'per_page'     => $paginador->perPage(),
+            ],
+        ];
     }
 
     private function consultarErp(string $nit): ?array

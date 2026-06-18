@@ -34,16 +34,25 @@ class ClientesHuerfanosWebController extends Controller
         $huerfanos      = [];
         $totalHuerfanos = 0;
         $erpDisponible  = false;
+        $porPagina      = 50;
+        $pagina         = max(1, (int) $request->query('page', 1));
 
         try {
             if ($this->erp->isAvailable()) {
                 $erpDisponible  = true;
                 $totalHuerfanos = $this->erp->countClientesHuerfanos($compania, $nitsEnCrm);
-                $huerfanos      = $this->erp->clientesHuerfanos($compania, $nitsEnCrm, 150);
+                $offset         = ($pagina - 1) * $porPagina;
+                $huerfanos      = $this->erp->clientesHuerfanos($compania, $nitsEnCrm, $porPagina, $offset);
             }
         } catch (\Throwable) {}
 
-        return view('clientes.huerfanos', compact('huerfanos', 'totalHuerfanos', 'erpDisponible', 'compania', 'esAsesor'));
+        $totalPaginas = $totalHuerfanos > 0 ? (int) ceil($totalHuerfanos / $porPagina) : 1;
+        $pagina       = min($pagina, $totalPaginas);
+
+        return view('clientes.huerfanos', compact(
+            'huerfanos', 'totalHuerfanos', 'erpDisponible',
+            'compania', 'esAsesor', 'pagina', 'totalPaginas', 'porPagina'
+        ));
     }
 
     public function reclamar(Request $request, string $nit): RedirectResponse

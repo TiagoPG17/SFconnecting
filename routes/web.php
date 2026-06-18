@@ -15,6 +15,8 @@ use App\Http\Controllers\Web\ReporteWebController;
 use App\Http\Controllers\Web\SeguimientoWebController;
 use App\Http\Controllers\Web\MapeoVendedorWebController;
 use App\Http\Controllers\Web\PresupuestoWebController;
+use App\Http\Controllers\Web\AdminGestionWebController;
+use App\Http\Controllers\Web\ContactoWebController;
 use App\Http\Controllers\Web\UsuarioWebController;
 use Illuminate\Support\Facades\Route;
 
@@ -64,6 +66,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/negocios',                  [NegocioWebController::class, 'index'])->name('negocios.index');
 
     // Clientes huérfanos (todos los roles)
+    Route::patch('/contactos/{contacto}/toggle', [ContactoWebController::class, 'toggle'])->name('contactos.toggle');
+
     Route::get('/clientes-huerfanos', [ClientesHuerfanosWebController::class, 'index'])->name('clientes-huerfanos.index');
     Route::post('/clientes-huerfanos/{nit}/reclamar', [ClientesHuerfanosWebController::class, 'reclamar'])->name('clientes-huerfanos.reclamar');
 
@@ -96,6 +100,19 @@ Route::middleware(['auth'])->group(function () {
 
     // Auditoría (admin only)
     Route::get('/auditoria', [AuditoriaWebController::class, 'index'])->name('auditoria.index')->middleware('role:admin');
+
+    // Gestión de registros (admin only)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/admin/gestion', [AdminGestionWebController::class, 'index'])->name('admin.gestion.index');
+
+        Route::patch('/admin/gestion/negocios/{negocio}/toggle',   [AdminGestionWebController::class, 'toggleNegocio'])->name('admin.gestion.negocios.toggle');
+        Route::delete('/admin/gestion/negocios/{negocio}',         [AdminGestionWebController::class, 'destroyNegocio'])->name('admin.gestion.negocios.destroy');
+        Route::patch('/admin/gestion/negocios/{id}/restore',       [AdminGestionWebController::class, 'restoreNegocio'])->name('admin.gestion.negocios.restore');
+
+        Route::patch('/admin/gestion/prospectos/{prospecto}/toggle', [AdminGestionWebController::class, 'toggleProspecto'])->name('admin.gestion.prospectos.toggle');
+        Route::delete('/admin/gestion/prospectos/{prospecto}',       [AdminGestionWebController::class, 'destroyProspecto'])->name('admin.gestion.prospectos.destroy');
+        Route::patch('/admin/gestion/prospectos/{id}/restore',       [AdminGestionWebController::class, 'restoreProspecto'])->name('admin.gestion.prospectos.restore');
+    });
 
     // Usuarios (admin only)
     Route::get('/usuarios/create',        [UsuarioWebController::class, 'create'])->name('usuarios.create');

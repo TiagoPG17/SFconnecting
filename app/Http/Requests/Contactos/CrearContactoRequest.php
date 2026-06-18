@@ -22,9 +22,9 @@ class CrearContactoRequest extends FormRequest
     {
         return [
             'nombre'    => ['required', 'string', 'max:255'],
-            'cargo'     => ['nullable', 'string', 'max:100'],
-            'email'     => ['nullable', 'email', 'max:255'],
-            'telefono'  => ['nullable', 'string', 'max:20'],
+            'cargo'     => ['required', 'string', 'max:100'],
+            'email'     => ['required', 'email', 'max:255'],
+            'telefono'  => ['required', 'string', 'max:20'],
             'principal' => ['nullable', 'boolean'],
         ];
     }
@@ -32,8 +32,11 @@ class CrearContactoRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'nombre.required' => 'El nombre del contacto es obligatorio.',
-            'email.email'     => 'El correo electrónico no es válido.',
+            'nombre.required'   => 'El nombre del contacto es obligatorio.',
+            'cargo.required'    => 'El cargo es obligatorio.',
+            'email.required'    => 'El correo electrónico es obligatorio.',
+            'email.email'       => 'El correo electrónico no es válido.',
+            'telefono.required' => 'El teléfono es obligatorio.',
         ];
     }
 }

@@ -101,7 +101,7 @@
     </div>
     <div class="dash-card p-4">
       <p class="text-xs text-slate-500">Cumplimiento</p>
-      <p class="text-2xl font-bold mt-1 tnum text-slate-900" x-text="totales.cumplimiento+'%'"></p>
+      <p class="text-2xl font-bold mt-1 tnum text-slate-900" x-text="Math.min(totales.cumplimiento, 100).toFixed(1)+'%'"></p>
     </div>
     <div class="dash-card p-4">
       <p class="text-xs text-slate-500">Pipeline activo</p>
@@ -142,7 +142,7 @@
                 <td class="py-2.5 text-right tnum text-slate-800" x-text="moneyShort(v.logrado_ytd)"></td>
                 <td class="py-2.5 text-right tnum">
                   <span class="px-2 py-0.5 rounded-full text-xs font-medium"
-                        :style="semaforoStyle(v.cumpl)" x-text="v.cumpl+'%'"></span>
+                        :style="semaforoStyle(Math.min(v.cumpl,100))" x-text="Math.min(parseFloat(v.cumpl)||0, 100).toFixed(1)+'%'"></span>
                 </td>
                 <td class="py-2.5">
                   <div class="h-2 rounded-full overflow-hidden bg-slate-100">
@@ -813,7 +813,7 @@ function dashGerencial(){
       const pr = this.vendedores.reduce((s,v)=>s+v.presupuesto_anual,0);
       const lo = this.vendedores.reduce((s,v)=>s+v.logrado_ytd,0);
       const fc = this.vendedores.reduce((s,v)=>s+v.forecast_pipeline,0);
-      return { presupuesto:pr, logrado:lo, cumplimiento: pr>0?Math.round(lo/pr*100):0, forecast:lo+fc };
+      return { presupuesto:pr, logrado:lo, cumplimiento: pr>0?parseFloat(Math.min(lo/pr*100,100).toFixed(1)):0, forecast:lo+fc };
     },
     get valorEnRiesgo(){ return this.churn.filter(b=>b.banda>='2').reduce((s,b)=>s+Number(b.valor_en_banda),0) },
     get maxCiclo(){ return this.ciclo.length ? Math.max(...this.ciclo.map(c=>c.dias),1) : 1 },

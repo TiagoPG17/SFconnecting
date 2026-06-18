@@ -22,10 +22,12 @@ class Contacto extends Model
         'email',
         'telefono',
         'principal',
+        'activo',
     ];
 
     protected $casts = [
         'principal'  => 'boolean',
+        'activo'     => 'boolean',
         'deleted_at' => 'datetime',
     ];
 

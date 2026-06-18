@@ -26,7 +26,7 @@ interface ProspectoRepositoryInterface
 
     public function porAsesor(int $asesorId): Collection;
 
-    public function kanbanPorTipo(string $tipo): array;
+    public function kanbanPorTipo(string $tipo, ?int $asesorId = null): array;
 
     public function existeEmail(string $email, ?int $exceptoId = null): bool;
 

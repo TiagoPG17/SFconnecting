@@ -171,46 +171,121 @@
             @endif {{-- datosErp --}}
 
             {{-- Contactos --}}
-            <x-ui.card>
-                <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-                    <h3 class="text-sm font-semibold text-slate-900">Contactos</h3>
-                    <x-ui.button variant="ghost" size="xs" @click="$dispatch('open-contacto')">
-                        <x-ui.icon name="plus" class="w-4 h-4"/> Añadir
-                    </x-ui.button>
-                </div>
-                @if($cliente->contactos->isEmpty())
-                    <div class="p-6 text-center text-sm text-slate-400">Sin contactos registrados</div>
-                @else
-                <div class="divide-y divide-slate-100">
-                    @foreach($cliente->contactos as $contacto)
-                    <div class="flex items-center gap-3 px-4 py-3">
-                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-600">
-                            {{ substr($contacto->nombre, 0, 2) }}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2">
-                                <p class="text-sm font-medium text-slate-900">{{ $contacto->nombre }}</p>
-                                @if($contacto->principal)
-                                    <x-ui.badge color="blue" class="text-xs">Principal</x-ui.badge>
-                                @endif
-                            </div>
-                            @if($contacto->cargo)
-                                <p class="text-xs text-slate-500">{{ $contacto->cargo }}</p>
-                            @endif
-                        </div>
-                        <div class="text-right">
-                            @if($contacto->email)
-                                <p class="text-xs text-slate-600">{{ $contacto->email }}</p>
-                            @endif
-                            @if($contacto->telefono)
-                                <p class="text-xs text-slate-400">{{ $contacto->telefono }}</p>
-                            @endif
-                        </div>
+            @php
+                $contactosActivos   = $cliente->contactos->where('activo', true)->values();
+                $contactosInactivos = $cliente->contactos->where('activo', false)->values();
+            @endphp
+            <div class="grid grid-cols-2 gap-4">
+
+                {{-- Card izquierda: vigentes --}}
+                <x-ui.card>
+                    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-slate-900">Contactos vigentes</h3>
+                        <x-ui.button variant="ghost" size="xs" @click="$dispatch('open-contacto')">
+                            <x-ui.icon name="plus" class="w-4 h-4"/> Añadir
+                        </x-ui.button>
                     </div>
-                    @endforeach
-                </div>
-                @endif
-            </x-ui.card>
+                    @if($contactosActivos->isEmpty())
+                        <div class="p-6 text-center text-sm text-slate-400">Sin contactos activos</div>
+                    @else
+                    <div x-data="{ p: 1 }">
+                        <div class="divide-y divide-slate-100">
+                            @foreach($contactosActivos as $i => $contacto)
+                            <div x-show="p === {{ floor($i / 3) + 1 }}">
+                                <div class="px-4 py-3">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                                                <p class="text-sm font-semibold text-slate-800 truncate">{{ $contacto->nombre }}</p>
+                                                @if($contacto->principal)
+                                                    <span class="flex-shrink-0 px-1.5 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 border border-blue-200">Principal</span>
+                                                @endif
+                                            </div>
+                                            @if($contacto->cargo)
+                                                <p class="text-xs text-slate-400 mb-1.5 truncate">{{ $contacto->cargo }}</p>
+                                            @endif
+                                            <div class="flex flex-wrap gap-x-4 gap-y-1">
+                                                @if($contacto->email)
+                                                    <span class="flex items-center gap-1 text-xs text-slate-500 min-w-0">
+                                                        <svg class="w-3.5 h-3.5 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                                        <span class="truncate">{{ $contacto->email }}</span>
+                                                    </span>
+                                                @endif
+                                                @if($contacto->telefono)
+                                                    <span class="flex items-center gap-1 text-xs text-slate-500 flex-shrink-0">
+                                                        <svg class="w-3.5 h-3.5 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                                        {{ $contacto->telefono }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <form method="POST" action="{{ route('contactos.toggle', $contacto) }}" class="flex-shrink-0 mt-0.5">
+                                            @csrf @method('PATCH')
+                                            <button type="submit" class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 border border-slate-200 hover:border-red-200 transition-colors">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                                Desactivar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @if($contactosActivos->count() > 3)
+                        <div class="flex items-center justify-between px-4 py-2 border-t border-slate-100">
+                            <button @click="if(p>1) p--" :disabled="p===1" class="text-xs text-slate-400 hover:text-slate-700 disabled:opacity-30 transition-colors">← Ant</button>
+                            <span class="text-xs text-slate-400" x-text="`${p} / {{ ceil($contactosActivos->count() / 3) }}`"></span>
+                            <button @click="if(p<{{ ceil($contactosActivos->count() / 3) }}) p++" :disabled="p==={{ ceil($contactosActivos->count() / 3) }}" class="text-xs text-slate-400 hover:text-slate-700 disabled:opacity-30 transition-colors">Sig →</button>
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </x-ui.card>
+
+                {{-- Card derecha: inactivos --}}
+                <x-ui.card class="bg-slate-50/60">
+                    <div class="p-4 border-b border-slate-100">
+                        <h3 class="text-sm font-semibold text-slate-400">Contactos inactivos</h3>
+                    </div>
+                    @if($contactosInactivos->isEmpty())
+                        <div class="p-6 text-center text-sm text-slate-300">Ninguno por ahora</div>
+                    @else
+                    <div x-data="{ p: 1 }">
+                        <div class="divide-y divide-slate-100">
+                            @foreach($contactosInactivos as $i => $contacto)
+                            <div x-show="p === {{ floor($i / 3) + 1 }}" class="opacity-60">
+                                <div class="px-4 py-3">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-sm font-medium text-slate-500 line-through truncate">{{ $contacto->nombre }}</p>
+                                            @if($contacto->cargo)
+                                                <p class="text-xs text-slate-400 truncate">{{ $contacto->cargo }}</p>
+                                            @endif
+                                        </div>
+                                        <form method="POST" action="{{ route('contactos.toggle', $contacto) }}" class="flex-shrink-0">
+                                            @csrf @method('PATCH')
+                                            <button type="submit" class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-200 hover:border-emerald-200 transition-colors">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                Reactivar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @if($contactosInactivos->count() > 3)
+                        <div class="flex items-center justify-between px-4 py-2 border-t border-slate-100">
+                            <button @click="if(p>1) p--" :disabled="p===1" class="text-xs text-slate-400 hover:text-slate-700 disabled:opacity-30 transition-colors">← Ant</button>
+                            <span class="text-xs text-slate-400" x-text="`${p} / {{ ceil($contactosInactivos->count() / 3) }}`"></span>
+                            <button @click="if(p<{{ ceil($contactosInactivos->count() / 3) }}) p++" :disabled="p==={{ ceil($contactosInactivos->count() / 3) }}" class="text-xs text-slate-400 hover:text-slate-700 disabled:opacity-30 transition-colors">Sig →</button>
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </x-ui.card>
+
+            </div>
 
             {{-- Timeline seguimientos --}}
             <x-ui.card>
@@ -850,7 +925,7 @@
                     loading = true;
                     const fd = new FormData($el);
                     const body = {};
-                    fd.forEach((v, k) => { if (v !== '') body[k] = v; });
+                    fd.forEach((v, k) => { body[k] = v; });
                     $api('POST', '/api/clientes/{{ $cliente->id }}/contactos', body)
                         .then(r => {
                             if (r.success) { $store.toast.success(r.message ?? 'Contacto añadido'); setTimeout(() => location.reload(), 600); }
@@ -861,11 +936,11 @@
             >
                 <div class="grid grid-cols-2 gap-4">
                     <x-ui.input name="nombre" label="Nombre" required placeholder="Nombre completo"/>
-                    <x-ui.input name="cargo" label="Cargo" placeholder="Cargo o posición"/>
+                    <x-ui.input name="cargo" label="Cargo" required placeholder="Cargo o posición"/>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <x-ui.input name="email" type="email" label="Email"/>
-                    <x-ui.input name="telefono" label="Teléfono"/>
+                    <x-ui.input name="email" type="email" label="Email" required/>
+                    <x-ui.input name="telefono" label="Teléfono" required/>
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="checkbox" name="principal" value="1" id="principal_check"

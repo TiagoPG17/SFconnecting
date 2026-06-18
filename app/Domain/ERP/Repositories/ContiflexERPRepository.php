@@ -459,60 +459,45 @@ class ContiflexERPRepository implements ERPRepositoryInterface
     public function countClientesHuerfanos(int $compania, array $nitsExcluir = []): int
     {
         try {
-            $excluir = implode("','", array_map('addslashes', $nitsExcluir));
-            $whereExcluir = $excluir ? "AND c.NIT NOT IN ('{$excluir}')" : '';
+            $excluir      = implode("','", array_map('addslashes', $nitsExcluir));
+            $whereExcluir = $excluir ? "AND NIT NOT IN ('{$excluir}')" : '';
 
             return (int) DB::connection('erp_contiflex')->selectOne("
                 SELECT COUNT(*) AS total
-                FROM dbo.CRM_Consolidado_Ventas_cliente c
-                LEFT JOIN dbo.vw_CRM_Ventas_por_Vendedor v
-                    ON v.NOMBRE_VENDEDOR = c.NOMBRE_VENDEDOR AND v.COMPANIA = c.COMPANIA
-                WHERE c.COMPANIA = {$compania}
-                  AND c.DIAS_DESDE_ULTIMA_COMPRA >= 365
-                  AND c.VLR_NETO_FACTURADO > 0
+                FROM dbo.CRM_Consolidado_Ventas_cliente
+                WHERE COMPANIA = {$compania}
+                  AND DIAS_DESDE_ULTIMA_COMPRA >= 365
+                  AND VLR_NETO_FACTURADO > 0
                   {$whereExcluir}
-                  AND (
-                      c.NOMBRE_VENDEDOR IS NULL
-                      OR LTRIM(RTRIM(c.NOMBRE_VENDEDOR)) = ''
-                      OR c.NOMBRE_VENDEDOR LIKE '%VACANTE%'
-                      OR v.DIAS_DESDE_ULTIMA_VENTA > 150
-                  )
             ")->total ?? 0;
         } catch (Throwable $e) {
             return 0;
         }
     }
 
-    public function clientesHuerfanos(int $compania, array $nitsExcluir = [], int $limite = 100): array
+    public function clientesHuerfanos(int $compania, array $nitsExcluir = [], int $porPagina = 50, int $offset = 0): array
     {
         try {
-            $excluir = implode("','", array_map('addslashes', $nitsExcluir));
-            $whereExcluir = $excluir ? "AND c.NIT NOT IN ('{$excluir}')" : '';
+            $excluir      = implode("','", array_map('addslashes', $nitsExcluir));
+            $whereExcluir = $excluir ? "AND NIT NOT IN ('{$excluir}')" : '';
 
             return collect(DB::connection('erp_contiflex')->select("
-                SELECT TOP {$limite}
-                    c.NIT, c.RAZON_SOCIAL, c.CIUDAD,
-                    c.NOMBRE_VENDEDOR,
-                    c.VLR_NETO_FACTURADO, c.DIAS_DESDE_ULTIMA_COMPRA, c.ULTIMA_FACTURA,
+                SELECT
+                    NIT, RAZON_SOCIAL, CIUDAD,
+                    NOMBRE_VENDEDOR,
+                    VLR_NETO_FACTURADO, DIAS_DESDE_ULTIMA_COMPRA, ULTIMA_FACTURA,
                     CASE
-                        WHEN c.NOMBRE_VENDEDOR IS NULL OR LTRIM(RTRIM(c.NOMBRE_VENDEDOR)) = '' OR c.NOMBRE_VENDEDOR LIKE '%VACANTE%'
+                        WHEN NOMBRE_VENDEDOR IS NULL OR LTRIM(RTRIM(NOMBRE_VENDEDOR)) = ''
                             THEN 'Sin vendedor'
-                        ELSE 'Vendedor inactivo'
+                        ELSE 'Con vendedor'
                     END AS MOTIVO_HUERFANO
-                FROM dbo.CRM_Consolidado_Ventas_cliente c
-                LEFT JOIN dbo.vw_CRM_Ventas_por_Vendedor v
-                    ON v.NOMBRE_VENDEDOR = c.NOMBRE_VENDEDOR AND v.COMPANIA = c.COMPANIA
-                WHERE c.COMPANIA = {$compania}
-                  AND c.DIAS_DESDE_ULTIMA_COMPRA >= 365
-                  AND c.VLR_NETO_FACTURADO > 0
+                FROM dbo.CRM_Consolidado_Ventas_cliente
+                WHERE COMPANIA = {$compania}
+                  AND DIAS_DESDE_ULTIMA_COMPRA >= 365
+                  AND VLR_NETO_FACTURADO > 0
                   {$whereExcluir}
-                  AND (
-                      c.NOMBRE_VENDEDOR IS NULL
-                      OR LTRIM(RTRIM(c.NOMBRE_VENDEDOR)) = ''
-                      OR c.NOMBRE_VENDEDOR LIKE '%VACANTE%'
-                      OR v.DIAS_DESDE_ULTIMA_VENTA > 150
-                  )
-                ORDER BY c.VLR_NETO_FACTURADO DESC
+                ORDER BY VLR_NETO_FACTURADO DESC
+                OFFSET {$offset} ROWS FETCH NEXT {$porPagina} ROWS ONLY
             "))
             ->map(fn ($r) => (array) $r)
             ->toArray();
