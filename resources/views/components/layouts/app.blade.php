@@ -8,6 +8,8 @@
     <meta name="api-token" content="{{ session('api_token', '') }}">
     @endauth
     <title>{{ $title ?? 'SFconnecting CRM' }}</title>
+    <link rel="icon" type="image/svg+xml" href="/images/logo.svg">
+    <link rel="alternate icon" href="/favicon.ico">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         @keyframes sfblink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.2;transform:scale(0.85)} }
@@ -25,7 +27,7 @@
         } catch(e) {}
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Exo+2:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="h-full font-sans antialiased" x-data="{ sidebarOpen: false }">
 
@@ -51,20 +53,11 @@
         class="fixed inset-y-0 left-0 z-40 flex flex-col w-64 bg-slate-900 transition-transform duration-200 ease-in-out lg:translate-x-0"
     >
         {{-- Logo --}}
-        <div class="flex h-16 items-center gap-3 px-6 border-b border-slate-800 shrink-0">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%); box-shadow: 0 4px 14px rgba(29,78,216,0.45)">
-                <svg viewBox="0 0 24 24" fill="none" class="w-6 h-6">
-                    {{-- Asa del maletín --}}
-                    <path d="M8 8V6.5A2.5 2.5 0 0110.5 4h3A2.5 2.5 0 0116 6.5V8" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-                    {{-- Cuerpo del maletín --}}
-                    <rect x="2" y="8" width="20" height="13" rx="2.5" fill="rgba(255,255,255,0.18)" stroke="white" stroke-width="1.7"/>
-                    {{-- $ centrado dentro del cuerpo --}}
-                    <text x="12" y="18.5" text-anchor="middle" dominant-baseline="auto" fill="white" font-size="8.5" font-weight="800" font-family="Arial, sans-serif">$</text>
-                </svg>
-            </div>
-            <span class="text-white font-semibold text-sm tracking-wide">SFconnecting</span>
+        <div class="flex flex-col items-center justify-center gap-2 py-6 border-b border-slate-800 shrink-0 relative">
+            <img src="{{ asset('images/logo.svg') }}" alt="SFconnecting" class="w-28 h-28 object-contain">
+            <span class="text-white tracking-[0.12em]" style="font-family: 'Exo 2', sans-serif; font-weight: 600; font-size: 1.1rem;">SFconnecting</span>
             {{-- Cerrar en móvil --}}
-            <button @click="sidebarOpen = false" class="ml-auto text-slate-400 hover:text-white lg:hidden">
+            <button @click="sidebarOpen = false" class="absolute top-3 right-3 text-slate-400 hover:text-white lg:hidden">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>

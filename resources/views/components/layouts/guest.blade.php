@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'SFconnecting' }}</title>
+    <link rel="icon" type="image/svg+xml" href="/images/logo.svg">
+    <link rel="alternate icon" href="/favicon.ico">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Exo+2:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="h-full font-sans antialiased" x-data>
 
@@ -27,14 +29,8 @@
 
         {{-- Logo --}}
         <div class="relative flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center"
-                 style="background: rgba(59,130,246,0.3); border: 1px solid rgba(96,165,250,0.3);">
-                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-            </div>
-            <span class="text-white font-semibold tracking-wide text-lg">SFconnecting</span>
+            <img src="/images/logo.svg" alt="SFconnecting" class="w-14 h-14">
+            <span class="text-white tracking-[0.12em] text-xl" style="font-family: 'Exo 2', sans-serif; font-weight: 600;">SFconnecting</span>
         </div>
 
         {{-- Contenido central --}}

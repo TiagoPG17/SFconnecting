@@ -3,11 +3,7 @@
 
         {{-- Logo mobile --}}
         <div class="flex lg:hidden items-center gap-2 mb-10">
-            <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-            </div>
+            <img src="/images/logo.svg" alt="SFconnecting" class="w-8 h-8">
             <span class="font-semibold text-slate-900 text-lg">SFconnecting</span>
         </div>
 
