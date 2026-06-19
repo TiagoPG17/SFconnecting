@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Web;
 
+use App\Domain\Auditoria\Models\ActividadLog;
 use App\Domain\Clientes\DTOs\CrearClienteDTO;
 use App\Domain\Clientes\Exceptions\ClienteDuplicadoException;
 use App\Domain\Clientes\Repositories\ClienteRepositoryInterface;
@@ -72,6 +73,8 @@ class ClientesHuerfanosWebController extends Controller
             );
 
             $cliente = $this->clienteService->crear($dto);
+
+            ActividadLog::registrar('reclamar', 'clientes', "Cliente '{$cliente->razon_social}' (NIT: {$cliente->nit}) reclamado desde huérfanos (CIA {$compania})", $user->id);
 
             return redirect()
                 ->route('clientes.show', $cliente)

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Prospectos\Services;
 
+use App\Domain\Auditoria\Models\ActividadLog;
 use App\Domain\Clientes\DTOs\CrearClienteDTO;
 use App\Domain\Clientes\Repositories\ClienteRepositoryInterface;
 use App\Domain\Negocios\Models\AuditoriaPipeline;
@@ -32,8 +33,11 @@ class ProspectoService
         }
 
         $codigo = $this->repo->proximosCodigo();
+        $prospecto = $this->repo->crear($dto, $codigo);
 
-        return $this->repo->crear($dto, $codigo);
+        ActividadLog::registrar('crear', 'prospectos', "Prospecto '{$prospecto->empresa}' creado (#{$prospecto->codigo})", $prospecto->asesor_id);
+
+        return $prospecto;
     }
 
     public function actualizar(Prospecto $prospecto, ActualizarProspectoDTO $dto): Prospecto
@@ -56,6 +60,8 @@ class ProspectoService
                 $dto->toArray(),
             );
         }
+
+        ActividadLog::registrar('actualizar', 'prospectos', "Prospecto '{$prospecto->empresa}' actualizado (#{$prospecto->codigo})", $prospecto->asesor_id);
 
         return $actualizado;
     }
@@ -84,17 +90,13 @@ class ProspectoService
 
             $convertido = $this->repo->marcarConvertido($prospecto, $cliente->id, $dto->usuarioId);
 
-            $this->registrarAuditoria(
-                $convertido,
-                'conversion_lead',
-                $prospecto->estadoPipeline?->nombre,
-                'convertido',
-                [
-                    'cliente_id'            => $cliente->id,
-                    'empresa'               => $prospecto->empresa,
-                    'seguimientos_migrados' => $seguimientosMigrados,
-                ],
-            );
+            $this->registrarAuditoria($convertido, 'conversion_lead', $prospecto->estadoPipeline?->nombre, 'convertido', [
+                'cliente_id'            => $cliente->id,
+                'empresa'               => $prospecto->empresa,
+                'seguimientos_migrados' => $seguimientosMigrados,
+            ]);
+
+            ActividadLog::registrar('convertir', 'prospectos', "Prospecto '{$prospecto->empresa}' convertido a cliente (#{$prospecto->codigo})", $dto->usuarioId);
 
             return $convertido;
         });
@@ -102,6 +104,8 @@ class ProspectoService
 
     public function eliminar(Prospecto $prospecto): void
     {
+        ActividadLog::registrar('eliminar', 'prospectos', "Prospecto '{$prospecto->empresa}' eliminado (#{$prospecto->codigo})", $prospecto->asesor_id);
+
         $this->repo->eliminar($prospecto);
     }
 

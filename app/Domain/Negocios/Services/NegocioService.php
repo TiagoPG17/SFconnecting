@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Negocios\Services;
 
+use App\Domain\Auditoria\Models\ActividadLog;
 use App\Domain\Negocios\DTOs\ActualizarNegocioDTO;
 use App\Domain\Negocios\DTOs\CrearNegocioDTO;
 use App\Domain\Negocios\Exceptions\NegocioException;
@@ -26,13 +27,9 @@ class NegocioService
 
         $negocio = $this->repo->crear($dto);
 
-        $this->registrarAuditoria(
-            $negocio,
-            'cambio_estado',
-            null,
-            $negocio->pipelineEstado?->nombre,
-            $dto->toArray(),
-        );
+        $this->registrarAuditoria($negocio, 'cambio_estado', null, $negocio->pipelineEstado?->nombre, $dto->toArray());
+
+        ActividadLog::registrar('crear', 'negocios', "Negocio '{$negocio->nombre}' creado (#{$negocio->codigo})", $negocio->asesor_id);
 
         return $negocio;
     }
@@ -76,11 +73,15 @@ class NegocioService
             );
         }
 
+        ActividadLog::registrar('actualizar', 'negocios', "Negocio '{$negocio->nombre}' actualizado (#{$negocio->codigo})", $negocio->asesor_id);
+
         return $actualizado;
     }
 
     public function eliminar(Negocio $negocio): void
     {
+        ActividadLog::registrar('eliminar', 'negocios', "Negocio '{$negocio->nombre}' eliminado (#{$negocio->codigo})", $negocio->asesor_id);
+
         $this->repo->eliminar($negocio);
     }
 

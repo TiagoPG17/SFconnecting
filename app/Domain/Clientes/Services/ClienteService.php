@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Clientes\Services;
 
+use App\Domain\Auditoria\Models\ActividadLog;
 use App\Domain\Clientes\DTOs\ActualizarClienteDTO;
 use App\Domain\Clientes\DTOs\CrearClienteDTO;
 use App\Domain\Clientes\Exceptions\ClienteDuplicadoException;
@@ -32,7 +33,6 @@ class ClienteService
             throw ClienteDuplicadoException::porEmail($dto->email);
         }
 
-        // Enriquecimiento silencioso desde ERP — nunca bloquea la creación
         try {
             if ($this->erp->isAvailable()) {
                 $erpData = $this->erp->clientePorNit($dto->nit);
@@ -44,7 +44,11 @@ class ClienteService
             // ERP caído: continuar sin enriquecer
         }
 
-        return $this->repo->crear($dto);
+        $cliente = $this->repo->crear($dto);
+
+        ActividadLog::registrar('crear', 'clientes', "Cliente '{$cliente->razon_social}' (NIT: {$cliente->nit}) creado");
+
+        return $cliente;
     }
 
     public function actualizar(Cliente $cliente, ActualizarClienteDTO $dto): Cliente
@@ -53,17 +57,27 @@ class ClienteService
             throw ClienteDuplicadoException::porEmail($dto->email);
         }
 
-        return $this->repo->actualizar($cliente, $dto);
+        $actualizado = $this->repo->actualizar($cliente, $dto);
+
+        ActividadLog::registrar('actualizar', 'clientes', "Cliente '{$cliente->razon_social}' (NIT: {$cliente->nit}) actualizado");
+
+        return $actualizado;
     }
 
     public function eliminar(Cliente $cliente): void
     {
+        ActividadLog::registrar('eliminar', 'clientes', "Cliente '{$cliente->razon_social}' (NIT: {$cliente->nit}) eliminado");
+
         $this->repo->eliminar($cliente);
     }
 
     public function restaurar(int $id): Cliente
     {
-        return $this->repo->restaurar($id);
+        $cliente = $this->repo->restaurar($id);
+
+        ActividadLog::registrar('restaurar', 'clientes', "Cliente '{$cliente->razon_social}' restaurado");
+
+        return $cliente;
     }
 
     public function buscarPorId(int $id): ?Cliente
@@ -84,14 +98,28 @@ class ClienteService
             );
         }
 
-        return $this->repo->actualizar($cliente, ActualizarClienteDTO::fromArray(['estado' => $estado]));
+        $actualizado = $this->repo->actualizar($cliente, ActualizarClienteDTO::fromArray(['estado' => $estado]));
+
+        ActividadLog::registrar('cambiar_estado', 'clientes', "Cliente '{$cliente->razon_social}' cambió estado a '{$estado}'");
+
+        return $actualizado;
     }
 
     /** @return array{creados: int, actualizados: int} */
     public function sincronizarCarteraDesdeErp(string $nombreVendedor, int $userId): array
     {
-        $clientesErp = $this->erp->todosClientesPorVendedor($nombreVendedor);
+        $resultado = $this->repo->sincronizarDesdeErp(
+            $this->erp->todosClientesPorVendedor($nombreVendedor),
+            $userId
+        );
 
-        return $this->repo->sincronizarDesdeErp($clientesErp, $userId);
+        ActividadLog::registrar(
+            'sincronizar',
+            'clientes',
+            "Cartera sincronizada — {$resultado['creados']} creados, {$resultado['actualizados']} actualizados",
+            $userId
+        );
+
+        return $resultado;
     }
 }

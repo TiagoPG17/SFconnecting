@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Seguimientos\Services;
 
+use App\Domain\Auditoria\Models\ActividadLog;
 use App\Domain\Clientes\Repositories\ClienteRepositoryInterface;
 use App\Domain\Seguimientos\DTOs\CrearSeguimientoDTO;
 use App\Domain\Seguimientos\Exceptions\SeguimientoException;
@@ -32,7 +33,11 @@ class SeguimientoService
             throw SeguimientoException::fechaInvalida($dto->proximaFecha->toDateTimeString());
         }
 
-        return $this->repo->crear($dto);
+        $seguimiento = $this->repo->crear($dto);
+
+        ActividadLog::registrar('crear', 'seguimientos', "Seguimiento #{$seguimiento->id} creado para cliente #{$seguimiento->cliente_id}");
+
+        return $seguimiento;
     }
 
     public function actualizar(Seguimiento $seguimiento, array $data): Seguimiento
@@ -44,11 +49,17 @@ class SeguimientoService
             }
         }
 
-        return $this->repo->actualizar($seguimiento, $data);
+        $actualizado = $this->repo->actualizar($seguimiento, $data);
+
+        ActividadLog::registrar('actualizar', 'seguimientos', "Seguimiento #{$seguimiento->id} actualizado (cliente #{$seguimiento->cliente_id})");
+
+        return $actualizado;
     }
 
     public function eliminar(Seguimiento $seguimiento): void
     {
+        ActividadLog::registrar('eliminar', 'seguimientos', "Seguimiento #{$seguimiento->id} eliminado (cliente #{$seguimiento->cliente_id})");
+
         $this->repo->eliminar($seguimiento);
     }
 
