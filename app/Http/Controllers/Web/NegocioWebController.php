@@ -54,11 +54,9 @@ class NegocioWebController extends Controller
         $estados           = $this->maestros->pipelineEstadosPorTipo('negocio');
         $tipos             = $this->maestros->porTipo('tipo_negocio');
         $motivos           = $this->maestros->porTipo('motivo_perdida');
-        $clientes          = $this->clientes->buscar('', 200);
-        $prospectos        = $this->prospectos->paginar(['activo' => true], 200)->items();
         $estadosPerdidoIds = $estados->where('es_perdido', true)->pluck('id')->values()->toArray();
 
-        return view('negocios.create', compact('estados', 'tipos', 'motivos', 'clientes', 'prospectos', 'estadosPerdidoIds'));
+        return view('negocios.create', compact('estados', 'tipos', 'motivos', 'estadosPerdidoIds'));
     }
 
     public function edit(Negocio $negocio): View
