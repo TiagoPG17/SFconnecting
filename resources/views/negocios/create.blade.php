@@ -8,15 +8,21 @@
     <div class="max-w-2xl mx-auto">
         <x-ui.card>
             <div class="p-6">
-                <h2 class="text-base font-semibold text-slate-900 mb-6">Datos del negocio</h2>
-
                 <form
-                    x-data="{ loading: false }"
+                    x-data="{
+                        loading: false,
+                        tipoVinculo: 'prospecto',
+                        estadoId: null,
+                        estadosPerdidos: @js($estadosPerdidoIds),
+                        get esPerdido() { return this.estadosPerdidos.includes(parseInt(this.estadoId)); }
+                    }"
                     @submit.prevent="
                         loading = true;
                         const fd = new FormData($el);
                         const body = {};
                         fd.forEach((v, k) => { if (v !== '') body[k] = v; });
+                        if (tipoVinculo === 'prospecto') delete body.cliente_id;
+                        if (tipoVinculo === 'cliente') delete body.prospecto_id;
                         $api('POST', '/api/negocios', body)
                             .then(r => {
                                 if (r.success) {
@@ -30,18 +36,59 @@
                     "
                     class="space-y-5"
                 >
-                    <x-ui.input name="nombre_negocio" label="Nombre del negocio" required placeholder="Ej: Proyecto ERP Acme"/>
+                    {{-- Encabezado con título y toggle --}}
+                    <div class="flex items-center justify-between mb-1">
+                        <h2 class="text-base font-semibold text-slate-900">Datos del negocio</h2>
+                        <div class="inline-flex rounded-lg border border-slate-300 overflow-hidden">
+                            <button
+                                type="button"
+                                @click="
+                                    tipoVinculo = 'prospecto';
+                                    $el.closest('form').querySelector('[name=cliente_id]').value = '';
+                                "
+                                :class="tipoVinculo === 'prospecto'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-white text-slate-600 hover:bg-slate-50'"
+                                class="px-4 py-1.5 text-sm font-medium transition-colors duration-150 focus:outline-none"
+                            >
+                                Prospecto
+                            </button>
+                            <button
+                                type="button"
+                                @click="
+                                    tipoVinculo = 'cliente';
+                                    $el.closest('form').querySelector('[name=prospecto_id]').value = '';
+                                "
+                                :class="tipoVinculo === 'cliente'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-white text-slate-600 hover:bg-slate-50'"
+                                class="px-4 py-1.5 text-sm font-medium border-l border-slate-300 transition-colors duration-150 focus:outline-none"
+                            >
+                                Cliente
+                            </button>
+                        </div>
+                    </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <x-ui.select name="prospecto_id" label="Prospecto vinculado">
-                            <option value="">Sin prospecto</option>
+                    {{-- Select de prospecto --}}
+                    <div x-show="tipoVinculo === 'prospecto'" x-transition>
+                        <x-ui.select
+                            name="prospecto_id"
+                            label="Prospecto vinculado"
+                            placeholder="Seleccionar prospecto..."
+                        >
                             @foreach($prospectos as $p)
                                 <option value="{{ $p->id }}">{{ $p->empresa }} ({{ $p->codigo }})</option>
                             @endforeach
                         </x-ui.select>
+                    </div>
 
-                        <x-ui.select name="cliente_id" label="Cliente vinculado">
-                            <option value="">Sin cliente</option>
+                    {{-- Select de cliente --}}
+                    <div x-show="tipoVinculo === 'cliente'" x-transition>
+                        <x-ui.select
+                            name="cliente_id"
+                            label="Cliente vinculado"
+                            placeholder="Seleccionar cliente..."
+                        >
                             @foreach($clientes as $c)
                                 <option value="{{ $c->id }}">{{ $c->razon_social }}</option>
                             @endforeach
@@ -51,7 +98,7 @@
                     <p class="text-xs text-amber-600">* El negocio debe estar vinculado a un prospecto o un cliente.</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <x-ui.select name="pipeline_estado_id" label="Estado pipeline" required>
+                        <x-ui.select name="pipeline_estado_id" label="Estado pipeline" required x-model="estadoId">
                             <option value="">Seleccionar estado...</option>
                             @foreach($estados as $e)
                                 <option value="{{ $e->id }}">{{ $e->nombre }}</option>
@@ -64,6 +111,25 @@
                                 <option value="{{ $t->id }}">{{ $t->nombre }}</option>
                             @endforeach
                         </x-ui.select>
+                    </div>
+
+                    <div x-show="esPerdido" x-cloak class="space-y-4 p-4 rounded-xl border border-red-200 bg-red-50/50">
+                        <p class="text-xs font-semibold text-red-600 uppercase tracking-wide">Información de cierre perdido</p>
+                        <x-ui.select name="motivo_perdida_id" label="Motivo de pérdida">
+                            <option value="">Sin motivo</option>
+                            @foreach($motivos as $m)
+                                <option value="{{ $m->id }}">{{ $m->nombre }}</option>
+                            @endforeach
+                        </x-ui.select>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">¿Por qué se perdió? <span class="text-slate-400 font-normal">(opcional)</span></label>
+                            <textarea
+                                name="observacion_perdida"
+                                rows="3"
+                                placeholder="Describe aquí el detalle de por qué se perdió el negocio..."
+                                class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
+                            ></textarea>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
