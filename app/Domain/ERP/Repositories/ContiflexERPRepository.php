@@ -545,7 +545,7 @@ class ContiflexERPRepository implements ERPRepositoryInterface
     {
         try {
             return DB::connection('erp_contiflex')
-                ->table('dbo.vw_CRM_Clientes_Prioritarios')
+                ->table('dbo.clientes')
                 ->where('NOMBRE_VENDEDOR', $nombreVendedor)
                 ->orderBy('RAZON_SOCIAL')
                 ->get(['NIT', 'RAZON_SOCIAL', 'CIUDAD'])
