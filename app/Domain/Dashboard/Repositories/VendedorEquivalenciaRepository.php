@@ -69,7 +69,13 @@ class VendedorEquivalenciaRepository implements VendedorEquivalenciaRepositoryIn
         $ls = '[siesa-m4-sqlsw-db8.ceqnrhbwqaoo.us-east-1.rds.amazonaws.com].[unoee_formacol_real].[dbo]';
 
         try {
-            return DB::connection('erp_contiflex')
+            Log::info('[VendedoresSiesa] Intentando conectar a ERP', [
+                'compania' => $compania,
+                'host'     => config('database.connections.erp_contiflex.host'),
+                'database' => config('database.connections.erp_contiflex.database'),
+            ]);
+
+            $result = DB::connection('erp_contiflex')
                 ->select("
                     SELECT
                         LTRIM(RTRIM(v.f210_id))             AS cod,
@@ -83,7 +89,20 @@ class VendedorEquivalenciaRepository implements VendedorEquivalenciaRepositoryIn
                       AND LTRIM(RTRIM(t.f200_razon_social)) <> ''
                     ORDER BY t.f200_razon_social
                 ", [$compania]);
-        } catch (\Throwable) {
+
+            Log::info('[VendedoresSiesa] Consulta exitosa', [
+                'compania' => $compania,
+                'total'    => count($result),
+            ]);
+
+            return $result;
+        } catch (\Throwable $e) {
+            Log::error('[VendedoresSiesa] Error al consultar ERP', [
+                'compania' => $compania,
+                'mensaje'  => $e->getMessage(),
+                'tipo'     => get_class($e),
+            ]);
+
             return [];
         }
     }

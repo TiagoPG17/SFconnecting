@@ -29,7 +29,7 @@ class NegocioService
 
         $this->registrarAuditoria($negocio, 'cambio_estado', null, $negocio->pipelineEstado?->nombre, $dto->toArray());
 
-        ActividadLog::registrar('crear', 'negocios', "Negocio '{$negocio->nombre}' creado (#{$negocio->codigo})", $negocio->asesor_id);
+        ActividadLog::registrar('crear', 'negocios', "Negocio '{$negocio->nombre_negocio}' creado (#{$negocio->id})", $negocio->asesor_id);
 
         return $negocio;
     }
@@ -73,14 +73,14 @@ class NegocioService
             );
         }
 
-        ActividadLog::registrar('actualizar', 'negocios', "Negocio '{$negocio->nombre}' actualizado (#{$negocio->codigo})", $negocio->asesor_id);
+        ActividadLog::registrar('actualizar', 'negocios', "Negocio '{$negocio->nombre_negocio}' actualizado (#{$negocio->id})", $negocio->asesor_id);
 
         return $actualizado;
     }
 
     public function eliminar(Negocio $negocio): void
     {
-        ActividadLog::registrar('eliminar', 'negocios', "Negocio '{$negocio->nombre}' eliminado (#{$negocio->codigo})", $negocio->asesor_id);
+        ActividadLog::registrar('eliminar', 'negocios', "Negocio '{$negocio->nombre_negocio}' eliminado (#{$negocio->id})", $negocio->asesor_id);
 
         $this->repo->eliminar($negocio);
     }

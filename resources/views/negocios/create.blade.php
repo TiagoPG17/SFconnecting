@@ -175,6 +175,8 @@
                         </div>
                     </div>
 
+                    <x-ui.input name="nombre_negocio" label="Nombre del negocio" required placeholder="Ej: Implementación ERP Empresa X"/>
+
                     <p class="text-xs text-amber-600">* El negocio debe estar vinculado a un prospecto o un cliente.</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">

@@ -127,14 +127,40 @@ class DashboardVendedorRepository implements DashboardVendedorRepositoryInterfac
     {
         [$anio, $mesesNum] = $this->parsearMeses($meses);
 
+        $placeholders = implode(',', array_fill(0, count($mesesNum), '?'));
+
+        $ventas = DB::connection('erp_contiflex')
+            ->table('CRM_stg_facturas_venta AS f')
+            ->select(
+                'f.f461_id_cia AS COMPANIA',
+                'f.f461_rowid_tercero_vendedor AS ROWID_VENDEDOR',
+                DB::raw('LTRIM(RTRIM(MAX(f.f461_cod_vendedor))) AS COD_VENDEDOR'),
+                DB::raw("SUM(CASE
+                    WHEN f.f461_id_concepto = 501 THEN  (f.f461_vlr_bruto - f.f461_vlr_dscto)
+                    WHEN f.f461_id_concepto = 502 THEN -(f.f461_vlr_bruto - f.f461_vlr_dscto)
+                    ELSE 0
+                END) AS logrado"),
+            )
+            ->where('f.f461_id_cia', $compania)
+            ->whereRaw('YEAR(f.f461_id_fecha) = ?', [$anio])
+            ->whereRaw("MONTH(f.f461_id_fecha) IN ({$placeholders})", $mesesNum)
+            ->groupBy('f.f461_id_cia', 'f.f461_rowid_tercero_vendedor');
+
+        $nombres = DB::connection('erp_contiflex')
+            ->table('vw_CRM_Detalle_Mensual_Vendedor')
+            ->select('ROWID_VENDEDOR', DB::raw('MAX(NOMBRE_VENDEDOR) AS NOMBRE_VENDEDOR'))
+            ->groupBy('ROWID_VENDEDOR');
+
         return DB::connection('erp_contiflex')
-            ->table('vw_CRM_Ventas_Vendedor_Periodo')
-            ->where('COMPANIA', $compania)
-            ->where('ANIO', $anio)
-            ->whereIn('MES', $mesesNum)
-            ->select(DB::raw('LTRIM(RTRIM(COD_VENDEDOR)) AS COD_VENDEDOR'), DB::raw('SUM(VLR_NETO_FACTURADO) AS logrado'))
-            ->groupBy(DB::raw('LTRIM(RTRIM(COD_VENDEDOR))'))
-            ->orderByDesc('logrado')
+            ->query()
+            ->fromSub($ventas, 's')
+            ->leftJoinSub($nombres, 'd', 'd.ROWID_VENDEDOR', '=', 's.ROWID_VENDEDOR')
+            ->select(
+                's.COD_VENDEDOR',
+                DB::raw("ISNULL(d.NOMBRE_VENDEDOR, 'VENDEDOR ' + CAST(s.ROWID_VENDEDOR AS varchar(12))) AS NOMBRE_VENDEDOR"),
+                's.logrado',
+            )
+            ->orderByDesc('s.logrado')
             ->get();
     }
 
