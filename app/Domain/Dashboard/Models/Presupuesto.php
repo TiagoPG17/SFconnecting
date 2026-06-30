@@ -7,6 +7,7 @@ namespace App\Domain\Dashboard\Models;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Presupuesto extends Model
 {
@@ -23,5 +24,10 @@ class Presupuesto extends Model
     public function asesor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'asesor_id');
+    }
+
+    public function meses(): HasMany
+    {
+        return $this->hasMany(PresupuestoMensual::class)->orderBy('mes');
     }
 }

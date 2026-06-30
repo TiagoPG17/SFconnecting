@@ -88,6 +88,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reportes', [ReporteWebController::class, 'index'])->name('reportes.index');
 
     // Presupuestos (admin y gerente)
+    Route::post('/presupuestos/meses', [PresupuestoWebController::class, 'storeMeses'])
+        ->name('presupuestos.meses.store')
+        ->middleware('role:admin|gerente');
+
     Route::resource('presupuestos', PresupuestoWebController::class)
         ->only(['index', 'store', 'update', 'destroy'])
         ->middleware('role:admin|gerente');

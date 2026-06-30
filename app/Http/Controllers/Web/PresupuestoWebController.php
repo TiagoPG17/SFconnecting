@@ -25,7 +25,8 @@ class PresupuestoWebController extends Controller
         $asesores = User::role('comercial')->orderBy('name')->get(['id', 'name']);
         $anios    = range(now()->year + 1, now()->year - 3);
 
-        // Agrupa por asesor: cada entrada tiene cia1 y cia2 (o null si no existe)
+        $todos->load('meses');
+
         $porAsesor = $todos->groupBy('asesor_id')->map(fn ($rows) => [
             'asesor' => $rows->first()->asesor,
             'cia1'   => $rows->firstWhere('compania', 1),
@@ -61,7 +62,6 @@ class PresupuestoWebController extends Controller
             ->with('success', 'Presupuesto guardado correctamente.');
     }
 
-    // Edición de uno o ambos presupuestos de un asesor a la vez
     public function update(Request $request, Presupuesto $presupuesto): RedirectResponse
     {
         $data = $request->validate([
@@ -90,6 +90,53 @@ class PresupuestoWebController extends Controller
 
         return redirect()->route('presupuestos.index', ['anio' => $anio])
             ->with('success', 'Presupuesto actualizado correctamente.');
+    }
+
+    public function storeMeses(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'asesor_id'   => ['required', 'exists:users,id'],
+            'anio'        => ['required', 'integer'],
+            'cia1_id'     => ['nullable', 'integer', 'exists:sf_presupuesto,id'],
+            'cia2_id'     => ['nullable', 'integer', 'exists:sf_presupuesto,id'],
+            'cia1_mes'    => ['nullable', 'array', 'size:12'],
+            'cia1_mes.*'  => ['nullable', 'numeric', 'min:0'],
+            'cia2_mes'    => ['nullable', 'array', 'size:12'],
+            'cia2_mes.*'  => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $anio    = (int) $data['anio'];
+        $nombres = [1 => 'Formacol', 2 => 'Contiflex'];
+
+        foreach ([1 => 'cia1', 2 => 'cia2'] as $cia => $key) {
+            $presupuestoId = !empty($data["{$key}_id"]) ? (int) $data["{$key}_id"] : null;
+            $mesesData     = $data["{$key}_mes"] ?? null;
+
+            if (!$presupuestoId || !$mesesData) {
+                continue;
+            }
+
+            $presupuesto = $this->repo->buscarPorId($presupuestoId);
+            if (!$presupuesto) {
+                continue;
+            }
+
+            $suma  = (float) array_sum(array_map('floatval', $mesesData));
+            $anual = (float) $presupuesto->presupuesto;
+
+            if (abs($suma - $anual) > 1) {
+                $sumaFmt  = number_format($suma, 0, ',', '.');
+                $anualFmt = number_format($anual, 0, ',', '.');
+                return back()
+                    ->withErrors(["La suma mensual de {$nombres[$cia]} (\${$sumaFmt}) no coincide con el presupuesto anual (\${$anualFmt})."])
+                    ->withInput();
+            }
+
+            $this->repo->guardarMeses($presupuestoId, $mesesData);
+        }
+
+        return redirect()->route('presupuestos.index', ['anio' => $anio])
+            ->with('success', 'Distribución mensual guardada correctamente.');
     }
 
     public function destroy(Presupuesto $presupuesto): RedirectResponse

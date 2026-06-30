@@ -4,7 +4,7 @@
        class="text-xs text-slate-400">Año {{ $anio }}</a>
 </x-slot>
 
-<div x-data="{ modalCrear: false, modalEditar: false, editando: null }">
+<div x-data="{ modalCrear: false, modalEditar: false, modalMeses: false, editando: null, editandoMeses: null }">
 
     {{-- ===== Cabecera ===== --}}
     <div class="flex items-center justify-between mb-6">
@@ -95,6 +95,26 @@
                     </td>
                     <td class="px-5 py-4">
                         <div class="flex items-center justify-end gap-1">
+                            {{-- Distribuir meses --}}
+                            <button @click="editandoMeses = {{ json_encode([
+                                'asesor_id'   => $row['asesor']?->id,
+                                'asesor_name' => $row['asesor']?->name,
+                                'anio'        => $row['anio'],
+                                'cia1'        => $row['cia1'] ? [
+                                    'id'    => $row['cia1']->id,
+                                    'anual' => (float) $row['cia1']->presupuesto,
+                                    'meses' => $row['cia1']->meses->pluck('valor', 'mes'),
+                                ] : null,
+                                'cia2'        => $row['cia2'] ? [
+                                    'id'    => $row['cia2']->id,
+                                    'anual' => (float) $row['cia2']->presupuesto,
+                                    'meses' => $row['cia2']->meses->pluck('valor', 'mes'),
+                                ] : null,
+                            ]) }}; modalMeses = true"
+                                    class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                                    title="Distribuir por meses">
+                                <x-ui.icon name="calendar" class="w-4 h-4"/>
+                            </button>
                             {{-- Editar ambos --}}
                             <button @click="editando = {{ json_encode([
                                 'asesor_id'   => $row['asesor']?->id,
@@ -174,7 +194,6 @@
                     </select>
                 </div>
 
-                {{-- Campo único para una sola compañía --}}
                 <div x-show="cia === '1' || cia === '2'" x-data="pesoInput()" @reset.window="reset()">
                     <label class="block text-xs font-semibold text-slate-600 mb-1.5"
                            x-text="cia === '1' ? 'Presupuesto Formacol' : 'Presupuesto Contiflex'"></label>
@@ -191,7 +210,6 @@
                        x-text="raw ? '= $' + Number(raw).toLocaleString('es-CO') + ' COP' : ''"></p>
                 </div>
 
-                {{-- Dos campos cuando elige Ambas --}}
                 <div x-show="cia === '0'" class="space-y-3">
                     <div x-data="pesoInput()">
                         <label class="block text-xs font-semibold text-red-600 mb-1.5">Presupuesto Formacol</label>
@@ -298,6 +316,139 @@
         </div>
     </div>
 
+    {{-- ===== Modal Distribución Mensual ===== --}}
+    <div x-show="modalMeses" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+         @keydown.escape.window="modalMeses = false; editandoMeses = null">
+        <div @click.outside="modalMeses = false; editandoMeses = null"
+             class="bg-white rounded-2xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+            <template x-if="editandoMeses">
+                <div x-data="modalMesesComp(editandoMeses)" class="flex flex-col min-h-0">
+
+                    {{-- Header --}}
+                    <div class="px-6 pt-6 pb-4 border-b border-slate-100 shrink-0">
+                        <h3 class="text-base font-bold text-slate-900">Distribución mensual</h3>
+                        <p class="text-sm text-slate-400 mt-0.5" x-text="asesor_name + ' · ' + anio"></p>
+                    </div>
+
+                    {{-- Body (scrollable) --}}
+                    <form action="{{ route('presupuestos.meses.store') }}" method="POST" class="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+                        @csrf
+                        <input type="hidden" name="asesor_id" :value="asesor_id"/>
+                        <input type="hidden" name="anio" :value="anio"/>
+
+                        {{-- Sección Formacol --}}
+                        <template x-if="cia1">
+                            <div>
+                                <input type="hidden" name="cia1_id" :value="cia1.id"/>
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-xs font-bold text-red-700 uppercase tracking-wider px-2 py-0.5 bg-red-50 rounded-full">Formacol</span>
+                                    <div class="flex items-center gap-3">
+                                        <button type="button" @click="distribuirIgual('cia1')"
+                                                class="text-xs text-slate-500 hover:text-red-600 underline underline-offset-2">
+                                            Distribuir igualmente
+                                        </button>
+                                        <span class="text-xs font-semibold"
+                                              :class="ok1 ? 'text-emerald-600' : 'text-red-500'">
+                                            $<span x-text="fmt(suma1)"></span>
+                                            /
+                                            $<span x-text="fmt(cia1.anual)"></span>
+                                        </span>
+                                        <span x-show="!ok1" class="text-xs text-red-500 font-medium"
+                                              x-text="diferencia1 > 0 ? '+$' + fmt(Math.abs(diferencia1)) : '-$' + fmt(Math.abs(diferencia1))">
+                                        </span>
+                                        <span x-show="ok1" class="text-xs text-emerald-600">✓ Cuadra</span>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                    <template x-for="m in 12" :key="'c1-' + m">
+                                        <div>
+                                            <label class="block text-center text-xs text-slate-400 mb-1"
+                                                   x-text="mesesNombres[m - 1]"></label>
+                                            <div class="border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-red-400"
+                                                 :class="ok1 ? 'border-slate-200' : 'border-red-200'">
+                                                <input type="text" inputmode="numeric"
+                                                       :value="cia1.displays[m]"
+                                                       @input="onInput('cia1', m, $event)"
+                                                       @keydown="onKeydown($event)"
+                                                       placeholder="0"
+                                                       class="w-full px-2 py-1.5 text-xs text-right focus:outline-none bg-transparent"/>
+                                            </div>
+                                            <input type="hidden" :name="`cia1_mes[${m}]`" :value="cia1.vals[m]"/>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- Sección Contiflex --}}
+                        <template x-if="cia2">
+                            <div>
+                                <input type="hidden" name="cia2_id" :value="cia2.id"/>
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-xs font-bold text-blue-700 uppercase tracking-wider px-2 py-0.5 bg-blue-50 rounded-full">Contiflex</span>
+                                    <div class="flex items-center gap-3">
+                                        <button type="button" @click="distribuirIgual('cia2')"
+                                                class="text-xs text-slate-500 hover:text-blue-600 underline underline-offset-2">
+                                            Distribuir igualmente
+                                        </button>
+                                        <span class="text-xs font-semibold"
+                                              :class="ok2 ? 'text-emerald-600' : 'text-red-500'">
+                                            $<span x-text="fmt(suma2)"></span>
+                                            /
+                                            $<span x-text="fmt(cia2.anual)"></span>
+                                        </span>
+                                        <span x-show="!ok2" class="text-xs text-red-500 font-medium"
+                                              x-text="diferencia2 > 0 ? '+$' + fmt(Math.abs(diferencia2)) : '-$' + fmt(Math.abs(diferencia2))">
+                                        </span>
+                                        <span x-show="ok2" class="text-xs text-emerald-600">✓ Cuadra</span>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                    <template x-for="m in 12" :key="'c2-' + m">
+                                        <div>
+                                            <label class="block text-center text-xs text-slate-400 mb-1"
+                                                   x-text="mesesNombres[m - 1]"></label>
+                                            <div class="border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-400"
+                                                 :class="ok2 ? 'border-slate-200' : 'border-blue-200'">
+                                                <input type="text" inputmode="numeric"
+                                                       :value="cia2.displays[m]"
+                                                       @input="onInput('cia2', m, $event)"
+                                                       @keydown="onKeydown($event)"
+                                                       placeholder="0"
+                                                       class="w-full px-2 py-1.5 text-xs text-right focus:outline-none bg-transparent"/>
+                                            </div>
+                                            <input type="hidden" :name="`cia2_mes[${m}]`" :value="cia2.vals[m]"/>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- Footer con botones dentro del form --}}
+                        <div class="flex gap-3 pt-2 border-t border-slate-100">
+                            <button type="button"
+                                    @click="modalMeses = false; editandoMeses = null"
+                                    class="flex-1 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+                                Cancelar
+                            </button>
+                            <button type="submit"
+                                    :disabled="!todoOk"
+                                    :class="todoOk
+                                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                                        : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
+                                    class="flex-1 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                <span x-show="todoOk">Guardar distribución</span>
+                                <span x-show="!todoOk">Los montos no cuadran</span>
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </template>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -318,6 +469,66 @@ function pesoInput(initialValue) {
             if (!/^\d$/.test(e.key)) e.preventDefault();
         },
         reset() { this.display = ''; this.raw = ''; },
+    };
+}
+
+function modalMesesComp(em) {
+    const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const fmtNum = v => String(Math.round(v || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const toInt  = v => parseInt(String(v ?? '').replace(/\D/g, '') || '0', 10);
+
+    const initComp = (cia) => {
+        if (!cia) return null;
+        const anual = Math.round(Number(cia.anual));
+        const vals = {}, displays = {};
+        for (let m = 1; m <= 12; m++) {
+            const v = cia.meses && cia.meses[m] ? Math.round(Number(cia.meses[m])) : 0;
+            vals[m]    = v;
+            displays[m] = v > 0 ? fmtNum(v) : '';
+        }
+        return { id: cia.id, anual, vals, displays };
+    };
+
+    return {
+        asesor_id:    em.asesor_id,
+        asesor_name:  em.asesor_name,
+        anio:         em.anio,
+        cia1:         initComp(em.cia1),
+        cia2:         initComp(em.cia2),
+        mesesNombres: MESES,
+
+        fmt: fmtNum,
+
+        get suma1() { return this.cia1 ? Object.values(this.cia1.vals).reduce((s, v) => s + (v || 0), 0) : 0; },
+        get suma2() { return this.cia2 ? Object.values(this.cia2.vals).reduce((s, v) => s + (v || 0), 0) : 0; },
+        get ok1()   { return !this.cia1 || Math.abs(this.suma1 - this.cia1.anual) < 1; },
+        get ok2()   { return !this.cia2 || Math.abs(this.suma2 - this.cia2.anual) < 1; },
+        get todoOk(){ return this.ok1 && this.ok2; },
+        get diferencia1() { return this.cia1 ? this.suma1 - this.cia1.anual : 0; },
+        get diferencia2() { return this.cia2 ? this.suma2 - this.cia2.anual : 0; },
+
+        onInput(comp, m, e) {
+            const digits = e.target.value.replace(/\D/g, '');
+            const v = parseInt(digits || '0', 10);
+            this[comp].vals[m]    = v;
+            this[comp].displays[m] = fmtNum(digits);
+        },
+        onKeydown(e) {
+            const allowed = ['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Home','End'];
+            if (allowed.includes(e.key)) return;
+            if (!/^\d$/.test(e.key)) e.preventDefault();
+        },
+        distribuirIgual(comp) {
+            const c = this[comp];
+            if (!c) return;
+            const porMes = Math.floor(c.anual / 12);
+            const resto  = c.anual - (porMes * 12);
+            for (let m = 1; m <= 12; m++) {
+                const v = m === 12 ? porMes + resto : porMes;
+                c.vals[m]    = v;
+                c.displays[m] = fmtNum(v);
+            }
+        },
     };
 }
 </script>

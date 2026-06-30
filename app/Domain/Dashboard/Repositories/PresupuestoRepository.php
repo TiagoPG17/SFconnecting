@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Dashboard\Repositories;
 
 use App\Domain\Dashboard\Models\Presupuesto;
+use App\Domain\Dashboard\Models\PresupuestoMensual;
 use Illuminate\Database\Eloquent\Collection;
 
 class PresupuestoRepository implements PresupuestoRepositoryInterface
@@ -54,5 +55,20 @@ class PresupuestoRepository implements PresupuestoRepositoryInterface
             ['asesor_id' => $asesorId, 'compania' => $compania, 'anio' => $anio],
             ['presupuesto' => $presupuesto]
         );
+    }
+
+    public function guardarMeses(int $presupuestoId, array $meses): void
+    {
+        foreach ($meses as $mes => $valor) {
+            PresupuestoMensual::updateOrCreate(
+                ['presupuesto_id' => $presupuestoId, 'mes' => (int) $mes],
+                ['valor' => (float) $valor]
+            );
+        }
+    }
+
+    public function getMeses(int $presupuestoId): Collection
+    {
+        return PresupuestoMensual::where('presupuesto_id', $presupuestoId)->orderBy('mes')->get();
     }
 }
