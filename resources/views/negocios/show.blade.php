@@ -8,6 +8,13 @@
             <x-ui.icon name="edit" class="w-4 h-4"/> Editar
         </x-ui.button>
         @endcan
+        @if($negocio->cliente_id)
+        @can('create', \App\Domain\SolicitudesCredito\Models\SolicitudCredito::class)
+        <x-ui.button href="{{ route('solicitudes-credito.create', ['negocio_id' => $negocio->id]) }}" variant="primary" size="sm">
+            <x-ui.icon name="file-text" class="w-4 h-4"/> Radicar Solicitud de Crédito
+        </x-ui.button>
+        @endcan
+        @endif
     </x-slot>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

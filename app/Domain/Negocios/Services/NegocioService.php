@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Negocios\Services;
 
 use App\Domain\Auditoria\Models\ActividadLog;
+use App\Domain\Dashboard\Models\VendedorEquivalencia;
 use App\Domain\Negocios\DTOs\ActualizarNegocioDTO;
 use App\Domain\Negocios\DTOs\CrearNegocioDTO;
 use App\Domain\Negocios\Exceptions\NegocioException;
@@ -24,6 +25,11 @@ class NegocioService
         if ($dto->prospectoId === null && $dto->clienteId === null) {
             throw NegocioException::sinVinculo();
         }
+
+        $dto = CrearNegocioDTO::fromArray(array_merge(
+            $dto->toArray(),
+            ['compania' => $this->resolverCompania($dto)]
+        ));
 
         $negocio = $this->repo->crear($dto);
 
@@ -93,6 +99,33 @@ class NegocioService
     public function forecast(array $filtros = []): array
     {
         return $this->repo->forecast($filtros);
+    }
+
+    private function resolverCompania(CrearNegocioDTO $dto): ?int
+    {
+        $companiasAsesor = VendedorEquivalencia::where('asesor_id', $dto->asesorId)
+            ->where('activo', true)
+            ->pluck('compania')
+            ->unique()
+            ->values();
+
+        if ($companiasAsesor->count() === 1) {
+            return (int) $companiasAsesor->first();
+        }
+
+        if ($companiasAsesor->count() > 1) {
+            if ($dto->compania === null) {
+                throw NegocioException::companiaRequerida();
+            }
+
+            if (! $companiasAsesor->contains($dto->compania)) {
+                throw NegocioException::companiaNoPermitida();
+            }
+
+            return $dto->compania;
+        }
+
+        return null;
     }
 
     private function registrarAuditoria(

@@ -333,7 +333,7 @@
                 </svg>
             </div>
             <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Inteligencia Comercial</h2>
-            <span class="text-xs text-slate-400 font-medium">ERP Contiflex</span>
+            <span class="text-xs text-slate-400 font-medium">ERP</span>
             <div class="flex-1 h-px bg-gradient-to-r from-rose-200 via-rose-100 to-transparent" style="min-width:60px"></div>
         </div>
         @if(!$intel['disponible'])

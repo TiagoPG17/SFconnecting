@@ -51,6 +51,11 @@ class RolesPermisosSeeder extends Seeder
             'negocios.editar',
             'negocios.eliminar',
             'negocios.cerrar',
+            // Solicitudes de crédito
+            'solicitudes_credito.ver',
+            'solicitudes_credito.crear',
+            'solicitudes_credito.eliminar',
+            'solicitudes_credito.revisar',
             // Pipeline
             'pipeline.ver',
             'pipeline.mover',

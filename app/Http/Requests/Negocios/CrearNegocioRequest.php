@@ -25,6 +25,7 @@ class CrearNegocioRequest extends FormRequest
             'valor_estimado'       => ['nullable', 'numeric', 'min:0'],
             'probabilidad_cierre'  => ['nullable', 'integer', 'min:0', 'max:100'],
             'fecha_estimada_cierre' => ['nullable', 'date'],
+            'compania'             => ['nullable', 'integer', 'in:1,2'],
         ];
     }
 }

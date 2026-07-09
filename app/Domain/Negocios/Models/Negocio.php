@@ -34,6 +34,7 @@ class Negocio extends Model
         'motivo_perdida_id',
         'observacion_perdida',
         'asesor_id',
+        'compania',
         'activo',
     ];
 
@@ -42,6 +43,7 @@ class Negocio extends Model
         'probabilidad_cierre'  => 'integer',
         'fecha_estimada_cierre' => 'date',
         'fecha_cierre_real'    => 'date',
+        'compania'             => 'integer',
         'activo'               => 'boolean',
         'deleted_at'           => 'datetime',
     ];
@@ -91,6 +93,24 @@ class Negocio extends Model
     public function valorForecast(): float
     {
         return (float) $this->valor_estimado * ($this->probabilidadEfectiva() / 100);
+    }
+
+    public function companiaNombre(): ?string
+    {
+        return match ($this->compania) {
+            1       => 'Formacol',
+            2       => 'Contiflex',
+            default => null,
+        };
+    }
+
+    public function companiaSiglas(): ?string
+    {
+        return match ($this->compania) {
+            1       => 'FC',
+            2       => 'CX',
+            default => null,
+        };
     }
 
     public function scopeActivos($query)

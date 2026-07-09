@@ -69,6 +69,7 @@
                     <tr class="border-b border-slate-100">
                         <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Negocio</th>
                         <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Estado</th>
+                        <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Compañía</th>
                         <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Valor</th>
                         <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Forecast</th>
                         <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Cierre</th>
@@ -90,6 +91,15 @@
                                 <x-ui.badge :color="$n->pipelineEstado->color">
                                     {{ $n->pipelineEstado->nombre }}
                                 </x-ui.badge>
+                            @endif
+                        </td>
+                        <td class="py-3 px-4">
+                            @if($n->compania)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $n->compania === 1 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700' }}">
+                                    {{ $n->companiaNombre() }}
+                                </span>
+                            @else
+                                <span class="text-slate-300 text-xs">—</span>
                             @endif
                         </td>
                         <td class="py-3 px-4 font-medium text-slate-900">

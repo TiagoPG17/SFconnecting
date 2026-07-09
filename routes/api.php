@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\NegocioController;
 use App\Http\Controllers\Api\ProspectoController;
 use App\Http\Controllers\Api\ReporteController;
 use App\Http\Controllers\Api\SeguimientoController;
+use App\Http\Controllers\Api\SolicitudCreditoController;
 use App\Http\Controllers\Api\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
@@ -59,6 +60,7 @@ Route::middleware('auth:sanctum')->name('api.')->group(function () {
     Route::post('clientes/{cliente}/contactos', [ContactoController::class, 'store'])->name('clientes.contactos.store');
     Route::get('contactos/{contacto}', [ContactoController::class, 'show'])->name('contactos.show');
     Route::put('contactos/{contacto}', [ContactoController::class, 'update'])->name('contactos.update');
+    Route::patch('contactos/{contacto}/toggle', [ContactoController::class, 'toggle'])->name('contactos.toggle');
     Route::delete('contactos/{contacto}', [ContactoController::class, 'destroy'])->name('contactos.destroy');
 
     // Seguimientos — ruta estática antes del wildcard
@@ -74,6 +76,12 @@ Route::middleware('auth:sanctum')->name('api.')->group(function () {
     Route::get('negocios/kanban', [NegocioController::class, 'kanban'])->name('negocios.kanban');
     Route::get('negocios/forecast', [NegocioController::class, 'forecast'])->name('negocios.forecast');
     Route::apiResource('negocios', NegocioController::class);
+
+    // Solicitudes de Crédito
+    Route::post('solicitudes-credito/{solicitudCredito}/decidir', [SolicitudCreditoController::class, 'decidir'])->name('solicitudes-credito.decidir');
+    Route::apiResource('solicitudes-credito', SolicitudCreditoController::class)
+        ->only(['index', 'store', 'show', 'destroy'])
+        ->parameters(['solicitudes-credito' => 'solicitudCredito']);
 
     // Usuarios (admin only)
     Route::prefix('usuarios')->group(function () {

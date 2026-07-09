@@ -68,7 +68,7 @@
                             @endforeach
                         </x-ui.select>
 
-                        <x-ui.input name="valor_estimado" type="number" label="Valor estimado ($)" :value="$prospecto->valor_estimado" min="0" step="1000"/>
+                        <x-ui.input name="valor_estimado" type="number" label="Valor estimado ($)" :value="$prospecto->valor_estimado" min="0" step="0.01"/>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">

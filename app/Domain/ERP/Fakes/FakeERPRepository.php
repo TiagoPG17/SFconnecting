@@ -14,6 +14,7 @@ class FakeERPRepository implements ERPRepositoryInterface
     private array $clientes = [];
     private array $documentos = [];
     private array $saldos = [];
+    private array $cartera = [];
     private array $clientesVendedor = [];
 
     public function clientePorNit(string $nit): ?array
@@ -45,6 +46,13 @@ class FakeERPRepository implements ERPRepositoryInterface
         $this->checkAvailability();
 
         return $this->saldos[$nit] ?? null;
+    }
+
+    public function carteraPorNit(string $nit): array
+    {
+        $this->checkAvailability();
+
+        return $this->cartera[$nit] ?? [];
     }
 
     public function clientesAtencionInmediata(int $limite = 20, ?string $filtroVendedor = null): array
@@ -113,8 +121,18 @@ class FakeERPRepository implements ERPRepositoryInterface
         return [];
     }
 
-    public function clientesHuerfanos(int $compania, array $nitsExcluir = [], int $limite = 100): array
+    public function clientesHuerfanos(int $compania, array $nitsExcluir = [], int $porPagina = 50, int $offset = 0): array
     {
+        $this->checkAvailability();
+        return [];
+    }
+
+    public function clientesPorVendedorYHorizonte(
+        string $vendedor,
+        string $horizonte,
+        int $compania = 0,
+        int $limite = 100
+    ): array {
         $this->checkAvailability();
         return [];
     }
@@ -216,6 +234,11 @@ class FakeERPRepository implements ERPRepositoryInterface
     public function agregarSaldo(string $nit, array $saldo): void
     {
         $this->saldos[$nit] = $saldo;
+    }
+
+    public function agregarCartera(string $nit, array $filas): void
+    {
+        $this->cartera[$nit] = $filas;
     }
 
     private function checkAvailability(): void

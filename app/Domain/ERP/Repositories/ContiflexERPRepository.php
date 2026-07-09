@@ -66,6 +66,24 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
+    public function carteraPorNit(string $nit): array
+    {
+        try {
+            return DB::connection('erp_contiflex')
+                ->table('dbo.vw_CRM_Cartera_CxC')
+                ->where('NIT', $nit)
+                ->orderByDesc('DIAS_VENCIDO')
+                ->get([
+                    'COMPANIA', 'NIT', 'CLIENTE', 'VENDEDOR', 'TIPO_DOCTO', 'NUM_DOCTO',
+                    'CUOTA', 'FECHA_DOCTO', 'FECHA_VCTO', 'SALDO', 'DIAS_VENCIDO', 'TRAMO_AGING',
+                ])
+                ->map(fn ($r) => (array) $r)
+                ->toArray();
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
     public function clientesAtencionInmediata(int $limite = 20, ?string $filtroVendedor = null): array
     {
         try {

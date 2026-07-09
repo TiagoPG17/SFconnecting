@@ -17,6 +17,7 @@ class CrearNegocioDTO
         public readonly float $valorEstimado = 0,
         public readonly ?int $probabilidadCierre = null,
         public readonly ?string $fechaEstimadaCierre = null,
+        public readonly ?int $compania = null,
     ) {}
 
     public static function fromArray(array $data): self
@@ -32,6 +33,7 @@ class CrearNegocioDTO
             valorEstimado:       isset($data['valor_estimado']) ? (float) $data['valor_estimado'] : 0,
             probabilidadCierre:  isset($data['probabilidad_cierre']) ? (int) $data['probabilidad_cierre'] : null,
             fechaEstimadaCierre: $data['fecha_estimada_cierre'] ?? null,
+            compania:            isset($data['compania']) ? (int) $data['compania'] : null,
         );
     }
 
@@ -48,6 +50,7 @@ class CrearNegocioDTO
             'valor_estimado'       => $this->valorEstimado,
             'probabilidad_cierre'  => $this->probabilidadCierre,
             'fecha_estimada_cierre' => $this->fechaEstimadaCierre,
+            'compania'             => $this->compania,
         ];
     }
 }

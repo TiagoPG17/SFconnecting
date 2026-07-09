@@ -42,6 +42,10 @@ use App\Domain\Seguimientos\Models\Seguimiento;
 use App\Domain\Seguimientos\Policies\SeguimientoPolicy;
 use App\Domain\Seguimientos\Repositories\SeguimientoRepository;
 use App\Domain\Seguimientos\Repositories\SeguimientoRepositoryInterface;
+use App\Domain\SolicitudesCredito\Models\SolicitudCredito;
+use App\Domain\SolicitudesCredito\Policies\SolicitudCreditoPolicy;
+use App\Domain\SolicitudesCredito\Repositories\SolicitudCreditoRepository;
+use App\Domain\SolicitudesCredito\Repositories\SolicitudCreditoRepositoryInterface;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -64,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ProspectoRepositoryInterface::class, ProspectoRepository::class);
         $this->app->bind(NegocioRepositoryInterface::class, NegocioRepository::class);
         $this->app->bind(MaestroRepositoryInterface::class, MaestroRepository::class);
+        $this->app->bind(SolicitudCreditoRepositoryInterface::class, SolicitudCreditoRepository::class);
 
         $this->app->bind(ERPRepositoryInterface::class, function () {
             if (app()->environment('testing') || config('database.connections.erp_contiflex.host') === '') {
@@ -84,6 +89,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Seguimiento::class, SeguimientoPolicy::class);
         Gate::policy(Prospecto::class, ProspectoPolicy::class);
         Gate::policy(Negocio::class, NegocioPolicy::class);
+        Gate::policy(SolicitudCredito::class, SolicitudCreditoPolicy::class);
 
         View::composer('components.layouts.app', function ($view) {
             if (auth()->check()) {

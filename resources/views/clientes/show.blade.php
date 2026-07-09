@@ -175,7 +175,7 @@
                 $contactosActivos   = $cliente->contactos->where('activo', true)->values();
                 $contactosInactivos = $cliente->contactos->where('activo', false)->values();
             @endphp
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-4" x-data="contactosPanel()">
 
                 {{-- Card izquierda: vigentes --}}
                 <x-ui.card>
@@ -219,13 +219,12 @@
                                                 @endif
                                             </div>
                                         </div>
-                                        <form method="POST" action="{{ route('contactos.toggle', $contacto) }}" class="flex-shrink-0 mt-0.5">
-                                            @csrf @method('PATCH')
-                                            <button type="submit" class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 border border-slate-200 hover:border-red-200 transition-colors">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-                                                Desactivar
-                                            </button>
-                                        </form>
+                                        <button type="button" @click="toggle({{ $contacto->id }})"
+                                                :disabled="loadingId === {{ $contacto->id }}"
+                                                class="flex-shrink-0 mt-0.5 inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 border border-slate-200 hover:border-red-200 transition-colors disabled:opacity-40">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                            Desactivar
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -262,13 +261,13 @@
                                                 <p class="text-xs text-slate-400 truncate">{{ $contacto->cargo }}</p>
                                             @endif
                                         </div>
-                                        <form method="POST" action="{{ route('contactos.toggle', $contacto) }}" class="flex-shrink-0">
-                                            @csrf @method('PATCH')
-                                            <button type="submit" class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-200 hover:border-emerald-200 transition-colors">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                                Reactivar
-                                            </button>
-                                        </form>
+                                        <button type="button" @click="toggle({{ $contacto->id }})"
+                                                :disabled="loadingId === {{ $contacto->id }}"
+                                                class="flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-200 hover:border-emerald-200 transition-colors disabled:opacity-40">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            <span x-show="loadingId !== {{ $contacto->id }}">Reactivar</span>
+                                            <span x-show="loadingId === {{ $contacto->id }}">...</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -336,10 +335,7 @@
                 $kpiVariacion = $kpiPasado > 0 ? (($kpiActual - $kpiPasado) / $kpiPasado) * 100 : null;
                 $kpiNFacturas = count($facturas);
                 $kpiUltima    = !empty($facturas) ? collect($facturas)->max('FECHA') : null;
-                $fmtK = fn(float $v): string => $v >= 1_000_000_000 ? '$'.number_format($v/1_000_000_000,1).'B'
-                    : ($v >= 1_000_000 ? '$'.number_format($v/1_000_000,1).'M'
-                    : ($v >= 1_000 ? '$'.number_format($v/1_000,0).'K'
-                    : '$'.number_format($v,0,'.',',')));
+                $fmtK = fn(float $v): string => '$'.number_format($v, 0, ',', '.');
             @endphp
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <x-ui.card class="p-4">
@@ -638,13 +634,13 @@
                                     <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                                     </svg>
-                                    <span x-text="'Compañía ' + (facActiva?.COMPANIA || '')"></span>
+                                    <span x-text="({1: 'Formacol', 2: 'Contiflex'})[facActiva?.COMPANIA] || ('Compañía ' + (facActiva?.COMPANIA || ''))"></span>
                                 </div>
                                 <div class="flex items-center gap-1.5 text-xs text-slate-500">
                                     <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                     </svg>
-                                    <span x-text="'Vendedor: ' + (facActiva?.COD_VENDEDOR || '—')"></span>
+                                    <span x-text="'Vendedor: ' + (facActiva?.NOMBRE_VENDEDOR || facActiva?.COD_VENDEDOR || '—')"></span>
                                 </div>
                             </div>
                         </div>
@@ -739,6 +735,32 @@
 
 
     <script>
+    function contactosPanel() {
+        return {
+            loadingId: null,
+            async toggle(id) {
+                this.loadingId = id;
+                console.log(`[Contactos] Cambiando estado del contacto #${id}...`);
+                try {
+                    const r = await this.$api('PATCH', `/api/contactos/${id}/toggle`);
+                    console.log('[Contactos] Respuesta toggle:', r);
+                    if (r.success) {
+                        this.$store.toast.success(r.message ?? 'Contacto actualizado.');
+                        setTimeout(() => location.reload(), 500);
+                    } else {
+                        console.error('[Contactos] El servidor rechazó el cambio:', r);
+                        this.$store.toast.error(r.message ?? 'No se pudo actualizar el contacto.');
+                        this.loadingId = null;
+                    }
+                } catch (e) {
+                    console.error('[Contactos] Excepción de red/parseo al cambiar el contacto:', e);
+                    this.$store.toast.error('Error de conexión al actualizar el contacto. Revisa la consola.');
+                    this.loadingId = null;
+                }
+            },
+        };
+    }
+
     function historialCompras(data) {
         return {
             todas: data,
@@ -760,10 +782,7 @@
             fmtCOP(v) {
                 const n = Number(v);
                 if (isNaN(n)) return '—';
-                if (n >= 1_000_000_000) return '$' + (n / 1_000_000_000).toFixed(1) + 'B';
-                if (n >= 1_000_000)     return '$' + (n / 1_000_000).toFixed(1) + 'M';
-                if (n >= 1_000)         return '$' + Math.round(n / 1_000) + 'K';
-                return '$' + n.toLocaleString('es-CO', {minimumFractionDigits: 0, maximumFractionDigits: 2});
+                return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n);
             },
             irA(p) {
                 if (p < 1 || p > this.totalPaginas) return;
@@ -795,10 +814,7 @@
                 datasets,
                 tipo,
                 fmtY(v) {
-                    if (v >= 1_000_000_000) return '$' + (v / 1_000_000_000).toFixed(1) + 'B';
-                    if (v >= 1_000_000)     return '$' + (v / 1_000_000).toFixed(1) + 'M';
-                    if (v >= 1_000)         return '$' + Math.round(v / 1_000) + 'K';
-                    return '$' + Math.round(v);
+                    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(v || 0);
                 },
                 formatTotal(v) {
                     if (this.tipo !== 'ventas') return v + (v === 1 ? ' seg.' : ' segs.');
@@ -884,7 +900,7 @@
                 <x-ui.input name="fecha_seguimiento" type="datetime-local" label="Fecha y hora" required
                     :value="now()->format('Y-m-d\TH:i')"/>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Descripción</label>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Nota</label>
                     <textarea name="descripcion" rows="3" required
                         class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                         placeholder="¿Qué se trató en este seguimiento?"></textarea>
@@ -926,11 +942,13 @@
                     const fd = new FormData($el);
                     const body = {};
                     fd.forEach((v, k) => { body[k] = v; });
+                    console.log('[Contactos] Creando contacto, payload:', body);
                     $api('POST', '/api/clientes/{{ $cliente->id }}/contactos', body)
                         .then(r => {
+                            console.log('[Contactos] Respuesta crear contacto:', r);
                             if (r.success) { $store.toast.success(r.message ?? 'Contacto añadido'); setTimeout(() => location.reload(), 600); }
-                            else { $store.toast.error(r.message ?? 'Error'); loading = false; }
-                        }).catch(() => { $store.toast.error('Error de conexión'); loading = false; })
+                            else { console.error('[Contactos] Error al crear contacto:', r); $store.toast.error(r.message ?? 'Error'); loading = false; }
+                        }).catch(e => { console.error('[Contactos] Excepción de red al crear contacto:', e); $store.toast.error('Error de conexión'); loading = false; })
                 "
                 class="space-y-4"
             >

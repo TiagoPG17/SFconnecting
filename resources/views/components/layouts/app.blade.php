@@ -97,6 +97,11 @@
             <x-ui.nav-item href="{{ route('negocios.kanban') }}" :active="request()->routeIs('negocios.kanban')" icon="layout">
                 Pipeline Kanban
             </x-ui.nav-item>
+            @role('admin')
+            <x-ui.nav-item href="{{ route('solicitudes-credito.index') }}" :active="request()->routeIs('solicitudes-credito.*')" icon="file-text">
+                Solicitudes de Crédito
+            </x-ui.nav-item>
+            @endrole
 
             {{-- Clientes --}}
             <div class="pt-4 pb-1 px-3">

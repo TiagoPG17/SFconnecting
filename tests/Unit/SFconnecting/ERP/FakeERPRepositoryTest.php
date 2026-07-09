@@ -132,5 +132,36 @@ class FakeERPRepositoryTest extends TestCase
         $this->assertTrue($this->erp->isAvailable());
         $this->assertNull($this->erp->clientePorNit('999'));
     }
+
+    public function test_retorna_cartera_registrada_por_nit(): void
+    {
+        $filas = [
+            ['TIPO_DOCTO' => 'FV', 'NUM_DOCTO' => 1, 'SALDO' => 500000, 'DIAS_VENCIDO' => 10, 'TRAMO_AGING' => '1-30'],
+            ['TIPO_DOCTO' => 'FV', 'NUM_DOCTO' => 2, 'SALDO' => 300000, 'DIAS_VENCIDO' => 45, 'TRAMO_AGING' => '31-60'],
+        ];
+        $this->erp->agregarCartera('900123456', $filas);
+
+        $resultado = $this->erp->carteraPorNit('900123456');
+
+        $this->assertCount(2, $resultado);
+        $this->assertSame(500000, $resultado[0]['SALDO']);
+    }
+
+    public function test_retorna_array_vacio_para_cliente_sin_cartera(): void
+    {
+        $resultado = $this->erp->carteraPorNit('000000000');
+
+        $this->assertIsArray($resultado);
+        $this->assertEmpty($resultado);
+    }
+
+    public function test_lanza_excepcion_cartera_cuando_se_simula_desconexion(): void
+    {
+        $this->erp->simularDesconexion();
+
+        $this->expectException(ERPConnectionException::class);
+
+        $this->erp->carteraPorNit('900123456');
+    }
 }
 

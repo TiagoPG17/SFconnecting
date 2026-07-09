@@ -13,6 +13,7 @@ use App\Http\Controllers\Web\NegocioWebController;
 use App\Http\Controllers\Web\ProspectoWebController;
 use App\Http\Controllers\Web\ReporteWebController;
 use App\Http\Controllers\Web\SeguimientoWebController;
+use App\Http\Controllers\Web\SolicitudCreditoWebController;
 use App\Http\Controllers\Web\MapeoVendedorWebController;
 use App\Http\Controllers\Web\PresupuestoWebController;
 use App\Http\Controllers\Web\AdminGestionWebController;
@@ -64,6 +65,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/negocios/{negocio}/edit',   [NegocioWebController::class, 'edit'])->name('negocios.edit')->middleware('role:admin|comercial');
     Route::get('/negocios/{negocio}',        [NegocioWebController::class, 'show'])->name('negocios.show');
     Route::get('/negocios',                  [NegocioWebController::class, 'index'])->name('negocios.index');
+
+    // Solicitudes de Crédito — estáticas antes del wildcard
+    Route::get('/solicitudes-credito/create',              [SolicitudCreditoWebController::class, 'create'])->name('solicitudes-credito.create')->middleware('role:admin');
+    Route::get('/solicitudes-credito/{solicitudCredito}',  [SolicitudCreditoWebController::class, 'show'])->name('solicitudes-credito.show')->middleware('role:admin');
+    Route::get('/solicitudes-credito',                     [SolicitudCreditoWebController::class, 'index'])->name('solicitudes-credito.index')->middleware('role:admin');
 
     // Clientes huérfanos (todos los roles)
     Route::patch('/contactos/{contacto}/toggle', [ContactoWebController::class, 'toggle'])->name('contactos.toggle');

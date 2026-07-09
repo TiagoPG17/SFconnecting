@@ -120,11 +120,17 @@
                     style="border-left: 3px solid {{ $color }}"
                 >
                     {{-- Nombre --}}
-                    <div class="mb-1.5">
+                    <div class="mb-1.5 flex items-start justify-between gap-1.5">
                         <a href="{{ route('negocios.show', $negocio) }}"
                            class="text-sm font-semibold text-slate-900 leading-tight hover:text-blue-600 transition-colors line-clamp-2">
                             {{ $negocio->nombre_negocio }}
                         </a>
+                        @if($negocio->compania)
+                            <span class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded {{ $negocio->compania === 1 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700' }}"
+                                  title="{{ $negocio->companiaNombre() }}">
+                                {{ $negocio->companiaSiglas() }}
+                            </span>
+                        @endif
                     </div>
 
                     {{-- Cliente --}}

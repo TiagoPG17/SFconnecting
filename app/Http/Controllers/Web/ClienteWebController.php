@@ -8,6 +8,7 @@ use App\Domain\Clientes\DTOs\CrearClienteDTO;
 use App\Domain\Clientes\Models\Cliente;
 use App\Domain\Clientes\Repositories\ClienteRepositoryInterface;
 use App\Domain\Clientes\Services\ClienteService;
+use App\Domain\Dashboard\Models\VendedorEquivalencia;
 use App\Domain\Dashboard\Repositories\DashboardVendedorRepositoryInterface;
 use App\Domain\ERP\Contracts\ERPRepositoryInterface;
 use App\Domain\Seguimientos\Repositories\SeguimientoRepositoryInterface;
@@ -216,7 +217,30 @@ class ClienteWebController extends Controller
         if (! $this->erp->isAvailable()) {
             return [];
         }
-        return $this->erp->facturasPorNit($nit);
+
+        return $this->enriquecerNombreVendedor($this->erp->facturasPorNit($nit));
+    }
+
+    private function enriquecerNombreVendedor(array $facturas): array
+    {
+        if (empty($facturas)) {
+            return $facturas;
+        }
+
+        $companias = collect($facturas)->pluck('COMPANIA')->filter()->unique()->values()->all();
+
+        $mapa = VendedorEquivalencia::whereIn('compania', $companias)
+            ->get(['compania', 'cod_vendedor_siesa', 'nombre_vendedor'])
+            ->mapWithKeys(fn (VendedorEquivalencia $v) => [
+                $v->compania.'|'.trim((string) $v->cod_vendedor_siesa) => $v->nombre_vendedor,
+            ]);
+
+        return array_map(function (array $factura) use ($mapa) {
+            $clave = ($factura['COMPANIA'] ?? '').'|'.trim((string) ($factura['COD_VENDEDOR'] ?? ''));
+            $factura['NOMBRE_VENDEDOR'] = $mapa->get($clave);
+
+            return $factura;
+        }, $facturas);
     }
 
     private function calcularActividad(Collection $todos): array

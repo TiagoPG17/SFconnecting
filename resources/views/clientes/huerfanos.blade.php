@@ -44,11 +44,12 @@
 
 @else
 @php
-    $huerfanosJs = array_map(function ($c) {
+    $huerfanosJs = array_map(function ($c) use ($compania) {
         return [
             'NIT'                      => $c['NIT'] ?? '',
             'RAZON_SOCIAL'             => $c['RAZON_SOCIAL'] ?? '',
             'CIUDAD'                   => $c['CIUDAD'] ?? '',
+            'COMPANIA'                 => $compania === 1 ? 'Formacol' : 'Contiflex',
             'NOMBRE_VENDEDOR'          => $c['NOMBRE_VENDEDOR'] ?? '',
             'MOTIVO_HUERFANO'          => $c['MOTIVO_HUERFANO'] ?? 'Sin vendedor',
             'VLR_NETO_FACTURADO'       => (float) ($c['VLR_NETO_FACTURADO'] ?? 0),
@@ -81,6 +82,9 @@
                     <th class="px-5 py-3 cursor-pointer select-none hover:text-slate-800 transition-colors" @click="sortOn('CIUDAD')">
                         Ciudad <span x-text="arrow('CIUDAD')"></span>
                     </th>
+                    <th class="px-5 py-3 cursor-pointer select-none hover:text-slate-800 transition-colors" @click="sortOn('COMPANIA')">
+                        Compañía <span x-text="arrow('COMPANIA')"></span>
+                    </th>
                     <th class="px-5 py-3 text-right cursor-pointer select-none hover:text-slate-800 transition-colors" @click="sortOn('VLR_NETO_FACTURADO')">
                         Facturación histórica <span x-text="arrow('VLR_NETO_FACTURADO')"></span>
                     </th>
@@ -102,7 +106,7 @@
             <tbody class="divide-y divide-slate-100">
                 <template x-if="filtered.length === 0">
                     <tr>
-                        <td colspan="8" class="px-5 py-10 text-center text-sm text-slate-400">
+                        <td colspan="9" class="px-5 py-10 text-center text-sm text-slate-400">
                             Sin resultados para "<span x-text="search"></span>"
                         </td>
                     </tr>
@@ -114,6 +118,12 @@
                             <p class="text-xs text-slate-400 font-mono mt-0.5" x-text="c.NIT"></p>
                         </td>
                         <td class="px-5 py-4 text-slate-500 text-xs" x-text="c.CIUDAD || '—'"></td>
+                        <td class="px-5 py-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+                                  :class="c.COMPANIA === 'Formacol' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'"
+                                  x-text="c.COMPANIA">
+                            </span>
+                        </td>
                         <td class="px-5 py-4 text-xs text-slate-500" x-text="c.NOMBRE_VENDEDOR || '—'"></td>
                         <td class="px-5 py-4">
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"

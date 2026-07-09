@@ -177,6 +177,15 @@
 
                     <x-ui.input name="nombre_negocio" label="Nombre del negocio" required placeholder="Ej: Implementación ERP Empresa X"/>
 
+                    @if(count($companiasAsesor) > 1)
+                    <x-ui.select name="compania" label="Compañía" required>
+                        <option value="">Seleccionar compañía...</option>
+                        @foreach($companiasAsesor as $cia)
+                            <option value="{{ $cia }}">{{ $cia === 1 ? 'Formacol' : 'Contiflex' }}</option>
+                        @endforeach
+                    </x-ui.select>
+                    @endif
+
                     <p class="text-xs text-amber-600">* El negocio debe estar vinculado a un prospecto o un cliente.</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -215,14 +224,14 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <x-ui.input name="valor_estimado" type="number" label="Valor estimado ($)" placeholder="0" min="0" step="1000" value="0"/>
+                        <x-ui.input name="valor_estimado" type="number" label="Valor estimado ($)" placeholder="0" min="0" step="0.01" value="0"/>
                         <x-ui.input name="probabilidad_cierre" type="number" label="Probabilidad (%)" placeholder="Automática del estado" min="0" max="100"/>
                     </div>
 
                     <x-ui.input name="fecha_estimada_cierre" type="date" label="Fecha estimada de cierre"/>
 
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Descripción</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Descripción del producto cotizado</label>
                         <textarea
                             name="descripcion"
                             rows="3"

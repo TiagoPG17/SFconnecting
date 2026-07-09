@@ -180,7 +180,7 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-700 mb-1">Descripción</label>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Nota</label>
                             <textarea x-model="form.descripcion" rows="3"
                                 class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 resize-none"
                                 placeholder="Mínimo 10 caracteres…"></textarea>

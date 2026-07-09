@@ -57,7 +57,7 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <x-ui.input name="valor_estimado" type="number" label="Valor estimado ($)" :value="$negocio->valor_estimado" min="0" step="1000"/>
+                        <x-ui.input name="valor_estimado" type="number" label="Valor estimado ($)" :value="$negocio->valor_estimado" min="0" step="0.01"/>
                         <x-ui.input name="probabilidad_cierre" type="number" label="Probabilidad (%)"
                             :value="$negocio->probabilidad_cierre" placeholder="Automática del estado" min="0" max="100"/>
                     </div>

@@ -93,11 +93,11 @@
   <div class="grid sm:grid-cols-4 gap-4 mb-5">
     <div class="dash-card p-4">
       <p class="text-xs text-slate-500">Presupuesto total</p>
-      <p class="text-2xl font-bold mt-1 tnum text-slate-900" x-text="moneyShort(totales.presupuesto)"></p>
+      <p class="text-2xl font-bold mt-1 tnum text-slate-900" x-text="money(totales.presupuesto)"></p>
     </div>
     <div class="dash-card p-4">
       <p class="text-xs text-slate-500">{{ $periodo === 'mes' ? 'Logrado este mes' : ($periodo === 'trimestre' ? 'Logrado este trimestre' : 'Logrado en el año') }}</p>
-      <p class="text-2xl font-bold mt-1 tnum text-slate-900" x-text="moneyShort(totales.logrado)"></p>
+      <p class="text-2xl font-bold mt-1 tnum text-slate-900" x-text="money(totales.logrado)"></p>
     </div>
     <div class="dash-card p-4">
       <p class="text-xs text-slate-500">Cumplimiento</p>
@@ -105,7 +105,7 @@
     </div>
     <div class="dash-card p-4">
       <p class="text-xs text-slate-500">Pipeline activo</p>
-      <p class="text-2xl font-bold mt-1 tnum text-slate-900" x-text="moneyShort(totales.forecast)"></p>
+      <p class="text-2xl font-bold mt-1 tnum text-slate-900" x-text="money(totales.forecast)"></p>
     </div>
   </div>
 
@@ -138,8 +138,8 @@
             <template x-for="v in paged" :key="v.asesor_id">
               <tr class="border-t border-slate-100">
                 <td class="py-2.5 text-slate-800" x-text="v.vendedor"></td>
-                <td class="py-2.5 text-right tnum text-slate-400" x-text="moneyShort(v.presupuesto_anual)"></td>
-                <td class="py-2.5 text-right tnum text-slate-800" x-text="moneyShort(v.logrado_ytd)"></td>
+                <td class="py-2.5 text-right tnum text-slate-400" x-text="money(v.presupuesto_anual)"></td>
+                <td class="py-2.5 text-right tnum text-slate-800" x-text="money(v.logrado_ytd)"></td>
                 <td class="py-2.5 text-right tnum">
                   <span class="px-2 py-0.5 rounded-full text-xs font-medium"
                         :style="semaforoStyle(Math.min(v.cumpl,100))" x-text="Math.min(parseFloat(v.cumpl)||0, 100).toFixed(1)+'%'"></span>
@@ -188,7 +188,7 @@
               <span class="text-xs text-slate-400 ml-1.5" x-text="bandaCriterio(b.banda)"></span>
             </div>
             <div class="text-right shrink-0">
-              <p class="text-sm font-semibold tnum text-slate-800" x-text="moneyShort(b.valor_en_banda)"></p>
+              <p class="text-sm font-semibold tnum text-slate-800" x-text="money(b.valor_en_banda)"></p>
               <p class="text-xs text-slate-400" x-text="b.num_clientes + ' clientes'"></p>
             </div>
           </div>
@@ -198,7 +198,7 @@
 
       <div class="mt-3 pt-3 border-t border-slate-200 flex justify-between items-center">
         <p class="text-xs text-slate-500">Valor en riesgo <span class="text-slate-400">(tibios + en riesgo + inactivos)</span></p>
-        <span class="tnum font-bold" style="color:var(--red)" x-text="moneyShort(valorEnRiesgo)"></span>
+        <span class="tnum font-bold" style="color:var(--red)" x-text="money(valorEnRiesgo)"></span>
       </div>
     </div>
 
@@ -819,7 +819,6 @@ function dashGerencial(){
     get maxCiclo(){ return this.ciclo.length ? Math.max(...this.ciclo.map(c=>c.dias),1) : 1 },
 
     money(v){ return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(v||0) },
-    moneyShort(v){ if(!v) return '$0'; v=Number(v); if(v>=1e9) return '$'+(v/1e9).toFixed(1)+'B'; if(v>=1e6) return '$'+(v/1e6).toFixed(0)+'M'; return '$'+v },
     barColor(p){ return p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red)' },
     semaforoStyle(p){ return p>=80?'background:var(--green-bg);color:var(--green)':p>=50?'background:var(--amber-bg);color:var(--amber)':'background:var(--red-bg);color:var(--red)' },
     bandaColor(b){ return {'1':'#15803d','2':'#0ea5e9','3':'#f59e0b','4':'#b91c1c'}[b[0]]||'#94a3b8' },

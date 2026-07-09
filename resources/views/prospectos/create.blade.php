@@ -138,7 +138,7 @@
                                 x-model="form.valor_estimado"
                                 @input="delete errors.valor_estimado"
                                 x-error="errors.valor_estimado"
-                                placeholder="0" min="0" step="1000"/>
+                                placeholder="0" min="0" step="0.01"/>
                         </div>
                     </div>
 

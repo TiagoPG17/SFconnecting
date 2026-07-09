@@ -10,6 +10,8 @@ use App\Domain\Clientes\DTOs\CrearContactoDTO;
 use App\Domain\Clientes\Models\Contacto;
 use App\Domain\Clientes\Repositories\ContactoRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ContactoService
 {
@@ -25,7 +27,7 @@ class ContactoService
             $this->repo->quitarPrincipalDeCliente($dto->clienteId, $contacto->id);
         }
 
-        ActividadLog::registrar('crear', 'contactos', "Contacto '{$contacto->nombre}' creado para cliente #{$dto->clienteId}");
+        $this->registrarActividad('crear', 'contactos', "Contacto '{$contacto->nombre}' creado para cliente #{$dto->clienteId}");
 
         return $contacto;
     }
@@ -38,14 +40,14 @@ class ContactoService
             $this->repo->quitarPrincipalDeCliente($contacto->cliente_id, $contacto->id);
         }
 
-        ActividadLog::registrar('actualizar', 'contactos', "Contacto '{$contacto->nombre}' actualizado (cliente #{$contacto->cliente_id})");
+        $this->registrarActividad('actualizar', 'contactos', "Contacto '{$contacto->nombre}' actualizado (cliente #{$contacto->cliente_id})");
 
         return $actualizado;
     }
 
     public function eliminar(Contacto $contacto): void
     {
-        ActividadLog::registrar('eliminar', 'contactos', "Contacto '{$contacto->nombre}' eliminado (cliente #{$contacto->cliente_id})");
+        $this->registrarActividad('eliminar', 'contactos', "Contacto '{$contacto->nombre}' eliminado (cliente #{$contacto->cliente_id})");
 
         $this->repo->eliminar($contacto);
     }
@@ -54,9 +56,25 @@ class ContactoService
     {
         $contacto = $this->repo->restaurar($id);
 
-        ActividadLog::registrar('restaurar', 'contactos', "Contacto '{$contacto->nombre}' restaurado (cliente #{$contacto->cliente_id})");
+        $this->registrarActividad('restaurar', 'contactos', "Contacto '{$contacto->nombre}' restaurado (cliente #{$contacto->cliente_id})");
 
         return $contacto;
+    }
+
+    /**
+     * El log de auditoría es informativo: si falla (ej. tabla actividad_log
+     * no migrada en el servidor), no debe tumbar la acción real del usuario.
+     */
+    private function registrarActividad(string $accion, string $modulo, string $descripcion): void
+    {
+        try {
+            ActividadLog::registrar($accion, $modulo, $descripcion);
+        } catch (Throwable $e) {
+            Log::error("[ActividadLog] No se pudo registrar '{$accion}' en '{$modulo}': {$e->getMessage()}", [
+                'descripcion' => $descripcion,
+                'exception'   => $e,
+            ]);
+        }
     }
 
     public function porCliente(int $clienteId): Collection

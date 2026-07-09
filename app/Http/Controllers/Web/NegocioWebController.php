@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Web;
 
 use App\Domain\Clientes\Repositories\ClienteRepositoryInterface;
+use App\Domain\Dashboard\Models\VendedorEquivalencia;
 use App\Domain\Maestros\Repositories\MaestroRepositoryInterface;
 use App\Domain\Negocios\Models\Negocio;
 use App\Domain\Negocios\Repositories\NegocioRepositoryInterface;
@@ -56,7 +57,14 @@ class NegocioWebController extends Controller
         $motivos           = $this->maestros->porTipo('motivo_perdida');
         $estadosPerdidoIds = $estados->where('es_perdido', true)->pluck('id')->values()->toArray();
 
-        return view('negocios.create', compact('estados', 'tipos', 'motivos', 'estadosPerdidoIds'));
+        $companiasAsesor = VendedorEquivalencia::where('asesor_id', auth()->id())
+            ->where('activo', true)
+            ->pluck('compania')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        return view('negocios.create', compact('estados', 'tipos', 'motivos', 'estadosPerdidoIds', 'companiasAsesor'));
     }
 
     public function edit(Negocio $negocio): View

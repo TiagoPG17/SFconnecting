@@ -14,6 +14,9 @@ interface ERPRepositoryInterface
 
     public function saldoPorCliente(string $nit): ?array;
 
+    /** Retorna la cartera por cobrar del cliente (un registro por documento/cuota), con aging. */
+    public function carteraPorNit(string $nit): array;
+
     public function clientesAtencionInmediata(int $limite = 20, ?string $filtroVendedor = null): array;
 
     public function clientesRescate(int $limite = 20, ?string $filtroVendedor = null): array;

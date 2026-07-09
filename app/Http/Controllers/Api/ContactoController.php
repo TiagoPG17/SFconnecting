@@ -15,6 +15,8 @@ use App\Http\Requests\Contactos\CrearContactoRequest;
 use App\Http\Resources\Contactos\ContactoResource;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ContactoController extends Controller
 {
@@ -66,5 +68,27 @@ class ContactoController extends Controller
         $this->service->eliminar($contacto);
 
         return ApiResponse::success(message: 'Contacto eliminado.');
+    }
+
+    public function toggle(Contacto $contacto): JsonResponse
+    {
+        $this->authorize('update', $contacto);
+
+        try {
+            $nuevoValor = ! $contacto->activo;
+            $contacto->update(['activo' => $nuevoValor]);
+
+            Log::info("[Contactos] Toggle exitoso: contacto #{$contacto->id} -> activo={$nuevoValor}");
+
+            $mensaje = $nuevoValor ? 'Contacto reactivado.' : 'Contacto desactivado.';
+
+            return ApiResponse::success(new ContactoResource($contacto), $mensaje);
+        } catch (Throwable $e) {
+            Log::error("[Contactos] Error al hacer toggle del contacto #{$contacto->id}: {$e->getMessage()}", [
+                'exception' => $e,
+            ]);
+
+            return ApiResponse::error('No se pudo actualizar el contacto: ' . $e->getMessage(), [], 500);
+        }
     }
 }
