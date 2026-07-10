@@ -17,7 +17,7 @@ class CrearClienteRequest extends FormRequest
     {
         return [
             'razon_social' => ['required', 'string', 'max:255'],
-            'nit'          => ['required', 'string', 'max:20', 'unique:clientes,nit', 'regex:/^\d{6,15}$/'],
+            'nit'          => ['required', 'string', 'max:20', 'regex:/^\d{6,15}$/'],
             'email'        => ['nullable', 'email', 'max:255', 'unique:clientes,email'],
             'telefono'     => ['nullable', 'string', 'max:20'],
             'ciudad'       => ['nullable', 'string', 'max:100'],
@@ -32,7 +32,6 @@ class CrearClienteRequest extends FormRequest
         return [
             'razon_social.required' => 'La razón social es obligatoria.',
             'nit.required'          => 'El NIT es obligatorio.',
-            'nit.unique'            => 'Ya existe un cliente con este NIT.',
             'nit.regex'             => 'El NIT debe contener solo dígitos (6-15).',
             'email.unique'          => 'Ya existe un cliente con este correo.',
             'estado.in'             => 'El estado debe ser: activo, inactivo o prospecto.',

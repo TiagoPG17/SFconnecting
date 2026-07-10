@@ -42,7 +42,7 @@ class ERPClienteIntegrationTest extends TestCase
             'telefono'     => '6051234567',
         ]);
 
-        $dto     = new CrearClienteDTO('Empresa Contiflex SA', '900100200', $user->id);
+        $dto     = new CrearClienteDTO('Empresa Contiflex SA', '900100200', $user->id, compania: 1);
         $cliente = $this->service->crear($dto);
 
         $this->assertSame('Barranquilla', $cliente->ciudad);
@@ -52,7 +52,7 @@ class ERPClienteIntegrationTest extends TestCase
     public function test_creacion_no_falla_si_erp_no_tiene_el_nit(): void
     {
         $user    = User::factory()->create();
-        $dto     = new CrearClienteDTO('Cliente Sin ERP', '111222333', $user->id);
+        $dto     = new CrearClienteDTO('Cliente Sin ERP', '111222333', $user->id, compania: 1);
         $cliente = $this->service->crear($dto);
 
         $this->assertNotNull($cliente->id);
@@ -64,7 +64,7 @@ class ERPClienteIntegrationTest extends TestCase
         $user = User::factory()->create();
         $this->erp->simularDesconexion();
 
-        $dto     = new CrearClienteDTO('Cliente ERP CaÃ­do', '444555666', $user->id);
+        $dto     = new CrearClienteDTO('Cliente ERP CaÃ­do', '444555666', $user->id, compania: 1);
         $cliente = $this->service->crear($dto);
 
         $this->assertNotNull($cliente->id);
@@ -80,6 +80,7 @@ class ERPClienteIntegrationTest extends TestCase
 
         $dto     = new CrearClienteDTO(
             'Mi Empresa', '777888999', $user->id,
+            compania: 1,
             ciudad: 'Cartagena',
             telefono: '6051111111',
         );

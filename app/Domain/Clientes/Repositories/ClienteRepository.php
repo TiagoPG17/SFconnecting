@@ -43,9 +43,9 @@ class ClienteRepository implements ClienteRepositoryInterface
         return Cliente::find($id);
     }
 
-    public function buscarPorNit(string $nit): ?Cliente
+    public function buscarPorNit(string $nit, int $compania): ?Cliente
     {
-        return Cliente::where('nit', $nit)->first();
+        return Cliente::where('nit', $nit)->where('compania', $compania)->first();
     }
 
     public function buscarPorEmail(string $email): ?Cliente
@@ -95,9 +95,9 @@ class ClienteRepository implements ClienteRepositoryInterface
         return Cliente::where('user_id', $userId)->get();
     }
 
-    public function existeNit(string $nit, ?int $exceptoId = null): bool
+    public function existeNit(string $nit, int $compania, ?int $exceptoId = null): bool
     {
-        $query = Cliente::where('nit', $nit);
+        $query = Cliente::where('nit', $nit)->where('compania', $compania);
 
         if ($exceptoId !== null) {
             $query->where('id', '!=', $exceptoId);
@@ -117,14 +117,15 @@ class ClienteRepository implements ClienteRepositoryInterface
         return $query->exists();
     }
 
-    public function sincronizarDesdeErp(array $clientesErp, int $userId): array
+    public function sincronizarDesdeErp(array $clientesErp, int $userId, int $compania): array
     {
         $creados     = 0;
         $actualizados = 0;
 
         $nits = array_filter(array_column($clientesErp, 'NIT'), fn ($n) => $n !== null && $n !== '');
 
-        $existentes = Cliente::whereIn('nit', $nits)
+        $existentes = Cliente::where('compania', $compania)
+            ->whereIn('nit', $nits)
             ->pluck('nit')
             ->flip()
             ->toArray();
@@ -137,14 +138,16 @@ class ClienteRepository implements ClienteRepositoryInterface
             }
 
             if (isset($existentes[$nit])) {
-                Cliente::where('nit', $nit)->update([
+                Cliente::where('nit', $nit)->where('compania', $compania)->update([
                     'razon_social' => $datos['RAZON_SOCIAL'] ?? '',
                     'ciudad'       => $datos['CIUDAD'] ?? null,
+                    'user_id'      => $userId,
                 ]);
                 $actualizados++;
             } else {
                 Cliente::create([
                     'nit'          => $nit,
+                    'compania'     => $compania,
                     'razon_social' => $datos['RAZON_SOCIAL'] ?? $nit,
                     'ciudad'       => $datos['CIUDAD'] ?? null,
                     'user_id'      => $userId,

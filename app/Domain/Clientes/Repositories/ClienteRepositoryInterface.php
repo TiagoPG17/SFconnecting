@@ -22,7 +22,7 @@ interface ClienteRepositoryInterface
 
     public function buscarPorId(int $id): ?Cliente;
 
-    public function buscarPorNit(string $nit): ?Cliente;
+    public function buscarPorNit(string $nit, int $compania): ?Cliente;
 
     public function buscarPorEmail(string $email): ?Cliente;
 
@@ -32,10 +32,10 @@ interface ClienteRepositoryInterface
 
     public function porAsesor(int $userId): Collection;
 
-    public function existeNit(string $nit, ?int $exceptoId = null): bool;
+    public function existeNit(string $nit, int $compania, ?int $exceptoId = null): bool;
 
     public function existeEmail(string $email, ?int $exceptoId = null): bool;
 
     /** @return array{creados: int, actualizados: int} */
-    public function sincronizarDesdeErp(array $clientesErp, int $userId): array;
+    public function sincronizarDesdeErp(array $clientesErp, int $userId, int $compania): array;
 }

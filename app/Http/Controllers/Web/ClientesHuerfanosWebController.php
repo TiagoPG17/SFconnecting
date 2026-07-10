@@ -9,7 +9,7 @@ use App\Domain\Clientes\DTOs\CrearClienteDTO;
 use App\Domain\Clientes\Exceptions\ClienteDuplicadoException;
 use App\Domain\Clientes\Repositories\ClienteRepositoryInterface;
 use App\Domain\Clientes\Services\ClienteService;
-use App\Domain\Dashboard\Models\VendedorEquivalencia;
+use App\Domain\Dashboard\Repositories\DashboardVendedorRepositoryInterface;
 use App\Domain\ERP\Contracts\ERPRepositoryInterface;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +22,7 @@ class ClientesHuerfanosWebController extends Controller
         private readonly ERPRepositoryInterface $erp,
         private readonly ClienteService $clienteService,
         private readonly ClienteRepositoryInterface $clienteRepo,
+        private readonly DashboardVendedorRepositoryInterface $vendedorRepo,
     ) {}
 
     public function index(Request $request): View
@@ -67,6 +68,7 @@ class ClientesHuerfanosWebController extends Controller
                 razonSocial: $request->input('razon_social', $nit),
                 nit:         $nit,
                 userId:      $user->id,
+                compania:    $compania,
                 ciudad:      $request->input('ciudad'),
                 estado:      'activo',
                 notas:       'Reactivado desde lista de clientes huérfanos (CIA ' . $compania . ').',
@@ -89,14 +91,8 @@ class ClientesHuerfanosWebController extends Controller
 
     private function companiaDelUsuario(int $userId, bool $esAsesor): int
     {
-        if ($esAsesor) {
-            $compania = VendedorEquivalencia::where('asesor_id', $userId)
-                ->where('activo', true)
-                ->value('compania');
-
-            return $compania ? (int) $compania : (int) config('crm.compania', 1);
-        }
-
-        return (int) config('crm.compania', 1);
+        return $esAsesor
+            ? $this->vendedorRepo->companiaPrincipal($userId)
+            : (int) config('crm.compania', 1);
     }
 }

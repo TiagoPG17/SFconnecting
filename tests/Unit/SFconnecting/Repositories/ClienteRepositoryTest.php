@@ -33,6 +33,7 @@ class ClienteRepositoryTest extends TestCase
             razonSocial: 'Empresa Test S.A.S',
             nit:         '900111222',
             userId:      $user->id,
+            compania:    1,
             email:       'test@empresa.co',
             ciudad:      'BogotÃ¡',
         );
@@ -47,7 +48,7 @@ class ClienteRepositoryTest extends TestCase
     public function test_crea_cliente_sin_email(): void
     {
         $user    = User::factory()->create();
-        $dto     = new CrearClienteDTO(razonSocial: 'Sin Email Co', nit: '800222333', userId: $user->id);
+        $dto     = new CrearClienteDTO(razonSocial: 'Sin Email Co', nit: '800222333', userId: $user->id, compania: 1);
         $cliente = $this->repo->crear($dto);
 
         $this->assertNull($cliente->email);
@@ -94,7 +95,7 @@ class ClienteRepositoryTest extends TestCase
         $cliente = Cliente::factory()->create(['nit' => '999888777']);
         $this->repo->eliminar($cliente);
 
-        $encontrado = $this->repo->buscarPorNit('999888777');
+        $encontrado = $this->repo->buscarPorNit('999888777', $cliente->compania);
 
         $this->assertNull($encontrado);
     }
@@ -133,11 +134,20 @@ class ClienteRepositoryTest extends TestCase
 
     public function test_busca_por_nit(): void
     {
-        Cliente::factory()->create(['nit' => '900500600']);
-        $encontrado = $this->repo->buscarPorNit('900500600');
+        Cliente::factory()->create(['nit' => '900500600', 'compania' => 1]);
+        $encontrado = $this->repo->buscarPorNit('900500600', 1);
 
         $this->assertNotNull($encontrado);
         $this->assertSame('900500600', $encontrado->nit);
+    }
+
+    public function test_buscar_por_nit_no_confunde_companias(): void
+    {
+        Cliente::factory()->create(['nit' => '900500600', 'compania' => 1]);
+
+        $encontrado = $this->repo->buscarPorNit('900500600', 2);
+
+        $this->assertNull($encontrado);
     }
 
     public function test_busca_por_email(): void
@@ -220,21 +230,28 @@ class ClienteRepositoryTest extends TestCase
 
     public function test_detecta_nit_existente(): void
     {
-        Cliente::factory()->create(['nit' => '900111222']);
+        Cliente::factory()->create(['nit' => '900111222', 'compania' => 1]);
 
-        $this->assertTrue($this->repo->existeNit('900111222'));
+        $this->assertTrue($this->repo->existeNit('900111222', 1));
     }
 
     public function test_no_detecta_nit_inexistente(): void
     {
-        $this->assertFalse($this->repo->existeNit('000000000'));
+        $this->assertFalse($this->repo->existeNit('000000000', 1));
+    }
+
+    public function test_no_detecta_nit_de_otra_compania(): void
+    {
+        Cliente::factory()->create(['nit' => '900111222', 'compania' => 1]);
+
+        $this->assertFalse($this->repo->existeNit('900111222', 2));
     }
 
     public function test_excluye_id_propio_al_verificar_nit(): void
     {
-        $cliente = Cliente::factory()->create(['nit' => '900111222']);
+        $cliente = Cliente::factory()->create(['nit' => '900111222', 'compania' => 1]);
 
-        $this->assertFalse($this->repo->existeNit('900111222', $cliente->id));
+        $this->assertFalse($this->repo->existeNit('900111222', 1, $cliente->id));
     }
 
     public function test_detecta_email_existente(): void

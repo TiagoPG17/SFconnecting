@@ -31,6 +31,15 @@ class DashboardVendedorRepository implements DashboardVendedorRepositoryInterfac
             ->value('nombre_vendedor');
     }
 
+    public function companiaPrincipal(int $asesorId): int
+    {
+        $compania = VendedorEquivalencia::where('asesor_id', $asesorId)
+            ->where('activo', true)
+            ->value('compania');
+
+        return $compania ? (int) $compania : (int) config('crm.compania', 1);
+    }
+
     public function presupuestoVendedor(int $asesorId, int $compania, int $anio): ?object
     {
         return Presupuesto::where('asesor_id', $asesorId)

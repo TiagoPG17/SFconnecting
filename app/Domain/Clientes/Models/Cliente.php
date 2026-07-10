@@ -20,6 +20,7 @@ class Cliente extends Model
     protected $fillable = [
         'razon_social',
         'nit',
+        'compania',
         'email',
         'telefono',
         'ciudad',
@@ -31,6 +32,7 @@ class Cliente extends Model
 
     protected $casts = [
         'deleted_at' => 'datetime',
+        'compania'   => 'integer',
     ];
 
     public function asesor(): BelongsTo

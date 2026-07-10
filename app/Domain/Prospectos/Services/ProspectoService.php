@@ -7,6 +7,7 @@ namespace App\Domain\Prospectos\Services;
 use App\Domain\Auditoria\Models\ActividadLog;
 use App\Domain\Clientes\DTOs\CrearClienteDTO;
 use App\Domain\Clientes\Repositories\ClienteRepositoryInterface;
+use App\Domain\Dashboard\Repositories\DashboardVendedorRepositoryInterface;
 use App\Domain\Negocios\Models\AuditoriaPipeline;
 use App\Domain\Seguimientos\Repositories\SeguimientoRepositoryInterface;
 use App\Domain\Prospectos\DTOs\ActualizarProspectoDTO;
@@ -24,6 +25,7 @@ class ProspectoService
         private readonly ProspectoRepositoryInterface $repo,
         private readonly ClienteRepositoryInterface $clienteRepo,
         private readonly SeguimientoRepositoryInterface $seguimientoRepo,
+        private readonly DashboardVendedorRepositoryInterface $vendedorRepo,
     ) {}
 
     public function crear(CrearProspectoDTO $dto): Prospecto
@@ -77,6 +79,7 @@ class ProspectoService
                 razonSocial: $dto->razonSocial ?? $prospecto->empresa,
                 nit:         $dto->nit ?? 'PEND-' . $prospecto->id,
                 userId:      $dto->usuarioId,
+                compania:    $this->vendedorRepo->companiaPrincipal($dto->usuarioId),
                 email:       $prospecto->email,
                 telefono:    $prospecto->telefono,
                 ciudad:      $dto->ciudad,

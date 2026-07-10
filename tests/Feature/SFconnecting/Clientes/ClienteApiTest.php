@@ -104,12 +104,21 @@ class ClienteApiTest extends TestCase
     public function test_crear_falla_con_nit_duplicado(): void
     {
         $asesor = $this->asesor();
-        Cliente::factory()->create(['nit' => '900111000']);
+        Cliente::factory()->create(['nit' => '900111000', 'compania' => 1]);
 
         $this->actingAs($asesor)
             ->postJson('/api/clientes', ['razon_social' => 'Otra', 'nit' => '900111000'])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['nit']);
+            ->assertStatus(409);
+    }
+
+    public function test_crear_permite_mismo_nit_en_compania_distinta(): void
+    {
+        $asesor = $this->asesor();
+        Cliente::factory()->create(['nit' => '900111000', 'compania' => 2]);
+
+        $this->actingAs($asesor)
+            ->postJson('/api/clientes', ['razon_social' => 'Otra', 'nit' => '900111000'])
+            ->assertStatus(201);
     }
 
     public function test_crear_falla_con_email_invalido(): void

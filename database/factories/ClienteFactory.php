@@ -17,6 +17,7 @@ class ClienteFactory extends Factory
         return [
             'razon_social' => fake()->company(),
             'nit'          => $this->generarNit(),
+            'compania'     => config('crm.compania', 1),
             'email'        => fake()->unique()->companyEmail(),
             'telefono'     => fake()->phoneNumber(),
             'ciudad'       => fake()->randomElement(['Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena']),
@@ -45,6 +46,11 @@ class ClienteFactory extends Factory
     public function sinEmail(): static
     {
         return $this->state(fn () => ['email' => null]);
+    }
+
+    public function compania(int $compania): static
+    {
+        return $this->state(fn () => ['compania' => $compania]);
     }
 
     private function generarNit(): string

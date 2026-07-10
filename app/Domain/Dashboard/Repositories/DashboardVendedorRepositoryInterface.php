@@ -10,6 +10,9 @@ interface DashboardVendedorRepositoryInterface
 {
     public function companiasDelAsesor(int $asesorId): array;
 
+    /** Compañía principal del asesor (la primera activa en sf_vendedor_equivalencia, o la de config('crm.compania') si no tiene mapeo). */
+    public function companiaPrincipal(int $asesorId): int;
+
     public function nombreVendedorSiesa(int $asesorId): ?string;
 
     public function presupuestoVendedor(int $asesorId, int $compania, int $anio): ?object;

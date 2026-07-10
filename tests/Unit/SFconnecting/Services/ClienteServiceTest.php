@@ -34,7 +34,7 @@ class ClienteServiceTest extends TestCase
     public function test_crea_cliente_exitosamente(): void
     {
         $user    = User::factory()->create();
-        $dto     = new CrearClienteDTO('Empresa TDD', '900300400', $user->id, 'tdd@empresa.co');
+        $dto     = new CrearClienteDTO('Empresa TDD', '900300400', $user->id, compania: 1, email: 'tdd@empresa.co');
         $cliente = $this->service->crear($dto);
 
         $this->assertInstanceOf(Cliente::class, $cliente);
@@ -45,12 +45,24 @@ class ClienteServiceTest extends TestCase
     public function test_lanza_excepcion_si_nit_ya_existe(): void
     {
         $user = User::factory()->create();
-        Cliente::factory()->create(['nit' => '900300400']);
+        Cliente::factory()->create(['nit' => '900300400', 'compania' => 1]);
 
         $this->expectException(ClienteDuplicadoException::class);
         $this->expectExceptionMessageMatches('/900300400/');
 
-        $this->service->crear(new CrearClienteDTO('Otra', '900300400', $user->id));
+        $this->service->crear(new CrearClienteDTO('Otra', '900300400', $user->id, compania: 1));
+    }
+
+    public function test_permite_mismo_nit_en_compania_distinta(): void
+    {
+        $user = User::factory()->create();
+        Cliente::factory()->create(['nit' => '900300400', 'compania' => 1]);
+
+        $cliente = $this->service->crear(new CrearClienteDTO('Otra', '900300400', $user->id, compania: 2));
+
+        $this->assertSame(2, $cliente->compania);
+        $this->assertDatabaseHas('clientes', ['nit' => '900300400', 'compania' => 1]);
+        $this->assertDatabaseHas('clientes', ['nit' => '900300400', 'compania' => 2]);
     }
 
     public function test_lanza_excepcion_si_email_ya_existe(): void
@@ -61,13 +73,13 @@ class ClienteServiceTest extends TestCase
         $this->expectException(ClienteDuplicadoException::class);
         $this->expectExceptionMessageMatches('/dup@empresa.co/');
 
-        $this->service->crear(new CrearClienteDTO('Otra', '111222333', $user->id, 'dup@empresa.co'));
+        $this->service->crear(new CrearClienteDTO('Otra', '111222333', $user->id, compania: 1, email: 'dup@empresa.co'));
     }
 
     public function test_permite_crear_cliente_sin_email(): void
     {
         $user    = User::factory()->create();
-        $cliente = $this->service->crear(new CrearClienteDTO('Sin Email', '700800900', $user->id));
+        $cliente = $this->service->crear(new CrearClienteDTO('Sin Email', '700800900', $user->id, compania: 1));
 
         $this->assertNull($cliente->email);
     }
@@ -162,7 +174,7 @@ class ClienteServiceTest extends TestCase
             'telefono'     => '6042223344',
         ]);
 
-        $dto     = new CrearClienteDTO('Empresa ERP SA', '900123456', $user->id);
+        $dto     = new CrearClienteDTO('Empresa ERP SA', '900123456', $user->id, compania: 1);
         $cliente = $this->service->crear($dto);
 
         $this->assertSame('MedellÃ­n', $cliente->ciudad);
@@ -174,7 +186,7 @@ class ClienteServiceTest extends TestCase
         $user = User::factory()->create();
         $this->erp->simularDesconexion();
 
-        $dto     = new CrearClienteDTO('Empresa Sin ERP', '800111222', $user->id);
+        $dto     = new CrearClienteDTO('Empresa Sin ERP', '800111222', $user->id, compania: 1);
         $cliente = $this->service->crear($dto);
 
         $this->assertInstanceOf(Cliente::class, $cliente);
@@ -189,11 +201,38 @@ class ClienteServiceTest extends TestCase
             'telefono' => '0001111111',
         ]);
 
-        $dto     = new CrearClienteDTO('Mi Empresa', '700444555', $user->id, ciudad: 'BogotÃ¡', telefono: '3001234567');
+        $dto     = new CrearClienteDTO('Mi Empresa', '700444555', $user->id, compania: 1, ciudad: 'BogotÃ¡', telefono: '3001234567');
         $cliente = $this->service->crear($dto);
 
         $this->assertSame('BogotÃ¡', $cliente->ciudad);
         $this->assertSame('3001234567', $cliente->telefono);
+    }
+
+    // â€” SINCRONIZAR CARTERA â€”
+
+    public function test_sincronizar_cartera_reasigna_cliente_al_nuevo_asesor(): void
+    {
+        $asesorAnterior = User::factory()->create();
+        $asesorNuevo    = User::factory()->create();
+
+        Cliente::factory()->create([
+            'nit'      => '900700800',
+            'compania' => 1,
+            'user_id'  => $asesorAnterior->id,
+        ]);
+
+        $this->erp->agregarClientesDeVendedor('Vendedor Nuevo', [
+            ['NIT' => '900700800', 'RAZON_SOCIAL' => 'Empresa Reasignada', 'CIUDAD' => 'Cali'],
+        ]);
+
+        $resultado = $this->service->sincronizarCarteraDesdeErp('Vendedor Nuevo', $asesorNuevo->id, 1);
+
+        $this->assertSame(1, $resultado['actualizados']);
+        $this->assertDatabaseHas('clientes', [
+            'nit'      => '900700800',
+            'compania' => 1,
+            'user_id'  => $asesorNuevo->id,
+        ]);
     }
 
     // â€” CAMBIO DE ESTADO â€”

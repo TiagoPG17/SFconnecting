@@ -25,8 +25,8 @@ class ClienteService
 
     public function crear(CrearClienteDTO $dto): Cliente
     {
-        if ($this->repo->existeNit($dto->nit)) {
-            throw ClienteDuplicadoException::porNit($dto->nit);
+        if ($this->repo->existeNit($dto->nit, $dto->compania)) {
+            throw ClienteDuplicadoException::porNit($dto->nit, $dto->compania);
         }
 
         if ($dto->email !== null && $this->repo->existeEmail($dto->email)) {
@@ -106,11 +106,12 @@ class ClienteService
     }
 
     /** @return array{creados: int, actualizados: int} */
-    public function sincronizarCarteraDesdeErp(string $nombreVendedor, int $userId): array
+    public function sincronizarCarteraDesdeErp(string $nombreVendedor, int $userId, int $compania): array
     {
         $resultado = $this->repo->sincronizarDesdeErp(
             $this->erp->todosClientesPorVendedor($nombreVendedor),
-            $userId
+            $userId,
+            $compania
         );
 
         ActividadLog::registrar(

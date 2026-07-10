@@ -8,9 +8,9 @@ use RuntimeException;
 
 class ClienteDuplicadoException extends RuntimeException
 {
-    public static function porNit(string $nit): self
+    public static function porNit(string $nit, int $compania): self
     {
-        return new self("Ya existe un cliente con NIT '{$nit}'.");
+        return new self("Ya existe un cliente con NIT '{$nit}' en la compañía {$compania}.");
     }
 
     public static function porEmail(string $email): self

@@ -6,6 +6,7 @@ namespace Tests\Unit\SFconnecting\Services;
 
 use App\Domain\Clientes\Models\Cliente;
 use App\Domain\Clientes\Repositories\ClienteRepository;
+use App\Domain\Dashboard\Repositories\DashboardVendedorRepository;
 use App\Domain\Pipeline\Models\PipelineEstado;
 use App\Domain\Seguimientos\Repositories\SeguimientoRepository;
 use App\Domain\Prospectos\DTOs\ActualizarProspectoDTO;
@@ -48,6 +49,7 @@ class ProspectoServiceTest extends TestCase
             new ProspectoRepository(),
             new ClienteRepository(),
             new SeguimientoRepository(),
+            new DashboardVendedorRepository(),
         );
     }
 

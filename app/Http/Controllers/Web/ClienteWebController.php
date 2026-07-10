@@ -68,14 +68,16 @@ class ClienteWebController extends Controller
 
         abort_if($datosErp === null, 404);
 
-        $user    = auth()->user();
-        $cliente = $this->repo->buscarPorNit($nit);
+        $user     = auth()->user();
+        $compania = $this->vendedorRepo->companiaPrincipal($user->id);
+        $cliente  = $this->repo->buscarPorNit($nit, $compania);
 
         if ($cliente === null && $user->hasRole('comercial')) {
             $dto     = CrearClienteDTO::fromArray([
                 'razon_social' => $datosErp['RAZON_SOCIAL'] ?? $nit,
                 'nit'          => $nit,
                 'user_id'      => $user->id,
+                'compania'     => $compania,
                 'ciudad'       => $datosErp['CIUDAD'] ?? null,
                 'estado'       => 'activo',
             ]);
@@ -130,7 +132,8 @@ class ClienteWebController extends Controller
         }
 
         try {
-            $resultado = $this->service->sincronizarCarteraDesdeErp($nombreVendedor, $user->id);
+            $compania  = $this->vendedorRepo->companiaPrincipal($user->id);
+            $resultado = $this->service->sincronizarCarteraDesdeErp($nombreVendedor, $user->id, $compania);
 
             $creados     = $resultado['creados'];
             $actualizados = $resultado['actualizados'];
@@ -177,6 +180,7 @@ class ClienteWebController extends Controller
                 'id'          => $c->id,
                 'razon_social'=> $c->razon_social,
                 'nit'         => $c->nit,
+                'compania'    => $c->compania,
                 'email'       => $c->email ?? '',
                 'telefono'    => $c->telefono ?? '',
                 'ciudad'      => $c->ciudad ?? '',

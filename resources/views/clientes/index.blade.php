@@ -197,6 +197,7 @@
                 'id'          => $c->id,
                 'razon_social'=> $c->razon_social,
                 'nit'         => $c->nit,
+                'compania'    => $c->compania,
                 'email'       => $c->email ?? '',
                 'telefono'    => $c->telefono ?? '',
                 'ciudad'      => $c->ciudad ?? '',
@@ -262,6 +263,10 @@
                                     NIT <span x-text="flecha('nit')" class="ml-0.5"></span>
                                 </th>
                                 <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 transition-colors"
+                                    @click="ordenar('compania')">
+                                    Cía <span x-text="flecha('compania')" class="ml-0.5"></span>
+                                </th>
+                                <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 transition-colors"
                                     @click="ordenar('ciudad')">
                                     Ciudad <span x-text="flecha('ciudad')" class="ml-0.5"></span>
                                 </th>
@@ -279,13 +284,14 @@
                         <tbody class="divide-y divide-slate-100">
                             <template x-if="sorted.length === 0 && !cargando">
                                 <tr>
-                                    <td colspan="6" class="py-10 text-center text-sm text-slate-400">Sin resultados</td>
+                                    <td colspan="7" class="py-10 text-center text-sm text-slate-400">Sin resultados</td>
                                 </tr>
                             </template>
                             <template x-for="c in sorted" :key="c.id">
                                 <tr class="hover:bg-slate-50 transition-colors">
                                     <td class="py-3 px-4 font-medium text-slate-900" x-text="c.razon_social"></td>
                                     <td class="py-3 px-4 text-slate-600 font-mono text-xs" x-text="c.nit"></td>
+                                    <td class="py-3 px-4 text-slate-600 text-xs" x-text="c.compania"></td>
                                     <td class="py-3 px-4 text-slate-600 text-xs" x-text="c.ciudad || '—'"></td>
                                     <td class="py-3 px-4">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"

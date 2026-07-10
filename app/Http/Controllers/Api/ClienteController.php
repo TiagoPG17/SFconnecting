@@ -10,6 +10,7 @@ use App\Domain\Clientes\Exceptions\ClienteDuplicadoException;
 use App\Domain\Clientes\Models\Cliente;
 use App\Domain\Clientes\Repositories\ClienteRepositoryInterface;
 use App\Domain\Clientes\Services\ClienteService;
+use App\Domain\Dashboard\Repositories\DashboardVendedorRepositoryInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Clientes\ActualizarClienteRequest;
 use App\Http\Requests\Clientes\CrearClienteRequest;
@@ -23,6 +24,7 @@ class ClienteController extends Controller
     public function __construct(
         private readonly ClienteRepositoryInterface $repo,
         private readonly ClienteService $service,
+        private readonly DashboardVendedorRepositoryInterface $vendedorRepo,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -40,7 +42,11 @@ class ClienteController extends Controller
     public function store(CrearClienteRequest $request): JsonResponse
     {
         try {
-            $dto     = CrearClienteDTO::fromArray(array_merge($request->validated(), ['user_id' => $request->user()->id]));
+            $compania = $this->vendedorRepo->companiaPrincipal($request->user()->id);
+            $dto      = CrearClienteDTO::fromArray(array_merge($request->validated(), [
+                'user_id'  => $request->user()->id,
+                'compania' => $compania,
+            ]));
             $cliente = $this->service->crear($dto);
 
             return ApiResponse::created(new ClienteResource($cliente), 'Cliente creado exitosamente.');
