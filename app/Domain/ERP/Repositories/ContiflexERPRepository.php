@@ -209,6 +209,8 @@ class ContiflexERPRepository implements ERPRepositoryInterface
                     cp.CIUDAD,
                     cp.VLR_NETO_FACTURADO,
                     cp.FACTURADO_ANIO_ACTUAL,
+                    cp.FACTURADO_ANIO_ANTERIOR,
+                    cp.VARIACION_ANUAL_PORC,
                     cp.ULTIMA_FACTURA,
                     cp.DIAS_DESDE_ULTIMA_COMPRA,
                     cp.HORIZONTE_PRESUPUESTO,

@@ -345,7 +345,9 @@
               <th @click="sortOn('NOMBRE_VENDEDOR')" :class="sortBy==='NOMBRE_VENDEDOR'?'text-purple-700':'text-slate-500'" class="text-left py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors"><span class="flex items-center gap-1">Vendedor <span x-text="arrow('NOMBRE_VENDEDOR')" class="opacity-50"></span></span></th>
               <th @click="sortOn('HORIZONTE_PRESUPUESTO')" :class="sortBy==='HORIZONTE_PRESUPUESTO'?'text-purple-700':'text-slate-500'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors"><span class="flex items-center justify-center gap-1">Tipo <span x-text="arrow('HORIZONTE_PRESUPUESTO')" class="opacity-50"></span></span></th>
               <th @click="sortOn('perfil_cruzado')" :class="sortBy==='perfil_cruzado'?'text-purple-700':'text-purple-600'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors"><span class="flex items-center justify-center gap-1">Perfil cruzado <span x-text="arrow('perfil_cruzado')" class="opacity-50"></span></span></th>
-              <th @click="sortOn('VLR_NETO_FACTURADO')" :class="sortBy==='VLR_NETO_FACTURADO'?'text-slate-800':'text-slate-500'" class="text-right py-2.5 pr-3 pl-3 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors"><span class="flex items-center justify-end gap-1">Facturado <span x-text="arrow('VLR_NETO_FACTURADO')" class="opacity-50"></span></span></th>
+              <th @click="sortOn('VLR_NETO_FACTURADO')" :class="sortBy==='VLR_NETO_FACTURADO'?'text-slate-800':'text-slate-500'" class="text-right py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors"><span class="flex items-center justify-end gap-1">Histórico <span x-text="arrow('VLR_NETO_FACTURADO')" class="opacity-50"></span></span></th>
+              <th @click="sortOn('FACTURADO_ANIO_ACTUAL')" :class="sortBy==='FACTURADO_ANIO_ACTUAL'?'text-purple-800':'text-purple-600'" class="text-right py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors"><span class="flex items-center justify-end gap-1">Año actual <span x-text="arrow('FACTURADO_ANIO_ACTUAL')" class="opacity-50"></span></span></th>
+              <th @click="sortOn('FACTURADO_ANIO_ANTERIOR')" :class="sortBy==='FACTURADO_ANIO_ANTERIOR'?'text-slate-800':'text-slate-500'" class="text-right py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors"><span class="flex items-center justify-end gap-1">Año anterior <span x-text="arrow('FACTURADO_ANIO_ANTERIOR')" class="opacity-50"></span></span></th>
               <th @click="sortOn('DIAS_DESDE_ULTIMA_COMPRA')" :class="sortBy==='DIAS_DESDE_ULTIMA_COMPRA'?'text-slate-800':'text-slate-500'" class="text-right py-2.5 pl-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors"><span class="flex items-center justify-end gap-1">Días <span x-text="arrow('DIAS_DESDE_ULTIMA_COMPRA')" class="opacity-50"></span></span></th>
             </tr>
           </thead>
@@ -362,8 +364,10 @@
                     :style="cli._empresa==='ambas'?'background:#f3e8ff;color:#7e22ce;border-color:#e9d5ff':(cli._empresa==='formacol'?'background:#fee2e2;color:#b91c1c;border-color:#fecaca':'background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe')"
                     x-text="cli._empresa==='ambas'?'Ambas':(cli._empresa==='formacol'?'Formacol':'Contiflex')"></span>
                 </td>
-                <td class="py-2.5 pl-3 pr-3 text-right font-bold text-slate-700 whitespace-nowrap" x-text="fmt(cli.VLR_NETO_FACTURADO)"></td>
-                <td class="py-2.5 pl-2 text-right font-semibold whitespace-nowrap" :class="(parseInt(cli.DIAS_DESDE_ULTIMA_COMPRA)||0)>60?'text-red-600':'text-slate-500'" x-text="cli.DIAS_DESDE_ULTIMA_COMPRA??'-'"></td>
+                <td class="py-2.5 px-2 text-right font-bold text-slate-700 whitespace-nowrap" x-text="fmt(cli.VLR_NETO_FACTURADO)"></td>
+                <td class="py-2.5 px-2 text-right font-semibold text-purple-700 whitespace-nowrap" x-text="fmt(cli.FACTURADO_ANIO_ACTUAL)"></td>
+                <td class="py-2.5 px-2 text-right text-slate-500 whitespace-nowrap" x-text="fmt(cli.FACTURADO_ANIO_ANTERIOR)"></td>
+                <td class="py-2.5 pl-2 pr-3 text-right font-semibold whitespace-nowrap" :class="(parseInt(cli.DIAS_DESDE_ULTIMA_COMPRA)||0)>60?'text-red-600':'text-slate-500'" x-text="cli.DIAS_DESDE_ULTIMA_COMPRA??'-'"></td>
               </tr>
             </template>
           </tbody>
