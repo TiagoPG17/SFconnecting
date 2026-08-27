@@ -34,6 +34,15 @@ class SolicitudCreditoService
 
     public function crear(CrearSolicitudCreditoDTO $dto): SolicitudCredito
     {
+        if ($dto->negocioId !== null) {
+            return $this->crearParaNegocio($dto);
+        }
+
+        return $this->crearParaCliente($dto);
+    }
+
+    private function crearParaNegocio(CrearSolicitudCreditoDTO $dto): SolicitudCredito
+    {
         $negocio = $this->negocioRepo->buscarPorId($dto->negocioId);
 
         if ($negocio === null || $negocio->cliente_id === null) {
@@ -47,6 +56,52 @@ class SolicitudCreditoService
         $cliente = Cliente::findOrFail($negocio->cliente_id);
         $dossier = $this->construirDossierErp($cliente->nit);
 
+        $solicitud = $this->radicar($dto, $cliente, $dossier);
+
+        ActividadLog::registrar(
+            'crear',
+            'solicitudes_credito',
+            "Solicitud de crédito #{$solicitud->id} radicada para el negocio '{$negocio->nombre_negocio}'",
+            $dto->asesorId,
+        );
+
+        return $solicitud;
+    }
+
+    /**
+     * Solicitud de cupo inicial, radicada en la conversión de prospecto a cliente,
+     * antes de que exista un Negocio. El cliente todavía no está registrado en SIESA
+     * (contabilidad lo hace manualmente después), así que el dossier ERP se construye
+     * "best effort": si no se encuentra, la solicitud igual se radica sin ese contexto.
+     */
+    private function crearParaCliente(CrearSolicitudCreditoDTO $dto): SolicitudCredito
+    {
+        $cliente = Cliente::findOrFail($dto->clienteId);
+
+        if ($this->repo->tieneSolicitudActivaParaCliente($cliente->id)) {
+            throw SolicitudCreditoException::solicitudActivaExistente();
+        }
+
+        try {
+            $dossier = $this->construirDossierErp($cliente->nit);
+        } catch (SolicitudCreditoException) {
+            $dossier = [];
+        }
+
+        $solicitud = $this->radicar($dto, $cliente, $dossier);
+
+        ActividadLog::registrar(
+            'crear',
+            'solicitudes_credito',
+            "Solicitud de cupo #{$solicitud->id} radicada para el cliente '{$cliente->razon_social}'",
+            $dto->asesorId,
+        );
+
+        return $solicitud;
+    }
+
+    private function radicar(CrearSolicitudCreditoDTO $dto, Cliente $cliente, array $dossier): SolicitudCredito
+    {
         $estadoRadicada = PipelineEstado::where('tipo', 'solicitud_credito')
             ->where('slug', 'credito-radicada')
             ->firstOrFail();
@@ -62,13 +117,6 @@ class SolicitudCreditoService
             'datos_nuevos'    => $dto->toArray(),
             'usuario_id'      => $dto->asesorId,
         ]);
-
-        ActividadLog::registrar(
-            'crear',
-            'solicitudes_credito',
-            "Solicitud de crédito #{$solicitud->id} radicada para el negocio '{$negocio->nombre_negocio}'",
-            $dto->asesorId,
-        );
 
         return $solicitud;
     }

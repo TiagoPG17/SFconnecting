@@ -16,6 +16,8 @@ class FakeERPRepository implements ERPRepositoryInterface
     private array $saldos = [];
     private array $cartera = [];
     private array $clientesVendedor = [];
+    private array $facturas = [];
+    private array $existenciasMP = [];
 
     public function clientePorNit(string $nit): ?array
     {
@@ -173,11 +175,18 @@ class FakeERPRepository implements ERPRepositoryInterface
         return ['mensual' => [], 'trimestral' => [], 'anual' => []];
     }
 
+    public function comparativoAnualPorNit(string $nit, int $cantidadAnios = 3): array
+    {
+        $this->checkAvailability();
+
+        return ['anios' => [], 'mensual' => [], 'trimestral' => [], 'anual' => [], 'totales' => []];
+    }
+
     public function facturasPorNit(string $nit, int $limite = 20): array
     {
         $this->checkAvailability();
 
-        return [];
+        return array_slice($this->facturas[$nit] ?? [], 0, $limite);
     }
 
     public function detalleFactura(int $rowidFactura): array
@@ -194,9 +203,81 @@ class FakeERPRepository implements ERPRepositoryInterface
         return 0;
     }
 
+    public function existenciasMP(
+        ?string $buscar = null,
+        int $pagina = 1,
+        int $porPagina = 50,
+        ?string $ordenarPor = null,
+        string $direccion = 'asc',
+        ?int $diasVencer = null
+    ): array {
+        $this->checkAvailability();
+
+        $todos = array_filter(
+            $this->existenciasMP,
+            fn (array $r) => (!$buscar
+                || str_contains(strtolower($r['DescItem'] ?? ''), strtolower($buscar))
+                || str_contains(strtolower($r['Referencia'] ?? ''), strtolower($buscar))
+                || str_contains(strtolower($r['Lote'] ?? ''), strtolower($buscar)))
+                && ($diasVencer === null
+                    || ($r['DiasParaVencer'] !== null && $r['DiasParaVencer'] >= 0 && $r['DiasParaVencer'] <= $diasVencer))
+        );
+
+        $todos = array_values($todos);
+
+        if ($ordenarPor) {
+            usort($todos, function (array $a, array $b) use ($ordenarPor, $direccion) {
+                $va = $a[$ordenarPor] ?? '';
+                $vb = $b[$ordenarPor] ?? '';
+                $cmp = is_numeric($va) && is_numeric($vb) ? ($va <=> $vb) : strcasecmp((string) $va, (string) $vb);
+
+                return $direccion === 'desc' ? -$cmp : $cmp;
+            });
+        }
+
+        $total = count($todos);
+        $data  = array_slice($todos, ($pagina - 1) * $porPagina, $porPagina);
+
+        return compact('data', 'total', 'pagina', 'porPagina');
+    }
+
+    public function agregarExistenciasMP(array $filas): void
+    {
+        $this->existenciasMP = $filas;
+    }
+
+    public function actualizarLoteExistenciaMP(
+        int $compania,
+        string $codBodega,
+        string $referencia,
+        string $lote,
+        array $campos
+    ): bool {
+        $this->checkAvailability();
+
+        foreach ($this->existenciasMP as &$fila) {
+            if ((int) ($fila['Compania'] ?? 0) === $compania
+                && ($fila['CodBodega'] ?? null) === $codBodega
+                && ($fila['Referencia'] ?? null) === $referencia
+                && ($fila['Lote'] ?? null) === $lote
+            ) {
+                $fila = array_merge($fila, $campos);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function agregarClientesDeVendedor(string $nombreVendedor, array $clientes): void
     {
         $this->clientesVendedor[$nombreVendedor] = $clientes;
+    }
+
+    public function agregarFacturas(string $nit, array $facturas): void
+    {
+        $this->facturas[$nit] = $facturas;
     }
 
     public function isAvailable(): bool

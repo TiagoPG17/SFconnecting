@@ -76,6 +76,43 @@ class DashboardGerencialService
         }
     }
 
+    /**
+     * Informe Comercial: agrupa todas las métricas de pedidos pendientes/facturación
+     * para un año, mes y compañía dados. Independiente del período (mes/trimestre/año)
+     * del resto del dashboard, porque este bloque tiene su propio filtro local (Año/Mes/Compañía).
+     */
+    public function informeComercial(?int $compania = null, ?int $anio = null, ?int $mes = null): array
+    {
+        $compania ??= $this->compania;
+        $anio     ??= $this->anio;
+        $mes      ??= now()->month;
+
+        $safe = fn (callable $fn) => rescue($fn, collect(), false);
+
+        return [
+            'compania'             => $compania,
+            'anio'                 => $anio,
+            'mes'                  => $mes,
+            'facturadoMes'         => $safe(fn () => $this->repo->facturadoDelMes($compania, $anio, $mes)),
+            'pendienteMes'         => $safe(fn () => $this->repo->pendienteDelMes($compania, $anio, $mes)),
+            'cierresProximos'      => $safe(fn () => $this->repo->cierresProximos($compania)),
+            'pedidosPorCerrar'     => $safe(fn () => $this->repo->pedidosPorCerrarDetalle($compania)),
+            'facturacionTendencia' => $safe(fn () => $this->repo->facturacionMensualTendencia($compania, $anio, $mes)),
+            'facturacionCliente'   => $safe(fn () => $this->repo->facturacionPorCliente($compania, $anio, $mes)),
+            'pedidosCliente'       => $safe(fn () => $this->repo->pedidosPendientesPorCliente($compania, $anio, $mes)),
+            'facturacionVendedor'  => $safe(fn () => $this->repo->facturacionPorVendedor($compania, $anio, $mes)),
+        ];
+    }
+
+    public function pedidosPendientesDetalleCliente(int $compania, int $anio, int $mes, string $cliente): Collection
+    {
+        try {
+            return $this->repo->pedidosPendientesDetallePorCliente($compania, $anio, $mes, $cliente);
+        } catch (Throwable) {
+            return collect();
+        }
+    }
+
     public function actividadEquipo(): Collection
     {
         $rows = $this->repo->actividadEquipo($this->meses);

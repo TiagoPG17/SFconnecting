@@ -84,4 +84,12 @@ class SolicitudCreditoRepository implements SolicitudCreditoRepositoryInterface
             ->whereHas('pipelineEstado', fn ($q) => $q->where('es_final', false))
             ->exists();
     }
+
+    public function tieneSolicitudActivaParaCliente(int $clienteId): bool
+    {
+        return SolicitudCredito::where('cliente_id', $clienteId)
+            ->whereNull('negocio_id')
+            ->whereHas('pipelineEstado', fn ($q) => $q->where('es_final', false))
+            ->exists();
+    }
 }

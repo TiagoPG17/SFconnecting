@@ -140,6 +140,204 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->get();
     }
 
+    public function facturadoDelMes(int $compania, int $anio, int $mes): Collection
+    {
+        return DB::connection('erp_contiflex')
+            ->table('dbo.vw_CRM_Facturacion_Mes')
+            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+            ->where('Anio', $anio)
+            ->where('Mes', $mes)
+            ->selectRaw('
+                Compania                       AS compania,
+                SUM(ValorSubtotalLocal)        AS subtotal_mes,
+                COUNT(DISTINCT RowidFactura)   AS documentos
+            ')
+            ->groupBy('Compania')
+            ->orderBy('Compania')
+            ->get();
+    }
+
+    public function pendienteDelMes(int $compania, int $anio, int $mes): Collection
+    {
+        return DB::connection('erp_contiflex')
+            ->table('dbo.vw_CRM_Pedidos_Pendientes')
+            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+            ->whereYear('FechaPedido', $anio)
+            ->whereMonth('FechaPedido', $mes)
+            ->selectRaw('
+                Compania                     AS compania,
+                COUNT(DISTINCT NroDocumento) AS num_pedidos,
+                SUM(ValorSubtotalLocal)      AS subtotal_pendiente
+            ')
+            ->groupBy('Compania')
+            ->orderBy('Compania')
+            ->get();
+    }
+
+    public function cierresProximos(int $compania): Collection
+    {
+        $cierre = "CASE WHEN CAST(FechaEntrega AS date) = CAST(DATEADD(DAY,1,GETDATE()) AS date)
+                        THEN 'MAÑANA' ELSE 'PASADO MAÑANA' END";
+
+        return DB::connection('erp_contiflex')
+            ->table('dbo.vw_CRM_Pedidos_Pendientes')
+            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+            ->whereRaw('CAST(FechaEntrega AS date) IN (
+                CAST(DATEADD(DAY,1,GETDATE()) AS date),
+                CAST(DATEADD(DAY,2,GETDATE()) AS date)
+            )')
+            ->selectRaw("
+                {$cierre}                    AS cierre,
+                Compania                     AS compania,
+                COUNT(DISTINCT NroDocumento) AS num_pedidos,
+                SUM(ValorSubtotalLocal)      AS total_pendiente
+            ")
+            ->groupBy(DB::raw($cierre), 'Compania')
+            ->orderBy('cierre')
+            ->orderBy('Compania')
+            ->get();
+    }
+
+    public function pedidosPorCerrarDetalle(int $compania): Collection
+    {
+        $cierre = "CASE WHEN CAST(FechaEntrega AS date) = CAST(DATEADD(DAY,1,GETDATE()) AS date)
+                        THEN 'MAÑANA' ELSE 'PASADO MAÑANA' END";
+
+        return DB::connection('erp_contiflex')
+            ->table('dbo.vw_CRM_Pedidos_Pendientes')
+            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+            ->whereRaw('CAST(FechaEntrega AS date) IN (
+                CAST(DATEADD(DAY,1,GETDATE()) AS date),
+                CAST(DATEADD(DAY,2,GETDATE()) AS date)
+            )')
+            ->selectRaw("
+                {$cierre}               AS cierre,
+                Compania                AS compania,
+                FechaEntrega             AS fecha_entrega,
+                RazonSocialCliente       AS cliente,
+                NombreVendedor           AS vendedor,
+                NroDocumento             AS nro_documento,
+                DescItem                 AS desc_item,
+                CantPendiente            AS cant_pendiente,
+                ValorSubtotalLocal       AS valor_subtotal,
+                Estado                   AS estado
+            ")
+            ->orderBy('FechaEntrega')
+            ->orderBy('RazonSocialCliente')
+            ->limit(300)
+            ->get();
+    }
+
+    public function facturacionMensualTendencia(int $compania, int $anio, int $mes, int $mesesAtras = 24): Collection
+    {
+        $hasta = \Carbon\Carbon::create($anio, $mes, 1)->endOfMonth();
+        $desde = $hasta->copy()->subMonths($mesesAtras - 1)->startOfMonth();
+
+        return DB::connection('erp_contiflex')
+            ->table('dbo.vw_CRM_Facturacion_Mes')
+            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+            ->whereRaw('(Anio * 100 + Mes) BETWEEN ? AND ?', [
+                $desde->year * 100 + $desde->month,
+                $hasta->year * 100 + $hasta->month,
+            ])
+            ->selectRaw('
+                Compania                     AS compania,
+                Anio                         AS anio,
+                Mes                          AS mes,
+                SUM(ValorSubtotalLocal)      AS subtotal_mes,
+                COUNT(DISTINCT RowidFactura) AS documentos
+            ')
+            ->groupBy('Compania', 'Anio', 'Mes')
+            ->orderBy('Anio')
+            ->orderBy('Mes')
+            ->get();
+    }
+
+    public function facturacionPorCliente(int $compania, int $anio, int $mes, int $limite = 12): Collection
+    {
+        return DB::connection('erp_contiflex')
+            ->table('dbo.vw_CRM_Facturacion_Mes as f')
+            ->leftJoin('dbo.clientes as c', function ($join) {
+                $join->on('c.COMPANIA', '=', 'f.Compania')
+                     ->on('c.COD_INT_CLIENTE', '=', 'f.RowidClienteFact');
+            })
+            ->when($compania > 0, fn ($q) => $q->where('f.Compania', $compania))
+            ->where('f.Anio', $anio)
+            ->where('f.Mes', $mes)
+            ->selectRaw("
+                f.Compania                                                     AS compania,
+                ISNULL(c.RAZON_SOCIAL, CAST(f.RowidClienteFact AS varchar(12))) AS cliente,
+                COUNT(DISTINCT f.RowidFactura)                                  AS facturas,
+                SUM(f.ValorSubtotalLocal)                                      AS facturado
+            ")
+            ->groupBy('f.Compania', DB::raw('ISNULL(c.RAZON_SOCIAL, CAST(f.RowidClienteFact AS varchar(12)))'))
+            ->orderByDesc('facturado')
+            ->limit($limite)
+            ->get();
+    }
+
+    public function pedidosPendientesPorCliente(int $compania, int $anio, int $mes, int $limite = 12): Collection
+    {
+        return DB::connection('erp_contiflex')
+            ->table('dbo.vw_CRM_Pedidos_Pendientes')
+            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+            ->whereYear('FechaPedido', $anio)
+            ->whereMonth('FechaPedido', $mes)
+            ->selectRaw('
+                Compania                     AS compania,
+                RazonSocialCliente           AS cliente,
+                COUNT(DISTINCT NroDocumento) AS num_pedidos,
+                SUM(CantPendiente)           AS cant_pendiente,
+                SUM(ValorSubtotalLocal)      AS total_pendiente
+            ')
+            ->groupBy('Compania', 'RazonSocialCliente')
+            ->orderByDesc('total_pendiente')
+            ->limit($limite)
+            ->get();
+    }
+
+    public function pedidosPendientesDetallePorCliente(int $compania, int $anio, int $mes, string $cliente): Collection
+    {
+        return DB::connection('erp_contiflex')
+            ->table('dbo.vw_CRM_Pedidos_Pendientes')
+            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+            ->whereYear('FechaPedido', $anio)
+            ->whereMonth('FechaPedido', $mes)
+            ->where('RazonSocialCliente', $cliente)
+            ->selectRaw('
+                Compania             AS compania,
+                RazonSocialCliente   AS cliente,
+                NroDocumento         AS nro_documento,
+                FechaPedido          AS fecha_pedido,
+                FechaEntrega         AS fecha_entrega,
+                DescItem             AS desc_item,
+                CantPendiente        AS cant_pendiente,
+                PrecioUnit           AS precio_unit,
+                ValorSubtotalLocal   AS valor_subtotal,
+                Estado               AS estado
+            ')
+            ->orderBy('NroDocumento')
+            ->get();
+    }
+
+    public function facturacionPorVendedor(int $compania, int $anio, int $mes): Collection
+    {
+        return DB::connection('erp_contiflex')
+            ->table('dbo.vw_CRM_Facturacion_Mes')
+            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+            ->where('Anio', $anio)
+            ->where('Mes', $mes)
+            ->selectRaw('
+                Compania                     AS compania,
+                CodVendedor                  AS cod_vendedor,
+                SUM(ValorSubtotalLocal)      AS facturado,
+                COUNT(DISTINCT RowidFactura) AS documentos
+            ')
+            ->groupBy('Compania', 'CodVendedor')
+            ->orderByDesc('facturado')
+            ->get();
+    }
+
     private function parsearMeses(array $meses): array
     {
         $anio     = (int) substr($meses[0], 0, 4);

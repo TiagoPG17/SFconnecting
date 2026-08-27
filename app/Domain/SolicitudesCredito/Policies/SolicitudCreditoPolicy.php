@@ -11,17 +11,21 @@ class SolicitudCreditoPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasRole('admin');
+        return $user->hasPermissionTo('solicitudes_credito.ver');
     }
 
     public function view(User $user, SolicitudCredito $solicitud): bool
     {
-        return $user->hasRole('admin');
+        if ($user->hasAnyRole(['admin', 'gerente', 'cartera'])) {
+            return true;
+        }
+
+        return $user->hasRole('comercial') && $solicitud->asesor_id === $user->id;
     }
 
     public function create(User $user): bool
     {
-        return $user->hasRole('admin');
+        return $user->hasAnyRole(['admin', 'comercial']);
     }
 
     public function delete(User $user, SolicitudCredito $solicitud): bool
@@ -31,6 +35,6 @@ class SolicitudCreditoPolicy
 
     public function revisar(User $user, SolicitudCredito $solicitud): bool
     {
-        return $user->hasRole('admin');
+        return $user->hasPermissionTo('solicitudes_credito.revisar');
     }
 }

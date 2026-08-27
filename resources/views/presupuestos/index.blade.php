@@ -452,26 +452,6 @@
 </div>
 
 <script>
-function pesoInput(initialValue) {
-    const fmt = v => String(v).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    const initRaw = initialValue ? String(initialValue).replace(/\D/g, '') : '';
-    return {
-        display: initRaw ? fmt(initRaw) : '',
-        raw: initRaw,
-        onInput(e) {
-            const digits = e.target.value.replace(/\D/g, '');
-            this.raw = digits;
-            this.display = fmt(digits);
-        },
-        onKeydown(e) {
-            const allowed = ['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Home','End'];
-            if (allowed.includes(e.key)) return;
-            if (!/^\d$/.test(e.key)) e.preventDefault();
-        },
-        reset() { this.display = ''; this.raw = ''; },
-    };
-}
-
 function modalMesesComp(em) {
     const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     const fmtNum = v => String(Math.round(v || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');

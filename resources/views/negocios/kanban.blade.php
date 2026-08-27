@@ -9,7 +9,15 @@
 #kanban-prev, #kanban-next {
     transition: opacity .15s, box-shadow .15s;
 }
+/* Evita que el arrastre de tarjetas seleccione texto de la página */
+body.sorting, body.sorting * {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+}
 </style>
+
+    <div x-data="kanban()" x-init="init()">
 
     {{-- Encabezado --}}
     <div class="flex items-center gap-4 mb-5">
@@ -62,8 +70,6 @@
         id="kanban-board"
         class="kanban-board flex gap-4 overflow-x-auto pb-6"
         style="min-height: calc(100vh - 9rem)"
-        x-data="kanban()"
-        x-init="init()"
     >
         @foreach($columnas as $columna)
         @php $color = $columna['estado']->color; @endphp
@@ -113,18 +119,51 @@
                     $diasRestantes = $negocio->fecha_estimada_cierre
                         ? (int) now()->diffInDays($negocio->fecha_estimada_cierre, false)
                         : null;
+                    $panelData = [
+                        'id'              => $negocio->id,
+                        'nombre'          => $negocio->nombre_negocio,
+                        'descripcion'     => $negocio->descripcion,
+                        'valor'           => (float) $negocio->valor_estimado,
+                        'forecast'        => $negocio->valorForecast(),
+                        'probabilidad'    => $negocio->probabilidadEfectiva(),
+                        'fechaCierre'     => optional($negocio->fecha_estimada_cierre)->format('Y-m-d'),
+                        'vencido'         => $vencido,
+                        'companiaNombre'  => $negocio->companiaNombre(),
+                        'companiaSiglas'  => $negocio->companiaSiglas(),
+                        'cliente'         => $negocio->cliente?->razon_social,
+                        'clienteEmail'    => $negocio->cliente?->email,
+                        'clienteTelefono' => $negocio->cliente?->telefono,
+                        'prospecto'       => $negocio->prospecto?->empresa,
+                        'prospectoContacto' => $negocio->prospecto?->contacto,
+                        'prospectoEmail'  => $negocio->prospecto?->email,
+                        'prospectoTelefono' => $negocio->prospecto?->telefono,
+                        'asesor'          => $negocio->asesor?->name,
+                        'estadoNombre'    => $columna['estado']->nombre,
+                        'estadoColor'     => $color,
+                        'url'             => route('negocios.show', $negocio),
+                    ];
                 @endphp
                 <div
                     x-sort:item="{{ $negocio->id }}"
-                    class="bg-white rounded-xl p-3 shadow-sm border border-slate-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-all"
+                    @click="abrirPanel({{ Js::from($panelData) }})"
+                    class="relative bg-white rounded-xl p-3 shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition-all"
                     style="border-left: 3px solid {{ $color }}"
                 >
+                    {{-- Handle de arrastre --}}
+                    <div x-sort:handle
+                         @click.stop
+                         title="Arrastrar para mover de etapa"
+                         class="absolute top-2 right-2 w-6 h-6 rounded-md flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-100 cursor-grab active:cursor-grabbing">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M7 4a1 1 0 110 2 1 1 0 010-2zm6 0a1 1 0 110 2 1 1 0 010-2zM7 9a1 1 0 110 2 1 1 0 010-2zm6 0a1 1 0 110 2 1 1 0 010-2zm-6 5a1 1 0 110 2 1 1 0 010-2zm6 0a1 1 0 110 2 1 1 0 010-2z"/>
+                        </svg>
+                    </div>
+
                     {{-- Nombre --}}
-                    <div class="mb-1.5 flex items-start justify-between gap-1.5">
-                        <a href="{{ route('negocios.show', $negocio) }}"
-                           class="text-sm font-semibold text-slate-900 leading-tight hover:text-blue-600 transition-colors line-clamp-2">
+                    <div class="mb-1.5 flex items-start justify-between gap-1.5 pr-6">
+                        <p class="text-sm font-semibold text-slate-900 leading-tight line-clamp-2">
                             {{ $negocio->nombre_negocio }}
-                        </a>
+                        </p>
                         @if($negocio->compania)
                             <span class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded {{ $negocio->compania === 1 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700' }}"
                                   title="{{ $negocio->companiaNombre() }}">
@@ -196,6 +235,180 @@
     </div>
     </div>{{-- /kanban-wrapper --}}
 
+    {{-- Panel de detalle (deslizante derecho) --}}
+    <div
+        x-show="panelAbierto"
+        x-transition:enter="transition ease-out duration-220"
+        x-transition:enter-start="opacity-0 translate-x-8"
+        x-transition:enter-end="opacity-100 translate-x-0"
+        x-transition:leave="transition ease-in duration-160"
+        x-transition:leave-start="opacity-100 translate-x-0"
+        x-transition:leave-end="opacity-0 translate-x-8"
+        @keydown.escape.window="cerrarPanel()"
+        class="fixed right-0 top-12 bottom-0 z-40 w-96 bg-white border-l border-slate-100 shadow-2xl flex flex-col"
+        x-cloak>
+
+        {{-- Barra de color arriba --}}
+        <div class="h-1.5 w-full flex-shrink-0"
+             :style="'background: linear-gradient(90deg,' + (negocioActivo?.estadoColor ?? '#94a3b8') + ',' + (negocioActivo?.estadoColor ?? '#94a3b8') + '99)'">
+        </div>
+
+        {{-- Cabecera --}}
+        <div class="px-6 py-5 border-b border-slate-100 flex items-start justify-between gap-4">
+            <div class="flex items-center gap-4 min-w-0">
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                     :style="'background:' + (negocioActivo?.estadoColor ?? '#94a3b8') + '18;border:2px solid ' + (negocioActivo?.estadoColor ?? '#94a3b8') + '30'">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                         :style="'color:' + (negocioActivo?.estadoColor ?? '#94a3b8')">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-2 0h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2z"/>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xs font-bold uppercase tracking-widest mb-0.5"
+                       :style="'color:' + (negocioActivo?.estadoColor ?? '#94a3b8')"
+                       x-text="negocioActivo?.estadoNombre ?? ''"></p>
+                    <p class="text-base font-bold text-slate-900 leading-tight line-clamp-2" x-text="negocioActivo?.nombre ?? ''"></p>
+                </div>
+            </div>
+            <button @click="cerrarPanel()"
+                    class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-xl transition-colors flex-shrink-0 mt-0.5">
+                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- Cuerpo --}}
+        <div class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+            {{-- Valor + forecast + probabilidad --}}
+            <div class="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-400 font-medium">Valor estimado</p>
+                        <p class="text-lg font-bold text-slate-900 mt-0.5" x-text="'$' + Number(negocioActivo?.valor ?? 0).toLocaleString('es-CO')"></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-400 font-medium">Forecast</p>
+                        <p class="text-sm font-semibold text-slate-600 mt-0.5" x-text="'$' + Number(negocioActivo?.forecast ?? 0).toLocaleString('es-CO')"></p>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs text-slate-400">Probabilidad</span>
+                        <span class="text-xs font-semibold text-slate-600" x-text="(negocioActivo?.probabilidad ?? 0) + '%'"></span>
+                    </div>
+                    <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full"
+                             :style="'width:' + (negocioActivo?.probabilidad ?? 0) + '%; background-color:' + (negocioActivo?.estadoColor ?? '#94a3b8')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Fecha estimada de cierre --}}
+            <div class="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400 font-medium">Fecha estimada de cierre</p>
+                        <p class="text-sm font-bold mt-0.5"
+                           :class="negocioActivo?.vencido ? 'text-red-600' : 'text-slate-900'"
+                           x-text="fmtFechaCierre(negocioActivo?.fechaCierre) + (negocioActivo?.vencido ? ' · vencido' : '')"></p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Cliente / Prospecto --}}
+            <div class="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs text-slate-400 font-medium" x-text="negocioActivo?.cliente ? 'Cliente' : 'Prospecto'"></p>
+                        <p class="text-sm font-bold text-slate-900 mt-0.5 truncate" x-text="negocioActivo?.cliente ?? negocioActivo?.prospecto ?? '—'"></p>
+                    </div>
+                </div>
+                <template x-if="negocioActivo?.prospectoContacto">
+                    <p class="text-xs text-slate-500 mt-2.5 pl-[52px]" x-text="'Contacto: ' + negocioActivo.prospectoContacto"></p>
+                </template>
+                <template x-if="(negocioActivo?.clienteTelefono || negocioActivo?.prospectoTelefono)">
+                    <p class="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        </svg>
+                        <span x-text="negocioActivo?.clienteTelefono ?? negocioActivo?.prospectoTelefono"></span>
+                    </p>
+                </template>
+                <template x-if="(negocioActivo?.clienteEmail || negocioActivo?.prospectoEmail)">
+                    <p class="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="truncate" x-text="negocioActivo?.clienteEmail ?? negocioActivo?.prospectoEmail"></span>
+                    </p>
+                </template>
+            </div>
+
+            {{-- Asesor + compañía --}}
+            <div class="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400 font-medium">Asesor responsable</p>
+                        <p class="text-sm font-bold text-slate-900 mt-0.5" x-text="negocioActivo?.asesor || 'Sin asesor asignado'"></p>
+                    </div>
+                </div>
+                <template x-if="negocioActivo?.companiaNombre">
+                    <p class="text-xs text-slate-500 mt-2.5" x-text="'Compañía: ' + negocioActivo.companiaNombre"></p>
+                </template>
+            </div>
+
+            {{-- Descripción --}}
+            <template x-if="negocioActivo?.descripcion">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5">Descripción</p>
+                    <div class="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-4">
+                        <p class="text-sm text-slate-700 leading-relaxed" x-text="negocioActivo.descripcion"></p>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        {{-- Botones de acción --}}
+        <div class="px-6 py-5 border-t border-slate-100">
+            <a :href="negocioActivo?.url ?? '#'"
+               class="flex items-center justify-center gap-2.5 w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-bold px-5 py-3 rounded-xl transition-colors shadow-sm shadow-blue-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                Ver ficha completa
+            </a>
+        </div>
+    </div>
+
+    {{-- Overlay oscuro detrás del panel en móvil --}}
+    <div x-show="panelAbierto"
+         @click="cerrarPanel()"
+         class="fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-sm lg:hidden"
+         x-cloak></div>
+
     {{-- Modal motivo de pérdida --}}
     <div x-data x-show="$store.kanban.modalPerdido" x-cloak
          class="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -250,6 +463,7 @@
             </div>
         </div>
     </div>
+    </div>{{-- /x-data="kanban()" --}}
 
     @push('scripts')
     <script>
@@ -323,6 +537,8 @@
     function kanban() {
         return {
             estadosPerdidos: [{{ collect($columnas)->filter(fn($c) => $c['estado']->es_perdido)->pluck('estado.id')->join(',') }}],
+            panelAbierto: false,
+            negocioActivo: null,
 
             init() {},
 
@@ -332,6 +548,21 @@
                     return;
                 }
                 await kanbanMover(this.$api.bind(this), this.$store.toast, itemId, estadoId);
+            },
+
+            abrirPanel(negocio) {
+                this.negocioActivo = negocio;
+                this.panelAbierto = true;
+            },
+
+            cerrarPanel() {
+                this.panelAbierto = false;
+                this.negocioActivo = null;
+            },
+
+            fmtFechaCierre(iso) {
+                if (!iso) return 'Sin fecha definida';
+                return new Date(iso + 'T12:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
             },
         };
     }

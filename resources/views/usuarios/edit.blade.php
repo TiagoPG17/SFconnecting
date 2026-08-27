@@ -116,7 +116,7 @@
                         x-error="errors.rol"
                         :placeholder="null">
                         @foreach ($roles as $rol)
-                            <option value="{{ $rol }}" @selected($usuario->hasRole($rol))>{{ ucfirst($rol) }}</option>
+                            <option value="{{ $rol }}" @selected($usuario->hasRole($rol))>{{ ucwords(str_replace('_', ' ', $rol)) }}</option>
                         @endforeach
                     </x-ui.select>
                 </div>

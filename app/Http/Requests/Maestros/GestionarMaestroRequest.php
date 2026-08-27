@@ -10,7 +10,7 @@ class GestionarMaestroRequest extends FormRequest
 {
     private const TIPOS_VALIDOS = [
         'tipo_negocio', 'prioridad', 'fuente_lead',
-        'motivo_perdida', 'tipo_actividad', 'clasificacion', 'segmento',
+        'motivo_perdida', 'tipo_actividad', 'clasificacion', 'segmento', 'sector',
     ];
 
     public function authorize(): bool

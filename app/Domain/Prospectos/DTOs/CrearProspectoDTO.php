@@ -19,6 +19,7 @@ class CrearProspectoDTO
         public readonly ?int $probabilidadCierre = null,
         public readonly ?string $fechaProximoContacto = null,
         public readonly ?string $observaciones = null,
+        public readonly ?int $compania = null,
     ) {}
 
     public static function fromArray(array $data): self
@@ -36,6 +37,7 @@ class CrearProspectoDTO
             probabilidadCierre:   isset($data['probabilidad_cierre']) ? (int) $data['probabilidad_cierre'] : null,
             fechaProximoContacto: $data['fecha_proximo_contacto'] ?? null,
             observaciones:        $data['observaciones'] ?? null,
+            compania:             isset($data['compania']) ? (int) $data['compania'] : null,
         );
     }
 
@@ -54,6 +56,7 @@ class CrearProspectoDTO
             'probabilidad_cierre'   => $this->probabilidadCierre,
             'fecha_proximo_contacto' => $this->fechaProximoContacto,
             'observaciones'         => $this->observaciones,
+            'compania'              => $this->compania,
         ];
     }
 }

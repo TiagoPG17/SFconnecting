@@ -598,6 +598,81 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
+    public function comparativoAnualPorNit(string $nit, int $cantidadAnios = 3): array
+    {
+        try {
+            $anioFin = (int) now()->year;
+            $anioIni = $anioFin - ($cantidadAnios - 1);
+
+            $rows = DB::connection('erp_contiflex')
+                ->table('dbo.vw_CRM_Ventas_Mensuales_cliente')
+                ->where('NIT', $nit)
+                ->whereRaw('(ANIO * 100 + MES) BETWEEN ? AND ?', [$anioIni * 100 + 1, $anioFin * 100 + 12])
+                ->select([
+                    'ANIO', 'MES',
+                    DB::raw('SUM(CAST(VLR_NETO_FACTURADO AS float)) AS total'),
+                ])
+                ->groupBy('ANIO', 'MES')
+                ->orderBy('ANIO')
+                ->orderBy('MES')
+                ->get();
+
+            return $this->construirComparativoAnual($rows, $anioIni, $anioFin);
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
+    private function construirComparativoAnual(\Illuminate\Support\Collection $rows, int $anioIni, int $anioFin): array
+    {
+        $nombresMes = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        $anios      = range($anioFin, $anioIni); // más reciente primero
+
+        $totalPorAnioMes = fn (int $anio, array $mesesRango) => (float) $rows
+            ->filter(fn ($r) => (int) $r->ANIO === $anio && in_array((int) $r->MES, $mesesRango, true))
+            ->sum(fn ($r) => (float) $r->total);
+
+        $mensual = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $valores = array_map(fn (int $anio) => $totalPorAnioMes($anio, [$m]), $anios);
+            $mensual[] = ['label' => $nombresMes[$m - 1], 'valores' => $valores];
+        }
+
+        $trimestral = [];
+        for ($q = 1; $q <= 4; $q++) {
+            $mesesTrimestre = range($q * 3 - 2, $q * 3);
+            $valores        = array_map(fn (int $anio) => $totalPorAnioMes($anio, $mesesTrimestre), $anios);
+            $trimestral[]   = ['label' => "Q{$q}", 'valores' => $valores];
+        }
+
+        $totales = array_map(
+            fn (int $anio) => (float) $rows->filter(fn ($r) => (int) $r->ANIO === $anio)->sum(fn ($r) => (float) $r->total),
+            $anios
+        );
+
+        $anual = [['label' => 'Año', 'valores' => $totales]];
+
+        $escalarAlturas = function (array $filas): array {
+            $planos = array_merge(...array_column($filas, 'valores'));
+            $max    = max(1.0, ...$planos);
+
+            foreach ($filas as &$fila) {
+                $fila['alturas'] = array_map(
+                    fn (float $v) => $v > 0 ? max(3, (int) round($v / $max * 136)) : 1,
+                    $fila['valores']
+                );
+            }
+
+            return $filas;
+        };
+
+        $mensual    = $escalarAlturas($mensual);
+        $trimestral = $escalarAlturas($trimestral);
+        $anual      = $escalarAlturas($anual);
+
+        return compact('anios', 'mensual', 'trimestral', 'anual', 'totales');
+    }
+
     private function construirDatasetsSiesa(\Illuminate\Support\Collection $rows): array
     {
         $mensual = [];
@@ -684,6 +759,78 @@ class ContiflexERPRepository implements ERPRepositoryInterface
             return collect(DB::connection('erp_contiflex')->select($sql, [$rowidFactura]))
                 ->map(fn ($r) => (array) $r)
                 ->toArray();
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
+    public function existenciasMP(
+        ?string $buscar = null,
+        int $pagina = 1,
+        int $porPagina = 50,
+        ?string $ordenarPor = null,
+        string $direccion = 'asc',
+        ?int $diasVencer = null
+    ): array {
+        try {
+            $columnasOrdenables = [
+                'Bodega', 'Referencia', 'DescItem', 'Lote', 'UM', 'Existencia',
+                'UltEntrada', 'FechaVencimiento', 'Ubicacion', 'EstadoVencimiento', 'DiasParaVencer',
+            ];
+            $columna   = in_array($ordenarPor, $columnasOrdenables, true) ? $ordenarPor : 'DescItem';
+            $direccion = $direccion === 'desc' ? 'desc' : 'asc';
+
+            $base = DB::connection('erp_contiflex')
+                ->table('dbo.vw_ExistenciasMP')
+                ->when($buscar, fn ($q) => $q->where(function ($q2) use ($buscar) {
+                    $q2->where('Referencia', 'like', "%{$buscar}%")
+                       ->orWhere('DescItem', 'like', "%{$buscar}%")
+                       ->orWhere('Lote', 'like', "%{$buscar}%");
+                }))
+                ->when($diasVencer !== null, fn ($q) => $q->whereBetween('DiasParaVencer', [0, $diasVencer]));
+
+            $total = (clone $base)->count();
+
+            $data = $base
+                ->orderBy($columna, $direccion)
+                ->skip(($pagina - 1) * $porPagina)
+                ->take($porPagina)
+                ->get([
+                    'Compania', 'CodBodega', 'Bodega', 'Referencia', 'DescItem', 'Lote', 'UM',
+                    'Existencia', 'CostoUnit', 'CostoTotal', 'UltEntrada', 'FechaVencimiento',
+                    'Ubicacion', 'DiasParaVencer', 'EstadoVencimiento', 'FechaSync',
+                ])
+                ->map(fn ($r) => (array) $r)
+                ->toArray();
+
+            return compact('data', 'total', 'pagina', 'porPagina');
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
+    public function actualizarLoteExistenciaMP(
+        int $compania,
+        string $codBodega,
+        string $referencia,
+        string $lote,
+        array $campos
+    ): bool {
+        if (array_key_exists('FechaVencimiento', $campos) && $campos['FechaVencimiento'] !== null) {
+            // Formato YYYYMMDD (sin separadores): el único que SQL Server interpreta
+            // siempre igual sin importar el DATEFORMAT/idioma de la sesión. Con guiones
+            // (YYYY-MM-DD) puede leer día y mes invertidos según la configuración regional.
+            $campos['FechaVencimiento'] = \Carbon\Carbon::parse($campos['FechaVencimiento'])->format('Ymd');
+        }
+
+        try {
+            return DB::connection('erp_contiflex')
+                ->table('dbo.ExistenciasMP')
+                ->where('Compania', $compania)
+                ->where('CodBodega', $codBodega)
+                ->where('Referencia', $referencia)
+                ->where('Lote', $lote)
+                ->update($campos) > 0;
         } catch (Throwable $e) {
             throw ERPConnectionException::queryFailed($e->getMessage());
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Web;
 
+use App\Domain\Dashboard\Models\VendedorEquivalencia;
 use App\Domain\Maestros\Repositories\MaestroRepositoryInterface;
 use App\Domain\Prospectos\Models\Prospecto;
 use App\Domain\Prospectos\Repositories\ProspectoRepositoryInterface;
@@ -54,7 +55,14 @@ class ProspectoWebController extends Controller
         $origenes   = $this->maestros->porTipo('fuente_lead');
         $prioridades = $this->maestros->porTipo('prioridad');
 
-        return view('prospectos.create', compact('estados', 'origenes', 'prioridades'));
+        $companiasAsesor = VendedorEquivalencia::where('asesor_id', auth()->id())
+            ->where('activo', true)
+            ->pluck('compania')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        return view('prospectos.create', compact('estados', 'origenes', 'prioridades', 'companiasAsesor'));
     }
 
     public function edit(Prospecto $prospecto): View
@@ -66,6 +74,13 @@ class ProspectoWebController extends Controller
         $prioridades = $this->maestros->porTipo('prioridad');
 
         return view('prospectos.edit', compact('prospecto', 'estados', 'origenes', 'prioridades'));
+    }
+
+    public function convertir(Prospecto $prospecto): View
+    {
+        $this->authorize('convertir', $prospecto);
+
+        return view('prospectos.convertir', compact('prospecto'));
     }
 
     public function kanban(): View

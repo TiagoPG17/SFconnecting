@@ -57,9 +57,10 @@ class ClienteWebController extends Controller
         $actividad      = $this->calcularActividad($cliente->seguimientos);
         $datosErp       = $this->consultarErp($cliente->nit);
         $actividadSiesa = $this->consultarVentasSiesa($cliente->nit);
+        $comparativoAnual = $this->consultarComparativoAnual($cliente->nit);
         $facturas       = $this->consultarFacturas($cliente->nit);
 
-        return view('clientes.show', compact('cliente', 'seguimientos', 'actividad', 'datosErp', 'actividadSiesa', 'facturas'));
+        return view('clientes.show', compact('cliente', 'seguimientos', 'actividad', 'datosErp', 'actividadSiesa', 'comparativoAnual', 'facturas'));
     }
 
     public function showErp(Request $request, string $nit): View
@@ -84,9 +85,10 @@ class ClienteWebController extends Controller
             $cliente = $this->repo->crear($dto);
         }
 
-        $seguimientos   = collect();
-        $actividad      = ['mensual' => [], 'trimestral' => [], 'anual' => []];
-        $actividadSiesa = $this->consultarVentasSiesa($nit);
+        $seguimientos     = collect();
+        $actividad        = ['mensual' => [], 'trimestral' => [], 'anual' => []];
+        $actividadSiesa   = $this->consultarVentasSiesa($nit);
+        $comparativoAnual = $this->consultarComparativoAnual($nit);
 
         if ($cliente !== null) {
             $this->authorize('view', $cliente);
@@ -97,7 +99,7 @@ class ClienteWebController extends Controller
 
         $facturas = $this->consultarFacturas($nit);
 
-        return view('clientes.show', compact('cliente', 'seguimientos', 'actividad', 'datosErp', 'actividadSiesa', 'facturas'));
+        return view('clientes.show', compact('cliente', 'seguimientos', 'actividad', 'datosErp', 'actividadSiesa', 'comparativoAnual', 'facturas'));
     }
 
     public function create(): View
@@ -216,13 +218,45 @@ class ClienteWebController extends Controller
         }
     }
 
+    private function consultarComparativoAnual(string $nit): array
+    {
+        try {
+            return $this->erp->isAvailable() ? $this->erp->comparativoAnualPorNit($nit) : [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     private function consultarFacturas(string $nit): array
     {
         if (! $this->erp->isAvailable()) {
             return [];
         }
 
-        return $this->enriquecerNombreVendedor($this->erp->facturasPorNit($nit));
+        $facturas = $this->enriquecerNombreVendedor($this->erp->facturasPorNit($nit));
+
+        return $this->filtrarFacturasPorCompaniaDelComercial($facturas);
+    }
+
+    /**
+     * Un comercial solo debe ver facturas de la(s) compañía(s) en las que tiene
+     * mapeo activo en sf_vendedor_equivalencia (puede tener Formacol, Contiflex o ambas
+     * si le ha vendido al cliente desde las dos). Admin/gerente ven todo sin filtrar.
+     */
+    private function filtrarFacturasPorCompaniaDelComercial(array $facturas): array
+    {
+        $user = auth()->user();
+
+        if (empty($facturas) || ! $user->hasRole('comercial')) {
+            return $facturas;
+        }
+
+        $companias = $this->vendedorRepo->companiasDelAsesor($user->id);
+
+        return array_values(array_filter(
+            $facturas,
+            fn (array $factura) => in_array((int) ($factura['COMPANIA'] ?? 0), $companias, true)
+        ));
     }
 
     private function enriquecerNombreVendedor(array $facturas): array

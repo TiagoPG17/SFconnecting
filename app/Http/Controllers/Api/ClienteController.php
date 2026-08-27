@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Domain\Auditoria\Models\ActividadLog;
 use App\Domain\Clientes\DTOs\ActualizarClienteDTO;
 use App\Domain\Clientes\DTOs\CrearClienteDTO;
 use App\Domain\Clientes\Exceptions\ClienteDuplicadoException;
@@ -93,5 +94,21 @@ class ClienteController extends Controller
         $restaurado = $this->service->restaurar($id);
 
         return ApiResponse::success(new ClienteResource($restaurado), 'Cliente restaurado.');
+    }
+
+    public function marcarRegistradoContabilidad(Request $request, Cliente $cliente): JsonResponse
+    {
+        if (! $request->user()->hasAnyRole(['contabilidad_formacol', 'contabilidad_contiflex', 'admin'])) {
+            return ApiResponse::forbidden();
+        }
+
+        $cliente->update([
+            'revisado_contabilidad_en'  => now(),
+            'revisado_contabilidad_por' => $request->user()->id,
+        ]);
+
+        ActividadLog::registrar('revisar_contabilidad', 'clientes', "Cliente '{$cliente->razon_social}' marcado como registrado en SIESA", $request->user()->id);
+
+        return ApiResponse::success(new ClienteResource($cliente), 'Cliente marcado como registrado en SIESA.');
     }
 }

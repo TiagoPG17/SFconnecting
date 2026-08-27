@@ -27,6 +27,7 @@ class CrearProspectoRequest extends FormRequest
             'probabilidad_cierre'   => ['nullable', 'integer', 'min:0', 'max:100'],
             'fecha_proximo_contacto' => ['nullable', 'date', 'after_or_equal:today'],
             'observaciones'         => ['nullable', 'string', 'max:2000'],
+            'compania'              => ['nullable', 'integer', 'in:1,2'],
         ];
     }
 

@@ -25,6 +25,7 @@ class Negocio extends Model
         'cliente_id',
         'pipeline_estado_id',
         'tipo_negocio_id',
+        'sector_id',
         'nombre_negocio',
         'descripcion',
         'valor_estimado',
@@ -66,6 +67,11 @@ class Negocio extends Model
     public function tipoNegocio(): BelongsTo
     {
         return $this->belongsTo(MaestroComercial::class, 'tipo_negocio_id');
+    }
+
+    public function sector(): BelongsTo
+    {
+        return $this->belongsTo(MaestroComercial::class, 'sector_id');
     }
 
     public function motivoPerdida(): BelongsTo

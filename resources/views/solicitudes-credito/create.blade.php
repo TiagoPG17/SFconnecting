@@ -8,13 +8,20 @@
     <div class="max-w-2xl mx-auto">
         <x-ui.card>
             <div class="p-6">
-                <form
+                <div
                     x-data="{
                         loading: false,
                         selectedId: {{ $negocio?->id ?? 'null' }},
                         query: {{ $negocio ? \Illuminate\Support\Js::from($negocio->nombre_negocio) : \Illuminate\Support\Js::from('') }},
                         clienteNombre: {{ $negocio?->cliente ? \Illuminate\Support\Js::from($negocio->cliente->razon_social) : 'null' }},
                         results: [], open: false, buscando: false, timer: null,
+
+                        condicionesPagoDias: '',
+                        cupoMensualSolicitado: '',
+                        inventarioConsignacion: '',
+                        referencia1: { empresa: '', telefono: '', nit: '' },
+                        referencia2: { empresa: '', telefono: '', nit: '' },
+
                         buscar() {
                             clearTimeout(this.timer);
                             if (this.query.length < 2) { this.results = []; this.open = false; return; }
@@ -32,25 +39,32 @@
                             this.clienteNombre = item.cliente?.razon_social ?? null;
                             this.open = false;
                         },
-                        limpiar() { this.selectedId = null; this.query = ''; this.clienteNombre = null; this.results = []; this.open = false; }
-                    }"
-                    @submit.prevent="
-                        loading = true;
-                        const fd = new FormData($el);
-                        const body = {};
-                        fd.forEach((v, k) => { if (v !== '') body[k] = v; });
-                        body.negocio_id = selectedId;
-                        $api('POST', '/api/solicitudes-credito', body)
-                            .then(r => {
+                        limpiar() { this.selectedId = null; this.query = ''; this.clienteNombre = null; this.results = []; this.open = false; },
+
+                        referenciasParaEnviar() {
+                            const refs = [this.referencia1, this.referencia2].filter(r => r.empresa || r.telefono || r.nit);
+                            return refs.length ? refs : null;
+                        },
+
+                        guardar() {
+                            this.loading = true;
+                            $api('POST', '/api/solicitudes-credito', {
+                                negocio_id: this.selectedId,
+                                monto_solicitado: this.cupoMensualSolicitado,
+                                plazo_solicitado_dias: this.condicionesPagoDias || null,
+                                referencias_comerciales: this.referenciasParaEnviar(),
+                                inventario_consignacion: this.inventarioConsignacion === '' ? null : this.inventarioConsignacion === 'si',
+                            }).then(r => {
                                 if (r.success) {
                                     $store.toast.success(r.message);
                                     setTimeout(() => window.location.href = '{{ route('solicitudes-credito.index') }}', 800);
                                 } else {
                                     $store.toast.error(r.message ?? 'Error al radicar la solicitud');
-                                    loading = false;
+                                    this.loading = false;
                                 }
-                            }).catch(() => { $store.toast.error('Error de conexión'); loading = false; })
-                    "
+                            }).catch(() => { $store.toast.error('Error de conexión'); this.loading = false; });
+                        },
+                    }"
                     class="space-y-5"
                 >
                     <h2 class="text-base font-semibold text-slate-900 mb-1">Datos de la solicitud</h2>
@@ -93,29 +107,77 @@
                         <p class="text-xs text-amber-600 mt-1.5">* El negocio debe estar vinculado a un cliente con NIT en SIESA.</p>
                     </div>
 
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 border border-slate-200 rounded-lg p-3">
+                        <p class="sm:col-span-3 text-xs font-semibold text-slate-600 -mb-1">Referencia comercial 1</p>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Nombre empresa</label>
+                            <input type="text" x-model="referencia1.empresa"
+                                   class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Teléfono</label>
+                            <input type="text" x-model="referencia1.telefono"
+                                   class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">NIT</label>
+                            <input type="text" x-model="referencia1.nit"
+                                   class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 border border-slate-200 rounded-lg p-3">
+                        <p class="sm:col-span-3 text-xs font-semibold text-slate-600 -mb-1">Referencia comercial 2</p>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Nombre empresa</label>
+                            <input type="text" x-model="referencia2.empresa"
+                                   class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Teléfono</label>
+                            <input type="text" x-model="referencia2.telefono"
+                                   class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">NIT</label>
+                            <input type="text" x-model="referencia2.nit"
+                                   class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <x-ui.input name="monto_solicitado" type="number" label="Monto solicitado ($)" required placeholder="0" min="0" step="0.01"/>
-                        <x-ui.input name="plazo_solicitado_dias" type="number" label="Plazo solicitado (días)" placeholder="Ej: 30" min="1"/>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Condiciones de pago (días) <span class="text-red-500">*</span></label>
+                            <input type="number" min="1" x-model="condicionesPagoDias"
+                                   class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Cupo mensual de crédito solicitado ($) <span class="text-red-500">*</span></label>
+                            <input type="text" inputmode="numeric" placeholder="0"
+                                   :value="cupoMensualSolicitado ? Number(cupoMensualSolicitado).toLocaleString('es-CO') : ''"
+                                   @input="cupoMensualSolicitado = $event.target.value.replace(/\D/g, '')"
+                                   class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Justificación</label>
-                        <textarea
-                            name="justificacion"
-                            rows="3"
-                            placeholder="Explica el motivo de la solicitud..."
-                            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                        ></textarea>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Inventario en consignación</label>
+                        <select x-model="inventarioConsignacion"
+                                class="w-full sm:w-56 px-3 py-2 text-sm rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Selecciona...</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
                     </div>
 
                     <div class="flex justify-end gap-3 pt-2">
                         <x-ui.button href="{{ route('solicitudes-credito.index') }}" variant="ghost">Cancelar</x-ui.button>
-                        <x-ui.button type="submit" variant="primary" x-bind:disabled="loading || !selectedId">
+                        <x-ui.button type="button" variant="primary" @click="guardar()" x-bind:disabled="loading || !selectedId || !cupoMensualSolicitado || !condicionesPagoDias">
                             <span x-show="!loading">Radicar solicitud</span>
                             <span x-show="loading">Guardando...</span>
                         </x-ui.button>
                     </div>
-                </form>
+                </div>
             </div>
         </x-ui.card>
     </div>

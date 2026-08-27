@@ -53,8 +53,8 @@
         class="fixed inset-y-0 left-0 z-40 flex flex-col w-64 bg-slate-900 transition-transform duration-200 ease-in-out lg:translate-x-0"
     >
         {{-- Logo --}}
-        <div class="flex flex-col items-center justify-center gap-2 py-6 border-b border-slate-800 shrink-0 relative">
-            <img src="{{ asset('images/logo.svg') }}" alt="SFconnecting" class="w-28 h-28 object-contain">
+        <div class="flex flex-col items-center justify-center gap-1 py-5 border-b border-slate-800 shrink-0 relative">
+            <img src="{{ asset('images/logo.svg') }}" alt="SFconnecting" class="w-[120px] h-[120px] object-contain">
             <span class="text-white tracking-[0.12em]" style="font-family: 'Exo 2', sans-serif; font-weight: 600; font-size: 1.1rem;">SFconnecting</span>
             {{-- Cerrar en móvil --}}
             <button @click="sidebarOpen = false" class="absolute top-3 right-3 text-slate-400 hover:text-white lg:hidden">
@@ -102,6 +102,12 @@
                 Solicitudes de Crédito
             </x-ui.nav-item>
             @endrole
+
+            @hasanyrole('contabilidad_formacol|contabilidad_contiflex|admin')
+            <x-ui.nav-item href="{{ route('contabilidad.index') }}" :active="request()->routeIs('contabilidad.*')" icon="file-text">
+                Contabilidad
+            </x-ui.nav-item>
+            @endhasanyrole
 
             {{-- Clientes --}}
             <div class="pt-4 pb-1 px-3">
@@ -165,7 +171,7 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name ?? '' }}</p>
-                    <p class="text-xs text-slate-400 truncate">{{ auth()->user()->getRoleNames()->first() ?? '' }}</p>
+                    <p class="text-xs text-slate-400 truncate">{{ ucwords(str_replace('_', ' ', auth()->user()->getRoleNames()->first() ?? '')) }}</p>
                 </div>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

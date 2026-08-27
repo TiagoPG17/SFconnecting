@@ -30,6 +30,17 @@ class MaestrosComercialDemoSeeder extends Seeder
             ['tipo' => 'prioridad',       'nombre' => 'Alta',             'color' => '#ef4444', 'orden' => 1],
             ['tipo' => 'prioridad',       'nombre' => 'Media',            'color' => '#f59e0b', 'orden' => 2],
             ['tipo' => 'prioridad',       'nombre' => 'Baja',             'color' => '#10b981', 'orden' => 3],
+            // Sectores
+            ['tipo' => 'sector',          'nombre' => 'Alimenticio',      'color' => '#f59e0b', 'orden' => 1],
+            ['tipo' => 'sector',          'nombre' => 'Farmacéutico',     'color' => '#10b981', 'orden' => 2],
+            ['tipo' => 'sector',          'nombre' => 'Cosmético',        'color' => '#ec4899', 'orden' => 3],
+            ['tipo' => 'sector',          'nombre' => 'Químico',          'color' => '#8b5cf6', 'orden' => 4],
+            ['tipo' => 'sector',          'nombre' => 'Agroindustrial',   'color' => '#65a30d', 'orden' => 5],
+            ['tipo' => 'sector',          'nombre' => 'Aseo y Limpieza',  'color' => '#0ea5e9', 'orden' => 6],
+            ['tipo' => 'sector',          'nombre' => 'Bebidas',          'color' => '#3b82f6', 'orden' => 7],
+            ['tipo' => 'sector',          'nombre' => 'Salud',            'color' => '#ef4444', 'orden' => 8],
+            ['tipo' => 'sector',          'nombre' => 'Industrial / Manufactura', 'color' => '#6366f1', 'orden' => 9],
+            ['tipo' => 'sector',          'nombre' => 'Otro',             'color' => '#94a3b8', 'orden' => 10],
         ];
 
         foreach ($maestros as $m) {

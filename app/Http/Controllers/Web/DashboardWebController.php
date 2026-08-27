@@ -121,9 +121,49 @@ class DashboardWebController extends Controller
             'integrales'           => $safe(fn () => $this->erp->clientesIntegrales(50)),
             'panoramaGerencial'    => $safe(fn () => $this->erp->panoramaGerencial($companiaErp)),
             'panoramaPresupuestal' => $safe(fn () => $this->erp->panoramaPresupuestal($companiaErp)),
+            'informeComercial'     => $svc->informeComercial(),
             'anio'                 => $anio,
             'periodo'              => $periodo,
             'cia'                  => $companiaErp,
         ]);
+    }
+
+    /**
+     * Refresca la sección "Informe Comercial" según su propio filtro local
+     * (Año/Mes/Compañía), independiente del filtro de período del resto del dashboard.
+     */
+    public function informeComercial(Request $request): JsonResponse
+    {
+        [$compania, $anio, $mes] = $this->parametrosInformeComercial($request);
+
+        $svc = new DashboardGerencialService($this->gerencialRepo, $compania, $anio, [sprintf('%d-%02d', $anio, $mes)]);
+
+        return response()->json($svc->informeComercial($compania, $anio, $mes));
+    }
+
+    /** Drill-down: líneas de pedidos pendientes de un cliente puntual. */
+    public function informeComercialDetalleCliente(Request $request): JsonResponse
+    {
+        [$compania, $anio, $mes] = $this->parametrosInformeComercial($request);
+        $cliente = (string) $request->input('cliente', '');
+
+        if ($cliente === '') {
+            return response()->json(['error' => 'Cliente requerido'], 422);
+        }
+
+        $svc = new DashboardGerencialService($this->gerencialRepo, $compania, $anio, [sprintf('%d-%02d', $anio, $mes)]);
+
+        return response()->json($svc->pedidosPendientesDetalleCliente($compania, $anio, $mes, $cliente));
+    }
+
+    /** @return array{0: int, 1: int, 2: int} [compania, anio, mes] */
+    private function parametrosInformeComercial(Request $request): array
+    {
+        $compania = in_array((int) $request->input('cia'), [0, 1, 2]) ? (int) $request->input('cia') : 0;
+        $anio     = (int) $request->input('anio', now()->year);
+        $mes      = (int) $request->input('mes', now()->month);
+        $mes      = ($mes >= 1 && $mes <= 12) ? $mes : now()->month;
+
+        return [$compania, $anio, $mes];
     }
 }

@@ -11,6 +11,11 @@
         <x-ui.button variant="primary" size="sm" @click="$dispatch('open-seguimiento')">
             <x-ui.icon name="plus" class="w-4 h-4"/> Seguimiento
         </x-ui.button>
+        @can('create', \App\Domain\SolicitudesCredito\Models\SolicitudCredito::class)
+        <x-ui.button variant="secondary" size="sm" @click="$dispatch('open-solicitud-cupo')">
+            <x-ui.icon name="file-text" class="w-4 h-4"/> Solicitar cupo de crédito
+        </x-ui.button>
+        @endcan
     </x-slot>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -490,6 +495,98 @@
                     </div>
                 </div>
             </x-ui.card>
+
+            {{-- Comparativo anual: ventas entre años --}}
+            @if(!empty($comparativoAnual['mensual'] ?? []))
+            @php
+                $fmtCompacto = function (float $v): string {
+                    if ($v >= 1_000_000) return '$'.number_format($v / 1_000_000, 1).'M';
+                    if ($v >= 1_000)     return '$'.number_format($v / 1_000, 0).'K';
+                    return '$'.number_format($v, 0);
+                };
+                $paletaPunto = ['#2563eb', '#93c5fd', '#cbd5e1', '#e2e8f0'];
+            @endphp
+            <script>window['_comparativo_{{ $cliente->id }}'] = @json($comparativoAnual);</script>
+
+            <x-ui.card x-data="comparativoChart(window['_comparativo_{{ $cliente->id }}'])">
+                <div class="p-4">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Comparativo anual</p>
+                            <p class="text-xs text-slate-400 mt-0.5">Ventas entre años</p>
+                        </div>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            {{-- Filtro por año: el punto de color es el activador, muestra/oculta cada año en el gráfico --}}
+                            <div class="flex items-center gap-3">
+                                @foreach($comparativoAnual['anios'] as $i => $anio)
+                                <button type="button" @click="activos[{{ $i }}] = !activos[{{ $i }}]"
+                                        class="flex items-center gap-1.5 cursor-pointer select-none">
+                                    <span class="w-3 h-3 rounded-full shrink-0 border-2 transition-all"
+                                          :style="activos[{{ $i }}]
+                                              ? 'background:{{ $paletaPunto[$i] ?? '#f1f5f9' }}; border-color:{{ $paletaPunto[$i] ?? '#f1f5f9' }}'
+                                              : 'background:transparent; border-color:#cbd5e1'">
+                                    </span>
+                                    <span class="text-xs" :class="activos[{{ $i }}] ? 'text-slate-500' : 'text-slate-300'">{{ $anio }}</span>
+                                </button>
+                                @endforeach
+                            </div>
+                            {{-- Filtro de período: siempre uno activo, funciona como filtro --}}
+                            <div class="flex gap-0.5 bg-slate-100 rounded-lg p-0.5">
+                                @foreach(['mensual' => 'Mes', 'trimestral' => 'Trim.', 'anual' => 'Año'] as $key => $lbl)
+                                <button type="button" @click="periodo = '{{ $key }}'"
+                                        :class="periodo === '{{ $key }}' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'"
+                                        class="px-3 py-1 rounded-md text-xs font-medium transition-all">
+                                    {{ $lbl }}
+                                </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Barras agrupadas según el período elegido --}}
+                    <div class="flex items-end gap-1.5" style="height:160px">
+                        <template x-for="(grupo, idx) in grupos" :key="idx">
+                            <div class="flex-1 flex flex-col items-center gap-1.5 min-w-0">
+                                <div class="flex items-end justify-center gap-0.5 w-full overflow-hidden" style="height:136px">
+                                    <template x-for="(valor, i) in grupo.valores" :key="i">
+                                        <div :class="['flex-1 max-w-[10px] rounded-t', paletaBarra[i] ?? 'bg-slate-100']"
+                                             :style="`height:${grupo.alturas[i] ?? 1}px; display:${activos[i] ? 'block' : 'none'}`"
+                                             :title="`${anios[i] ?? ''}: ${fmt(valor)}`">
+                                        </div>
+                                    </template>
+                                </div>
+                                <span class="text-[10px] text-slate-400" x-text="grupo.label"></span>
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- Footer: totales por año --}}
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-x-6 gap-y-2">
+                        @foreach($comparativoAnual['anios'] as $i => $anio)
+                        @php
+                            $total       = $comparativoAnual['totales'][$i] ?? 0;
+                            $totalAnt    = $comparativoAnual['totales'][$i + 1] ?? null;
+                            $variacion   = $totalAnt !== null && $totalAnt > 0 ? (($total - $totalAnt) / $totalAnt) * 100 : null;
+                        @endphp
+                        <div x-show="activos[{{ $i }}]">
+                            <p class="text-xs text-slate-400">
+                                <span class="inline-block w-2 h-2 rounded-full align-middle mr-1" style="background:{{ $paletaPunto[$i] ?? '#f1f5f9' }}"></span>
+                                Total {{ $anio }}
+                            </p>
+                            <p class="text-sm font-bold text-slate-900">
+                                {{ $fmtCompacto($total) }}
+                                @if($variacion !== null)
+                                <span class="text-xs font-semibold {{ $variacion >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                    ({{ $variacion >= 0 ? '+' : '' }}{{ number_format($variacion, 1) }}%)
+                                </span>
+                                @endif
+                            </p>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </x-ui.card>
+            @endif
         </div>
 
         {{-- Sidebar --}}
@@ -860,6 +957,22 @@
                 },
             };
         }
+
+        function comparativoChart(datasets) {
+            return {
+                periodo: 'mensual',
+                activos: datasets.anios.map(() => true),
+                datasets,
+                paletaBarra: ['bg-blue-600', 'bg-blue-300', 'bg-slate-300', 'bg-slate-200'],
+                get grupos() { return this.datasets[this.periodo] || []; },
+                get anios()  { return this.datasets.anios || []; },
+                fmt(v) {
+                    if (v >= 1_000_000) return '$' + (v / 1_000_000).toFixed(1) + 'M';
+                    if (v >= 1_000)     return '$' + Math.round(v / 1_000) + 'K';
+                    return '$' + Math.round(v);
+                },
+            };
+        }
     </script>
 
     {{-- Modal: nuevo seguimiento --}}
@@ -973,6 +1086,117 @@
                     </x-ui.button>
                 </div>
             </form>
+        </x-ui.modal>
+    </div>
+
+    {{-- Modal: solicitar cupo de crédito --}}
+    <div x-data="{ open: false }" @open-solicitud-cupo.window="open = true">
+        <x-ui.modal title="Solicitar cupo de crédito">
+            <div
+                x-data="{
+                    loading: false,
+                    condicionesPagoDias: '',
+                    cupoMensualSolicitado: '',
+                    inventarioConsignacion: '',
+                    referencia1: { empresa: '', telefono: '', nit: '' },
+                    referencia2: { empresa: '', telefono: '', nit: '' },
+
+                    referenciasParaEnviar() {
+                        const refs = [this.referencia1, this.referencia2].filter(r => r.empresa || r.telefono || r.nit);
+                        return refs.length ? refs : null;
+                    },
+
+                    guardar() {
+                        this.loading = true;
+                        $api('POST', '/api/solicitudes-credito', {
+                            cliente_id: {{ $cliente->id }},
+                            monto_solicitado: this.cupoMensualSolicitado,
+                            plazo_solicitado_dias: this.condicionesPagoDias || null,
+                            referencias_comerciales: this.referenciasParaEnviar(),
+                            inventario_consignacion: this.inventarioConsignacion === '' ? null : this.inventarioConsignacion === 'si',
+                        }).then(r => {
+                            if (r.success) {
+                                $store.toast.success(r.message ?? 'Solicitud de cupo radicada.');
+                                setTimeout(() => location.reload(), 800);
+                            } else {
+                                $store.toast.error(r.message ?? 'Error al radicar la solicitud');
+                                this.loading = false;
+                            }
+                        }).catch(() => { $store.toast.error('Error de conexión'); this.loading = false; });
+                    },
+                }"
+                class="space-y-4"
+            >
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 border border-slate-200 rounded-lg p-3">
+                    <p class="sm:col-span-3 text-xs font-semibold text-slate-600 -mb-1">Referencia comercial 1</p>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Nombre empresa</label>
+                        <input type="text" x-model="referencia1.empresa"
+                               class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Teléfono</label>
+                        <input type="text" x-model="referencia1.telefono"
+                               class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">NIT</label>
+                        <input type="text" x-model="referencia1.nit"
+                               class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 border border-slate-200 rounded-lg p-3">
+                    <p class="sm:col-span-3 text-xs font-semibold text-slate-600 -mb-1">Referencia comercial 2</p>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Nombre empresa</label>
+                        <input type="text" x-model="referencia2.empresa"
+                               class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Teléfono</label>
+                        <input type="text" x-model="referencia2.telefono"
+                               class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">NIT</label>
+                        <input type="text" x-model="referencia2.nit"
+                               class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Condiciones de pago (días) <span class="text-red-500">*</span></label>
+                        <input type="number" min="1" x-model="condicionesPagoDias"
+                               class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Cupo mensual de crédito solicitado ($) <span class="text-red-500">*</span></label>
+                        <input type="text" inputmode="numeric" placeholder="0"
+                               :value="cupoMensualSolicitado ? Number(cupoMensualSolicitado).toLocaleString('es-CO') : ''"
+                               @input="cupoMensualSolicitado = $event.target.value.replace(/\D/g, '')"
+                               class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Inventario en consignación</label>
+                        <select x-model="inventarioConsignacion"
+                                class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Selecciona...</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <x-ui.button type="button" variant="ghost" @click="open = false">Cancelar</x-ui.button>
+                    <x-ui.button type="button" variant="primary" @click="guardar()" x-bind:disabled="loading || !cupoMensualSolicitado || !condicionesPagoDias">
+                        <span x-show="!loading">Radicar solicitud</span>
+                        <span x-show="loading">Guardando...</span>
+                    </x-ui.button>
+                </div>
+            </div>
         </x-ui.modal>
     </div>
 </x-layouts.app>

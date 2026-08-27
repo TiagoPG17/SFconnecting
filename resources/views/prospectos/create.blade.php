@@ -10,7 +10,7 @@
             empresa: '', contacto: '', email: '', telefono: '',
             estado_pipeline_id: '', origen_id: '', prioridad_id: '',
             valor_estimado: '', probabilidad_cierre: '',
-            fecha_proximo_contacto: '', observaciones: ''
+            fecha_proximo_contacto: '', observaciones: '', compania: ''
         },
         errors: {},
         loading: false,
@@ -68,6 +68,23 @@
                                 placeholder="Nombre del contacto"/>
                         </div>
                     </div>
+
+                    @if(count($companiasAsesor) > 1)
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                            Compañía <span class="text-red-500">*</span>
+                        </label>
+                        <x-ui.select
+                            x-model="form.compania"
+                            @change="delete errors.compania"
+                            x-error="errors.compania">
+                            <option value="">Seleccionar compañía...</option>
+                            @foreach($companiasAsesor as $cia)
+                                <option value="{{ $cia }}">{{ $cia === 1 ? 'Formacol' : 'Contiflex' }}</option>
+                            @endforeach
+                        </x-ui.select>
+                    </div>
+                    @endif
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>

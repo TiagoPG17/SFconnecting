@@ -16,6 +16,8 @@ class SolicitudCreditoResource extends JsonResource
             'monto_solicitado'       => $this->monto_solicitado,
             'plazo_solicitado_dias'  => $this->plazo_solicitado_dias,
             'justificacion'          => $this->justificacion,
+            'referencias_comerciales' => $this->referencias_comerciales,
+            'inventario_consignacion' => $this->inventario_consignacion,
             'dossier_erp'            => $this->dossier_erp,
             'comentario_revision'    => $this->comentario_revision,
             'condiciones'            => $this->condiciones,

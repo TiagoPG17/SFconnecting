@@ -68,11 +68,53 @@ interface ERPRepositoryInterface
      */
     public function ventasMensualesPorNit(string $nit): array;
 
+    /**
+     * Comparativo de ventas entre varios años para un mismo cliente, en tres
+     * granularidades (equivalente a vw_CRM_Ventas_Mensuales_cliente filtrado
+     * por NIT y rango de años).
+     *
+     * Las alturas (0-136px) vienen pre-escaladas desde el servidor para que el
+     * navegador solo decida mostrar/ocultar por año, sin recalcular nada.
+     *
+     * @return array{
+     *     anios: array<int, int>,
+     *     mensual: array<int, array{label: string, valores: array<int, float>, alturas: array<int, int>}>,
+     *     trimestral: array<int, array{label: string, valores: array<int, float>, alturas: array<int, int>}>,
+     *     anual: array<int, array{label: string, valores: array<int, float>, alturas: array<int, int>}>,
+     *     totales: array<int, float>
+     * }
+     */
+    public function comparativoAnualPorNit(string $nit, int $cantidadAnios = 3): array;
+
     /** Retorna las últimas facturas del cliente por NIT (maestro). */
     public function facturasPorNit(string $nit, int $limite = 60): array;
 
     /** Retorna el detalle de ítems de una factura por ROWID_FACTURA. */
     public function detalleFactura(int $rowidFactura): array;
+
+    /**
+     * Retorna existencias de materia prima (vw_ExistenciasMP), paginado.
+     *
+     * @param  int|null  $diasVencer  Si se indica, sólo retorna lotes cuyo vencimiento cae dentro de N días (>= 0).
+     * @return array{data: array, total: int, pagina: int, porPagina: int}
+     */
+    public function existenciasMP(
+        ?string $buscar = null,
+        int $pagina = 1,
+        int $porPagina = 50,
+        ?string $ordenarPor = null,
+        string $direccion = 'asc',
+        ?int $diasVencer = null
+    ): array;
+
+    /** Actualiza Fecha de Vencimiento y/o Ubicación de un lote puntual en dbo.ExistenciasMP. */
+    public function actualizarLoteExistenciaMP(
+        int $compania,
+        string $codBodega,
+        string $referencia,
+        string $lote,
+        array $campos
+    ): bool;
 
     public function isAvailable(): bool;
 }

@@ -28,16 +28,26 @@ class Cliente extends Model
         'estado',
         'notas',
         'user_id',
+        'datos_carga',
+        'revisado_contabilidad_en',
+        'revisado_contabilidad_por',
     ];
 
     protected $casts = [
-        'deleted_at' => 'datetime',
-        'compania'   => 'integer',
+        'deleted_at'               => 'datetime',
+        'compania'                 => 'integer',
+        'datos_carga'              => 'array',
+        'revisado_contabilidad_en' => 'datetime',
     ];
 
     public function asesor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function revisadoContabilidadPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'revisado_contabilidad_por');
     }
 
     public function contactos(): HasMany
@@ -60,6 +70,13 @@ class Cliente extends Model
         return $query->where('clientes.estado', 'activo');
     }
 
+    public function scopePendientesContabilidad($query, int $compania)
+    {
+        return $query->where('clientes.compania', $compania)
+            ->whereNull('clientes.revisado_contabilidad_en')
+            ->whereNotNull('clientes.datos_carga');
+    }
+
     public function estaActivo(): bool
     {
         return $this->estado === 'activo';
@@ -68,6 +85,20 @@ class Cliente extends Model
     public function estaInactivo(): bool
     {
         return $this->estado === 'inactivo';
+    }
+
+    public function pendienteContabilidad(): bool
+    {
+        return is_null($this->revisado_contabilidad_en) && ! is_null($this->datos_carga);
+    }
+
+    public function companiaNombre(): ?string
+    {
+        return match ($this->compania) {
+            1       => 'Formacol',
+            2       => 'Contiflex',
+            default => null,
+        };
     }
 
     protected static function newFactory(): ClienteFactory

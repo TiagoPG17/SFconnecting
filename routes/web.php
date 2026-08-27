@@ -7,6 +7,7 @@ use App\Http\Controllers\Web\AuthWebController;
 use App\Http\Controllers\Web\ClienteWebController;
 use App\Http\Controllers\Web\ClientesHuerfanosWebController;
 use App\Http\Controllers\Web\CalendarioWebController;
+use App\Http\Controllers\Web\ContabilidadWebController;
 use App\Http\Controllers\Web\DashboardWebController;
 use App\Http\Controllers\Web\MaestroWebController;
 use App\Http\Controllers\Web\NegocioWebController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Web\PresupuestoWebController;
 use App\Http\Controllers\Web\AdminGestionWebController;
 use App\Http\Controllers\Web\ContactoWebController;
 use App\Http\Controllers\Web\UsuarioWebController;
+use App\Http\Controllers\Web\ExistenciasMPWebController;
 use Illuminate\Support\Facades\Route;
 
 // Auth pública (5 intentos de login por minuto por IP)
@@ -36,6 +38,9 @@ Route::middleware(['auth'])->group(function () {
         if ($user->hasRole('gerente')) {
             return redirect()->route('dash.gerencial');
         }
+        if ($user->hasRole('produccion')) {
+            return redirect()->route('existencias-mp.index');
+        }
         return redirect()->route('dash.vendedor');
     };
 
@@ -47,6 +52,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/mi-desempeno', [DashboardWebController::class, 'vendedor'])->name('dash.vendedor')->middleware('role:comercial|admin');
     Route::get('/gerencial',    [DashboardWebController::class, 'gerencial'])->name('dash.gerencial')->middleware('role:gerente|admin');
     Route::get('/gerencial/clientes-panorama', [DashboardWebController::class, 'clientesPanorama'])->name('gerencial.clientes-panorama')->middleware('role:gerente|admin');
+    Route::get('/gerencial/informe-comercial', [DashboardWebController::class, 'informeComercial'])->name('gerencial.informe-comercial')->middleware('role:gerente|admin');
+    Route::get('/gerencial/informe-comercial/detalle-cliente', [DashboardWebController::class, 'informeComercialDetalleCliente'])->name('gerencial.informe-comercial.detalle-cliente')->middleware('role:gerente|admin');
 
     // Calendario
     Route::get('/calendario', [CalendarioWebController::class, 'index'])->name('calendario.index');
@@ -55,7 +62,8 @@ Route::middleware(['auth'])->group(function () {
     // Prospectos — estáticas antes del wildcard
     Route::get('/prospectos/kanban',           [ProspectoWebController::class, 'kanban'])->name('prospectos.kanban');
     Route::get('/prospectos/create',           [ProspectoWebController::class, 'create'])->name('prospectos.create')->middleware('role:admin|comercial');
-    Route::get('/prospectos/{prospecto}/edit', [ProspectoWebController::class, 'edit'])->name('prospectos.edit')->middleware('role:admin|comercial');
+    Route::get('/prospectos/{prospecto}/edit',      [ProspectoWebController::class, 'edit'])->name('prospectos.edit')->middleware('role:admin|comercial');
+    Route::get('/prospectos/{prospecto}/convertir', [ProspectoWebController::class, 'convertir'])->name('prospectos.convertir');
     Route::get('/prospectos/{prospecto}',      [ProspectoWebController::class, 'show'])->name('prospectos.show');
     Route::get('/prospectos',                  [ProspectoWebController::class, 'index'])->name('prospectos.index');
 
@@ -67,9 +75,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/negocios',                  [NegocioWebController::class, 'index'])->name('negocios.index');
 
     // Solicitudes de Crédito — estáticas antes del wildcard
-    Route::get('/solicitudes-credito/create',              [SolicitudCreditoWebController::class, 'create'])->name('solicitudes-credito.create')->middleware('role:admin');
-    Route::get('/solicitudes-credito/{solicitudCredito}',  [SolicitudCreditoWebController::class, 'show'])->name('solicitudes-credito.show')->middleware('role:admin');
-    Route::get('/solicitudes-credito',                     [SolicitudCreditoWebController::class, 'index'])->name('solicitudes-credito.index')->middleware('role:admin');
+    Route::get('/solicitudes-credito/create',              [SolicitudCreditoWebController::class, 'create'])->name('solicitudes-credito.create')->middleware('role:admin|gerente|cartera');
+    Route::get('/solicitudes-credito/{solicitudCredito}',  [SolicitudCreditoWebController::class, 'show'])->name('solicitudes-credito.show')->middleware('role:admin|gerente|cartera');
+    Route::get('/solicitudes-credito',                     [SolicitudCreditoWebController::class, 'index'])->name('solicitudes-credito.index')->middleware('role:admin|gerente|cartera');
+
+    // Contabilidad — estáticas antes del wildcard
+    Route::get('/contabilidad/{cliente}', [ContabilidadWebController::class, 'show'])->name('contabilidad.show')->middleware('role:contabilidad_formacol|contabilidad_contiflex|admin');
+    Route::get('/contabilidad',           [ContabilidadWebController::class, 'index'])->name('contabilidad.index')->middleware('role:contabilidad_formacol|contabilidad_contiflex|admin');
+
+    Route::get('/consultas-lotes', [ExistenciasMPWebController::class, 'index'])->name('existencias-mp.index')->middleware('role:produccion|admin');
+    Route::patch('/consultas-lotes/actualizar', [ExistenciasMPWebController::class, 'actualizarCampo'])->name('existencias-mp.actualizar')->middleware('role:produccion|admin');
 
     // Clientes huérfanos (todos los roles)
     Route::patch('/contactos/{contacto}/toggle', [ContactoWebController::class, 'toggle'])->name('contactos.toggle');
@@ -109,7 +124,7 @@ Route::middleware(['auth'])->group(function () {
         ->parameters(['mapeo-vendedores' => 'mapeoVendedor']);
 
     // Auditoría (admin only)
-    Route::get('/auditoria', [AuditoriaWebController::class, 'index'])->name('auditoria.index')->middleware('role:admin');
+    Route::get('/auditoria', [AuditoriaWebController::class, 'index'])->name('auditoria.index')->middleware('role:admin|gerente|cartera');
 
     // Gestión de registros (admin only)
     Route::middleware('role:admin')->group(function () {

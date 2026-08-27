@@ -29,6 +29,8 @@ class SolicitudCredito extends Model
         'monto_solicitado',
         'plazo_solicitado_dias',
         'justificacion',
+        'referencias_comerciales',
+        'inventario_consignacion',
         'dossier_erp',
         'comentario_revision',
         'condiciones',
@@ -36,11 +38,13 @@ class SolicitudCredito extends Model
     ];
 
     protected $casts = [
-        'monto_solicitado'      => 'decimal:2',
-        'plazo_solicitado_dias' => 'integer',
-        'dossier_erp'           => 'array',
-        'revisado_en'           => 'datetime',
-        'deleted_at'            => 'datetime',
+        'monto_solicitado'         => 'decimal:2',
+        'plazo_solicitado_dias'    => 'integer',
+        'referencias_comerciales'  => 'array',
+        'inventario_consignacion'  => 'boolean',
+        'dossier_erp'              => 'array',
+        'revisado_en'              => 'datetime',
+        'deleted_at'               => 'datetime',
     ];
 
     public function negocio(): BelongsTo

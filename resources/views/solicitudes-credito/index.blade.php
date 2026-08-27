@@ -66,7 +66,9 @@
                 <tbody class="divide-y divide-slate-100">
                     @foreach($solicitudes as $s)
                     <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="py-3 px-4 font-medium text-slate-900">{{ $s->negocio?->nombre_negocio }}</td>
+                        <td class="py-3 px-4 font-medium text-slate-900">
+                            {{ $s->negocio?->nombre_negocio ?? 'Cupo inicial (sin negocio)' }}
+                        </td>
                         <td class="py-3 px-4">
                             <p class="text-slate-900">{{ $s->cliente?->razon_social }}</p>
                             <p class="text-xs font-mono text-slate-400">{{ $s->cliente?->nit }}</p>

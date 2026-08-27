@@ -32,4 +32,6 @@ interface SolicitudCreditoRepositoryInterface
     public function porNegocio(int $negocioId): Collection;
 
     public function tieneSolicitudActiva(int $negocioId): bool;
+
+    public function tieneSolicitudActivaParaCliente(int $clienteId): bool;
 }

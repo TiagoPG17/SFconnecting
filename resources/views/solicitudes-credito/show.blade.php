@@ -21,8 +21,13 @@
                 <div class="p-6">
                     <div class="flex items-start justify-between mb-4">
                         <div>
-                            <h2 class="text-xl font-semibold text-slate-900">{{ $solicitud->negocio?->nombre_negocio }}</h2>
-                            <p class="text-sm text-slate-500 mt-1">{{ $solicitud->cliente?->razon_social }} — NIT {{ $solicitud->cliente?->nit }}</p>
+                            <h2 class="text-xl font-semibold text-slate-900">{{ $solicitud->negocio?->nombre_negocio ?? $solicitud->cliente?->razon_social }}</h2>
+                            <p class="text-sm text-slate-500 mt-1">
+                                {{ $solicitud->cliente?->razon_social }} — NIT {{ $solicitud->cliente?->nit }}
+                                @unless($solicitud->negocio)
+                                    <span class="text-amber-600">(cupo inicial, sin negocio asociado)</span>
+                                @endunless
+                            </p>
                         </div>
                         @if($solicitud->pipelineEstado)
                             <x-ui.badge :color="$solicitud->pipelineEstado->color" class="text-sm px-3 py-1">
@@ -33,13 +38,19 @@
 
                     <dl class="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                            <dt class="text-slate-500 font-medium">Monto solicitado</dt>
+                            <dt class="text-slate-500 font-medium">Cupo mensual solicitado</dt>
                             <dd class="text-slate-900 font-semibold mt-1">${{ number_format($solicitud->monto_solicitado, 0, ',', '.') }}</dd>
                         </div>
                         @if($solicitud->plazo_solicitado_dias)
                         <div>
-                            <dt class="text-slate-500 font-medium">Plazo solicitado</dt>
+                            <dt class="text-slate-500 font-medium">Condiciones de pago</dt>
                             <dd class="text-slate-900 mt-1">{{ $solicitud->plazo_solicitado_dias }} días</dd>
+                        </div>
+                        @endif
+                        @if($solicitud->inventario_consignacion !== null)
+                        <div>
+                            <dt class="text-slate-500 font-medium">Inventario en consignación</dt>
+                            <dd class="text-slate-900 mt-1">{{ $solicitud->inventario_consignacion ? 'Sí' : 'No' }}</dd>
                         </div>
                         @endif
                         <div>
@@ -53,6 +64,21 @@
                         </div>
                         @endif
                     </dl>
+
+                    @if($solicitud->referencias_comerciales)
+                    <div class="mt-4 pt-4 border-t border-slate-100">
+                        <p class="text-sm font-medium text-slate-500 mb-2">Referencias comerciales</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            @foreach($solicitud->referencias_comerciales as $i => $ref)
+                            <div class="text-sm bg-slate-50 rounded-lg p-3">
+                                <p class="text-xs font-semibold text-slate-500 mb-1">Referencia {{ $i + 1 }}</p>
+                                <p class="text-slate-900">{{ $ref['empresa'] ?? '—' }}</p>
+                                <p class="text-slate-500 text-xs mt-0.5">{{ $ref['telefono'] ?? '—' }} @if(!empty($ref['nit'])) · NIT {{ $ref['nit'] }} @endif</p>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
 
                     @if($solicitud->justificacion)
                     <div class="mt-4 pt-4 border-t border-slate-100">

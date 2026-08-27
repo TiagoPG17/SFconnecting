@@ -17,6 +17,7 @@ class CrearClienteDTO
         public readonly ?string $direccion = null,
         public readonly string $estado = 'prospecto',
         public readonly ?string $notas = null,
+        public readonly ?array $datosCarga = null,
     ) {}
 
     public static function fromArray(array $data): self
@@ -32,6 +33,7 @@ class CrearClienteDTO
             direccion:   $data['direccion'] ?? null,
             estado:      $data['estado'] ?? 'prospecto',
             notas:       $data['notas'] ?? null,
+            datosCarga:  $data['datos_carga'] ?? null,
         );
     }
 
@@ -48,6 +50,7 @@ class CrearClienteDTO
             direccion:   $this->direccion ?: ($erpData['direccion'] ?? $this->direccion),
             estado:      $this->estado,
             notas:       $this->notas,
+            datosCarga:  $this->datosCarga,
         );
     }
 
@@ -64,6 +67,7 @@ class CrearClienteDTO
             'direccion'    => $this->direccion,
             'estado'       => $this->estado,
             'notas'        => $this->notas,
+            'datos_carga'  => $this->datosCarga,
         ];
     }
 }

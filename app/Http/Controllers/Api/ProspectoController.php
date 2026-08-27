@@ -9,6 +9,7 @@ use App\Domain\Prospectos\DTOs\ConvertirProspectoDTO;
 use App\Domain\Prospectos\DTOs\CrearProspectoDTO;
 use App\Domain\Prospectos\Exceptions\ConversionProspectoException;
 use App\Domain\Prospectos\Exceptions\ProspectoDuplicadoException;
+use App\Domain\Prospectos\Exceptions\ProspectoException;
 use App\Domain\Prospectos\Models\Prospecto;
 use App\Domain\Prospectos\Repositories\ProspectoRepositoryInterface;
 use App\Domain\Prospectos\Services\ProspectoService;
@@ -55,6 +56,8 @@ class ProspectoController extends Controller
             return ApiResponse::created(new ProspectoResource($prospecto), 'Prospecto creado exitosamente.');
         } catch (ProspectoDuplicadoException $e) {
             return ApiResponse::error($e->getMessage(), [], 409);
+        } catch (ProspectoException $e) {
+            return ApiResponse::error($e->getMessage(), [], 422);
         }
     }
 

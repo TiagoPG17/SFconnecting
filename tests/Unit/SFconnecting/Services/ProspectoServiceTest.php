@@ -17,6 +17,7 @@ use App\Domain\Prospectos\Exceptions\ProspectoDuplicadoException;
 use App\Domain\Prospectos\Models\Prospecto;
 use App\Domain\Prospectos\Repositories\ProspectoRepository;
 use App\Domain\Prospectos\Services\ProspectoService;
+use App\Domain\SolicitudesCredito\Services\SolicitudCreditoService;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -50,6 +51,7 @@ class ProspectoServiceTest extends TestCase
             new ClienteRepository(),
             new SeguimientoRepository(),
             new DashboardVendedorRepository(),
+            app(SolicitudCreditoService::class),
         );
     }
 

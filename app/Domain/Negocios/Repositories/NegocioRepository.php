@@ -33,7 +33,7 @@ class NegocioRepository implements NegocioRepositoryInterface
 
     public function buscarPorId(int $id): ?Negocio
     {
-        return Negocio::with(['pipelineEstado', 'tipoNegocio', 'motivoPerdida', 'asesor', 'prospecto', 'cliente'])
+        return Negocio::with(['pipelineEstado', 'tipoNegocio', 'sector', 'motivoPerdida', 'asesor', 'prospecto', 'cliente'])
             ->find($id);
     }
 

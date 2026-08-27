@@ -24,6 +24,7 @@ class MaestroController extends Controller
         'tipo_actividad',
         'clasificacion',
         'segmento',
+        'sector',
     ];
 
     public function __construct(

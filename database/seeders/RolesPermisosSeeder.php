@@ -56,6 +56,8 @@ class RolesPermisosSeeder extends Seeder
             'solicitudes_credito.crear',
             'solicitudes_credito.eliminar',
             'solicitudes_credito.revisar',
+            // Contabilidad
+            'clientes.revisar_contabilidad',
             // Pipeline
             'pipeline.ver',
             'pipeline.mover',
@@ -67,6 +69,8 @@ class RolesPermisosSeeder extends Seeder
             // Admin
             'usuarios.gestionar',
             'roles.gestionar',
+            // Producción
+            'existencias_mp.ver',
         ];
 
         foreach ($permisos as $permiso) {
@@ -83,6 +87,7 @@ class RolesPermisosSeeder extends Seeder
             'seguimientos.ver',
             'prospectos.ver',
             'negocios.ver',
+            'solicitudes_credito.ver',
             'pipeline.ver',
             'forecast.ver',
             'dashboard.ver', 'dashboard.kpis',
@@ -95,13 +100,36 @@ class RolesPermisosSeeder extends Seeder
             'clientes.ver', 'clientes.crear', 'clientes.editar',
             'contactos.ver', 'contactos.crear', 'contactos.editar',
             'seguimientos.ver', 'seguimientos.crear', 'seguimientos.editar',
-            'prospectos.ver', 'prospectos.crear', 'prospectos.editar',
+            'prospectos.ver', 'prospectos.crear', 'prospectos.editar', 'prospectos.convertir',
             'negocios.ver', 'negocios.crear', 'negocios.editar',
+            'solicitudes_credito.ver', 'solicitudes_credito.crear',
             'pipeline.ver', 'pipeline.mover',
             'forecast.ver',
             'maestros.ver',
             'dashboard.ver',
             'erp.consultar',
+        ]);
+
+        $cartera = Role::firstOrCreate(['name' => 'cartera', 'guard_name' => 'web']);
+        $cartera->syncPermissions([
+            'solicitudes_credito.ver', 'solicitudes_credito.revisar',
+        ]);
+
+        $contabilidadFormacol = Role::firstOrCreate(['name' => 'contabilidad_formacol', 'guard_name' => 'web']);
+        $contabilidadFormacol->syncPermissions([
+            'clientes.ver',
+            'clientes.revisar_contabilidad',
+        ]);
+
+        $contabilidadContiflex = Role::firstOrCreate(['name' => 'contabilidad_contiflex', 'guard_name' => 'web']);
+        $contabilidadContiflex->syncPermissions([
+            'clientes.ver',
+            'clientes.revisar_contabilidad',
+        ]);
+
+        $produccion = Role::firstOrCreate(['name' => 'produccion', 'guard_name' => 'web']);
+        $produccion->syncPermissions([
+            'existencias_mp.ver',
         ]);
     }
 }

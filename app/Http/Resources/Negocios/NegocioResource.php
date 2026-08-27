@@ -36,6 +36,10 @@ class NegocioResource extends JsonResource
                 'id'     => $this->tipoNegocio?->id,
                 'nombre' => $this->tipoNegocio?->nombre,
             ]),
+            'sector' => $this->whenLoaded('sector', fn () => [
+                'id'     => $this->sector?->id,
+                'nombre' => $this->sector?->nombre,
+            ]),
             'motivo_perdida' => $this->whenLoaded('motivoPerdida', fn () => [
                 'id'     => $this->motivoPerdida?->id,
                 'nombre' => $this->motivoPerdida?->nombre,

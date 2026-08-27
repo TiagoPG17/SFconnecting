@@ -23,6 +23,8 @@ class ProspectoResource extends JsonResource
             'probabilidad_cierre'   => $this->probabilidad_cierre,
             'fecha_proximo_contacto' => $this->fecha_proximo_contacto?->format('Y-m-d'),
             'observaciones'         => $this->observaciones,
+            'compania'              => $this->compania,
+            'compania_nombre'       => $this->companiaNombre(),
             'activo'                => $this->activo,
             'esta_convertido'       => $this->estaConvertido(),
             'fecha_conversion'      => $this->fecha_conversion?->format('Y-m-d H:i:s'),

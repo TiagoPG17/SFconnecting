@@ -35,6 +35,7 @@ class Prospecto extends Model
         'probabilidad_cierre',
         'fecha_proximo_contacto',
         'asesor_id',
+        'compania',
         'observaciones',
         'convertido_cliente_id',
         'fecha_conversion',
@@ -47,6 +48,7 @@ class Prospecto extends Model
         'probabilidad_cierre'   => 'integer',
         'fecha_proximo_contacto' => 'date',
         'fecha_conversion'      => 'datetime',
+        'compania'              => 'integer',
         'activo'                => 'boolean',
         'deleted_at'            => 'datetime',
     ];
@@ -99,6 +101,15 @@ class Prospecto extends Model
         return $this->probabilidad_cierre
             ?? $this->estadoPipeline?->porcentaje_cierre
             ?? 0;
+    }
+
+    public function companiaNombre(): ?string
+    {
+        return match ($this->compania) {
+            1       => 'Formacol',
+            2       => 'Contiflex',
+            default => null,
+        };
     }
 
     protected static function newFactory(): ProspectoFactory

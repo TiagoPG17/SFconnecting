@@ -55,7 +55,7 @@ class NegocioController extends Controller
     {
         $this->authorize('view', $negocio);
 
-        $negocio->load(['pipelineEstado', 'tipoNegocio', 'motivoPerdida', 'asesor', 'prospecto', 'cliente']);
+        $negocio->load(['pipelineEstado', 'tipoNegocio', 'sector', 'motivoPerdida', 'asesor', 'prospecto', 'cliente']);
 
         return ApiResponse::success(new NegocioResource($negocio));
     }

@@ -59,6 +59,12 @@
                             </dd>
                         </div>
                         @endif
+                        @if($negocio->sector)
+                        <div>
+                            <dt class="text-slate-500 font-medium">Sector</dt>
+                            <dd class="text-slate-900 mt-1">{{ $negocio->sector->nombre }}</dd>
+                        </div>
+                        @endif
                         @if($negocio->fecha_estimada_cierre)
                         <div>
                             <dt class="text-slate-500 font-medium">Fecha estimada cierre</dt>

@@ -43,7 +43,7 @@ class NegocioWebController extends Controller
     {
         $this->authorize('view', $negocio);
 
-        $negocio->load(['pipelineEstado', 'tipoNegocio', 'motivoPerdida', 'asesor', 'prospecto', 'cliente', 'auditoria.usuario']);
+        $negocio->load(['pipelineEstado', 'tipoNegocio', 'sector', 'motivoPerdida', 'asesor', 'prospecto', 'cliente', 'auditoria.usuario']);
 
         return view('negocios.show', compact('negocio'));
     }
@@ -54,6 +54,7 @@ class NegocioWebController extends Controller
 
         $estados           = $this->maestros->pipelineEstadosPorTipo('negocio');
         $tipos             = $this->maestros->porTipo('tipo_negocio');
+        $sectores          = $this->maestros->porTipo('sector');
         $motivos           = $this->maestros->porTipo('motivo_perdida');
         $estadosPerdidoIds = $estados->where('es_perdido', true)->pluck('id')->values()->toArray();
 
@@ -64,7 +65,7 @@ class NegocioWebController extends Controller
             ->values()
             ->toArray();
 
-        return view('negocios.create', compact('estados', 'tipos', 'motivos', 'estadosPerdidoIds', 'companiasAsesor'));
+        return view('negocios.create', compact('estados', 'tipos', 'sectores', 'motivos', 'estadosPerdidoIds', 'companiasAsesor'));
     }
 
     public function edit(Negocio $negocio): View
@@ -73,10 +74,11 @@ class NegocioWebController extends Controller
 
         $estados           = $this->maestros->pipelineEstadosPorTipo('negocio');
         $tipos             = $this->maestros->porTipo('tipo_negocio');
+        $sectores          = $this->maestros->porTipo('sector');
         $motivos           = $this->maestros->porTipo('motivo_perdida');
         $estadosPerdidoIds = $estados->where('es_perdido', true)->pluck('id')->values()->toArray();
 
-        return view('negocios.edit', compact('negocio', 'estados', 'tipos', 'motivos', 'estadosPerdidoIds'));
+        return view('negocios.edit', compact('negocio', 'estados', 'tipos', 'sectores', 'motivos', 'estadosPerdidoIds'));
     }
 
     public function kanban(): View

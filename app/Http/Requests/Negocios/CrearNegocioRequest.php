@@ -21,6 +21,7 @@ class CrearNegocioRequest extends FormRequest
             'prospecto_id'         => ['nullable', 'integer', 'exists:sf_prospectos,id'],
             'cliente_id'           => ['nullable', 'integer', 'exists:clientes,id'],
             'tipo_negocio_id'      => ['nullable', 'integer', 'exists:sf_maestros_comerciales,id'],
+            'sector_id'            => ['nullable', 'integer', 'exists:sf_maestros_comerciales,id'],
             'descripcion'          => ['nullable', 'string', 'max:2000'],
             'valor_estimado'       => ['nullable', 'numeric', 'min:0'],
             'probabilidad_cierre'  => ['nullable', 'integer', 'min:0', 'max:100'],

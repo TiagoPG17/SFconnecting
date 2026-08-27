@@ -10,7 +10,7 @@
         @endcan
         @can('convertir', $prospecto)
         @if(!$prospecto->estaConvertido())
-        <x-ui.button variant="primary" size="sm" @click="$dispatch('open-convertir')">
+        <x-ui.button href="{{ route('prospectos.convertir', $prospecto) }}" variant="primary" size="sm">
             <x-ui.icon name="check" class="w-4 h-4"/> Convertir en cliente
         </x-ui.button>
         @endif
@@ -63,6 +63,12 @@
                             <dt class="text-slate-500 font-medium">Asesor</dt>
                             <dd class="text-slate-900 mt-1">{{ $prospecto->asesor?->name ?? '—' }}</dd>
                         </div>
+                        @if($prospecto->companiaNombre())
+                        <div>
+                            <dt class="text-slate-500 font-medium">Compañía</dt>
+                            <dd class="text-slate-900 mt-1">{{ $prospecto->companiaNombre() }}</dd>
+                        </div>
+                        @endif
                         @if($prospecto->origen)
                         <div>
                             <dt class="text-slate-500 font-medium">Origen</dt>
@@ -258,37 +264,4 @@
         </div>
     </div>
 
-    {{-- Modal convertir --}}
-    @can('convertir', $prospecto)
-    @if(!$prospecto->estaConvertido())
-    <div x-data="{ open: false }" @open-convertir.window="open = true">
-        <x-ui.modal title="Convertir en cliente">
-            <form
-                x-data="{ loading: false }"
-                @submit.prevent="
-                    loading = true;
-                    $api('POST', '/api/prospectos/{{ $prospecto->id }}/convertir', {
-                            razon_social: $el.razon_social.value,
-                            nit: $el.nit.value,
-                        }).then(r => {
-                        if (r.success) { $store.toast.success(r.message); setTimeout(() => location.reload(), 800); }
-                        else { $store.toast.error(r.message); loading = false; }
-                    }).catch(() => { $store.toast.error('Error al convertir'); loading = false; })
-                "
-                class="space-y-4"
-            >
-                <x-ui.input name="razon_social" label="Razón social" :value="$prospecto->empresa" required/>
-                <x-ui.input name="nit" label="NIT / Identificación" placeholder="Opcional"/>
-                <div class="flex justify-end gap-3 pt-2">
-                    <x-ui.button type="button" variant="ghost" @click="open = false">Cancelar</x-ui.button>
-                    <x-ui.button type="submit" variant="primary" x-bind:disabled="loading">
-                        <span x-show="!loading">Confirmar conversión</span>
-                        <span x-show="loading">Procesando...</span>
-                    </x-ui.button>
-                </div>
-            </form>
-        </x-ui.modal>
-    </div>
-    @endif
-    @endcan
 </x-layouts.app>

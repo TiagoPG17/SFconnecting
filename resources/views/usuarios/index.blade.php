@@ -19,7 +19,7 @@
         <select name="rol" class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Todos los roles</option>
             @foreach ($roles as $rol)
-                <option value="{{ $rol }}" @selected(($filtros['rol'] ?? '') === $rol)>{{ ucfirst($rol) }}</option>
+                <option value="{{ $rol }}" @selected(($filtros['rol'] ?? '') === $rol)>{{ ucwords(str_replace('_', ' ', $rol)) }}</option>
             @endforeach
         </select>
         <select name="activo" class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -64,8 +64,8 @@
                             <td class="px-4 py-3 text-slate-600">{{ $usuario->email }}</td>
                             <td class="px-4 py-3">
                                 @foreach ($usuario->getRoleNames() as $rol)
-                                    <x-ui.badge :color="$rol === 'admin' ? 'red' : ($rol === 'gerente' ? 'amber' : 'blue')">
-                                        {{ ucfirst($rol) }}
+                                    <x-ui.badge :color="$rol === 'admin' ? 'red' : ($rol === 'gerente' ? 'amber' : (str_starts_with($rol, 'contabilidad') ? 'green' : 'blue'))">
+                                        {{ ucwords(str_replace('_', ' ', $rol)) }}
                                     </x-ui.badge>
                                 @endforeach
                             </td>

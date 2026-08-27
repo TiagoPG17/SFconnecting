@@ -202,6 +202,13 @@
                                 <option value="{{ $t->id }}">{{ $t->nombre }}</option>
                             @endforeach
                         </x-ui.select>
+
+                        <x-ui.select name="sector_id" label="Sector">
+                            <option value="">Sin sector</option>
+                            @foreach($sectores as $s)
+                                <option value="{{ $s->id }}">{{ $s->nombre }}</option>
+                            @endforeach
+                        </x-ui.select>
                     </div>
 
                     <div x-show="esPerdido" x-cloak class="space-y-4 p-4 rounded-xl border border-red-200 bg-red-50/50">
@@ -224,7 +231,17 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <x-ui.input name="valor_estimado" type="number" label="Valor estimado ($)" placeholder="0" min="0" step="0.01" value="0"/>
+                        <div x-data="pesoInput()">
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Valor estimado ($)</label>
+                            <div class="flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
+                                <span class="px-3 text-slate-400 text-sm shrink-0 border-r border-slate-300 bg-slate-50 py-2 select-none pointer-events-none">$</span>
+                                <input type="text" inputmode="numeric"
+                                       x-model="display" @input="onInput($event)" @keydown="onKeydown($event)"
+                                       placeholder="0"
+                                       class="flex-1 px-3 py-2 text-sm focus:outline-none bg-transparent"/>
+                            </div>
+                            <input type="hidden" name="valor_estimado" :value="raw"/>
+                        </div>
                         <x-ui.input name="probabilidad_cierre" type="number" label="Probabilidad (%)" placeholder="Automática del estado" min="0" max="100"/>
                     </div>
 

@@ -9,6 +9,7 @@ $tiposLabel = [
     'tipo_actividad' => 'Tipos de actividad',
     'clasificacion'  => 'Clasificaciones',
     'segmento'       => 'Segmentos',
+    'sector'         => 'Sectores',
 ];
 @endphp
 

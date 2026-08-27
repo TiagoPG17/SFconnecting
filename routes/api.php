@@ -54,6 +54,8 @@ Route::middleware('auth:sanctum')->name('api.')->group(function () {
     // Clientes
     Route::apiResource('clientes', ClienteController::class);
     Route::post('clientes/{id}/restore', [ClienteController::class, 'restore'])->name('clientes.restore');
+    Route::post('clientes/{cliente}/marcar-registrado-contabilidad', [ClienteController::class, 'marcarRegistradoContabilidad'])
+        ->name('clientes.marcar-registrado-contabilidad');
 
     // Contactos — nested index/store + shallow show/update/destroy
     Route::get('clientes/{cliente}/contactos', [ContactoController::class, 'index'])->name('clientes.contactos.index');

@@ -7,32 +7,40 @@ namespace App\Domain\SolicitudesCredito\DTOs;
 class CrearSolicitudCreditoDTO
 {
     public function __construct(
-        public readonly int $negocioId,
+        public readonly ?int $negocioId,
+        public readonly ?int $clienteId,
         public readonly int $asesorId,
         public readonly float $montoSolicitado,
         public readonly ?int $plazoSolicitadoDias = null,
         public readonly ?string $justificacion = null,
+        public readonly ?array $referenciasComerciales = null,
+        public readonly ?bool $inventarioConsignacion = null,
     ) {}
 
     public static function fromArray(array $data): self
     {
         return new self(
-            negocioId:           (int) $data['negocio_id'],
-            asesorId:            (int) $data['asesor_id'],
-            montoSolicitado:     (float) $data['monto_solicitado'],
-            plazoSolicitadoDias: isset($data['plazo_solicitado_dias']) ? (int) $data['plazo_solicitado_dias'] : null,
-            justificacion:       $data['justificacion'] ?? null,
+            negocioId:              isset($data['negocio_id']) ? (int) $data['negocio_id'] : null,
+            clienteId:              isset($data['cliente_id']) ? (int) $data['cliente_id'] : null,
+            asesorId:               (int) $data['asesor_id'],
+            montoSolicitado:        (float) $data['monto_solicitado'],
+            plazoSolicitadoDias:    isset($data['plazo_solicitado_dias']) ? (int) $data['plazo_solicitado_dias'] : null,
+            justificacion:          $data['justificacion'] ?? null,
+            referenciasComerciales: $data['referencias_comerciales'] ?? null,
+            inventarioConsignacion: isset($data['inventario_consignacion']) ? (bool) $data['inventario_consignacion'] : null,
         );
     }
 
     public function toArray(): array
     {
         return [
-            'negocio_id'             => $this->negocioId,
-            'asesor_id'               => $this->asesorId,
-            'monto_solicitado'        => $this->montoSolicitado,
-            'plazo_solicitado_dias'   => $this->plazoSolicitadoDias,
-            'justificacion'           => $this->justificacion,
+            'negocio_id'               => $this->negocioId,
+            'asesor_id'                => $this->asesorId,
+            'monto_solicitado'         => $this->montoSolicitado,
+            'plazo_solicitado_dias'    => $this->plazoSolicitadoDias,
+            'justificacion'            => $this->justificacion,
+            'referencias_comerciales'  => $this->referenciasComerciales,
+            'inventario_consignacion'  => $this->inventarioConsignacion,
         ];
     }
 }
