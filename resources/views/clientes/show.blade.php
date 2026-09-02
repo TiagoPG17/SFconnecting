@@ -636,9 +636,21 @@
             <x-ui.card class="p-5"
                 x-data="historialCompras({{ json_encode(array_values($facturas)) }})">
 
-                <div class="flex items-center justify-between mb-3">
+                <div class="flex items-end justify-between mb-3 gap-3 flex-wrap">
                     <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Historial de compras</p>
-                    <span class="text-xs text-slate-400" x-text="`${total} facturas`"></span>
+                    <div class="flex flex-col items-end gap-3">
+                        <template x-if="companias.length > 1">
+                            <div class="flex gap-0.5 bg-slate-100 rounded-lg p-0.5">
+                                <template x-for="c in companias" :key="c">
+                                    <button @click="toggleCompania(c)"
+                                            :class="companiaSel.includes(c) ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'"
+                                            class="px-2.5 py-1 rounded-md text-xs font-medium transition-all"
+                                            x-text="nombreCompania(c)"></button>
+                                </template>
+                            </div>
+                        </template>
+                        <span class="text-xs text-slate-400" x-text="`${total} facturas`"></span>
+                    </div>
                 </div>
 
                 {{-- Lista de facturas --}}
@@ -859,19 +871,37 @@
     }
 
     function historialCompras(data) {
+        const companiasDisponibles = [...new Set(data.map(f => f.COMPANIA))].sort();
         return {
             todas: data,
+            companias: companiasDisponibles,
+            companiaSel: [...companiasDisponibles],
             pagina: 1,
             porPagina: 12,
             modal: false,
             cargando: false,
             facActiva: null,
             detalles: {},
-            get total()        { return this.todas.length; },
+            nombreCompania(c) {
+                return ({1: 'Formacol', 2: 'Contiflex'})[c] || `Compañía ${c}`;
+            },
+            toggleCompania(c) {
+                if (this.companiaSel.includes(c)) {
+                    if (this.companiaSel.length === 1) return;
+                    this.companiaSel = this.companiaSel.filter(x => x !== c);
+                } else {
+                    this.companiaSel = [...this.companiaSel, c];
+                }
+                this.pagina = 1;
+            },
+            get filtradas() {
+                return this.todas.filter(f => this.companiaSel.includes(f.COMPANIA));
+            },
+            get total()        { return this.filtradas.length; },
             get totalPaginas() { return Math.ceil(this.total / this.porPagina); },
             get paginadas() {
                 const ini = (this.pagina - 1) * this.porPagina;
-                return this.todas.slice(ini, ini + this.porPagina);
+                return this.filtradas.slice(ini, ini + this.porPagina);
             },
             get itemsActivos() {
                 return this.facActiva ? (this.detalles[this.facActiva.ROWID_FACTURA] || []) : [];

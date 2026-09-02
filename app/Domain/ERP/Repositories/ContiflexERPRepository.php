@@ -716,22 +716,30 @@ class ContiflexERPRepository implements ERPRepositoryInterface
     {
         try {
             $sql = "
-                SELECT TOP {$limite}
-                    ROWID_FACTURA,
-                    COMPANIA,
-                    CONCEPTO,
-                    TIPO_DOCTO                       AS TIPO,
-                    CONVERT(varchar(10), FECHA, 23)  AS FECHA,
-                    COD_VENDEDOR,
-                    COUNT(*)                         AS NUM_ITEMS,
-                    SUM(VLR_NETO)                    AS VLR_NETO
-                FROM dbo.vw_CRM_Detalle_Ventas_Cliente_Linea
-                WHERE NIT = ?
-                GROUP BY ROWID_FACTURA, COMPANIA, CONCEPTO, TIPO_DOCTO, FECHA, COD_VENDEDOR
+                ;WITH Agrupado AS (
+                    SELECT
+                        ROWID_FACTURA,
+                        COMPANIA,
+                        CONCEPTO,
+                        TIPO_DOCTO                       AS TIPO,
+                        CONVERT(varchar(10), FECHA, 23)  AS FECHA,
+                        COD_VENDEDOR,
+                        COUNT(*)                         AS NUM_ITEMS,
+                        SUM(VLR_NETO)                    AS VLR_NETO
+                    FROM dbo.vw_CRM_Detalle_Ventas_Cliente_Linea
+                    WHERE NIT = ?
+                    GROUP BY ROWID_FACTURA, COMPANIA, CONCEPTO, TIPO_DOCTO, FECHA, COD_VENDEDOR
+                )
+                SELECT ROWID_FACTURA, COMPANIA, CONCEPTO, TIPO, FECHA, COD_VENDEDOR, NUM_ITEMS, VLR_NETO
+                FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY COMPANIA ORDER BY FECHA DESC) AS RN
+                    FROM Agrupado
+                ) Rankeado
+                WHERE RN <= ?
                 ORDER BY FECHA DESC
             ";
 
-            return collect(DB::connection('erp_contiflex')->select($sql, [$nit]))
+            return collect(DB::connection('erp_contiflex')->select($sql, [$nit, $limite]))
                 ->map(fn ($r) => (array) $r)
                 ->toArray();
         } catch (Throwable $e) {
