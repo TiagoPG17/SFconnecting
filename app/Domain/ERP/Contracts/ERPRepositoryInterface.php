@@ -116,5 +116,43 @@ interface ERPRepositoryInterface
         array $campos
     ): bool;
 
+    /**
+     * Gestión de Cartera: pedidos abiertos (vw_CRM_Gestion_Cartera), un registro por pedido
+     * (agrupado por Compania+NroDocumento, sumando cantidades/subtotal de sus líneas), paginado.
+     *
+     * @param  int  $compania  0 = todas las compañías.
+     * @param  bool  $soloHoy  Si es true, solo pedidos con FechaCreacion = hoy.
+     * @param  string|null  $buscar  Filtra por NroDocumento (LIKE).
+     * @return array{data: array, total: int, pagina: int, porPagina: int}
+     */
+    public function gestionCartera(
+        int $compania = 0,
+        bool $soloHoy = false,
+        ?string $buscar = null,
+        int $pagina = 1,
+        int $porPagina = 20
+    ): array;
+
+    /**
+     * Inserta en dbo.CRM_Notificaciones_Cartera el resumen de los pedidos indicados,
+     * sin duplicar los que ya existan ahí. Cada pedido lleva su propia
+     * fecha_inicio_cobro (desde la cual empieza a contar el aviso de 3 días antes en
+     * n8n) — no se comparte entre pedidos porque varían mucho en tamaño/urgencia.
+     * Retorna cuántos se insertaron.
+     *
+     * @param  array<int, array{compania: int, nro_documento: string, fecha_inicio_cobro: string}>  $pedidos
+     */
+    public function notificarCartera(array $pedidos): int;
+
+    /** Notificaciones de cartera pendientes de envío (Notificado = 0). */
+    public function notificacionesCarteraPendientes(int $compania = 0): array;
+
+    /**
+     * Marca manualmente una notificación de cartera como resuelta (Notificado = 1),
+     * para sacarla del seguimiento sin esperar al envío automático (ej. el pedido ya
+     * se pagó/gestionó). Retorna false si no existía o ya estaba resuelta.
+     */
+    public function marcarNotificacionCarteraResuelta(int $compania, string $nroDocumento): bool;
+
     public function isAvailable(): bool;
 }

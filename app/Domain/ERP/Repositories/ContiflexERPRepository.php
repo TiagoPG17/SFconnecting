@@ -846,6 +846,183 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
+    public function gestionCartera(
+        int $compania = 0,
+        bool $soloHoy = false,
+        ?string $buscar = null,
+        int $pagina = 1,
+        int $porPagina = 20
+    ): array {
+        try {
+            $whereCompania = $compania > 0 ? 'AND g.Compania = ?' : '';
+            $whereHoy      = $soloHoy ? 'AND CAST(g.FechaCreacion AS date) = CAST(GETDATE() AS date)' : '';
+            $whereBuscar   = $buscar ? 'AND g.NroDocumento LIKE ?' : '';
+
+            $bindings = [];
+            if ($compania > 0) {
+                $bindings[] = $compania;
+            }
+            if ($buscar) {
+                $bindings[] = "%{$buscar}%";
+            }
+
+            // Excluye pedidos que cartera ya marcó como resueltos (Notificado = 1 en
+            // CRM_Notificaciones_Cartera), sin importar que el ERP los siga mostrando
+            // como "abiertos" — para esta pantalla, resuelto por cartera es definitivo.
+            $whereNoResuelto = "
+                AND NOT EXISTS (
+                    SELECT 1 FROM dbo.CRM_Notificaciones_Cartera n
+                    WHERE n.Compania = g.Compania AND n.NroDocumento = g.NroDocumento AND n.Notificado = 1
+                )
+            ";
+
+            $totalSql = "
+                SELECT COUNT(*) AS total FROM (
+                    SELECT g.Compania, g.NroDocumento
+                    FROM dbo.vw_CRM_Gestion_Cartera g
+                    WHERE 1 = 1
+                      {$whereCompania}
+                      {$whereHoy}
+                      {$whereBuscar}
+                      {$whereNoResuelto}
+                    GROUP BY g.Compania, g.NroDocumento
+                ) t
+            ";
+            $total = (int) (DB::connection('erp_contiflex')->selectOne($totalSql, $bindings)->total ?? 0);
+
+            $sql = "
+                SELECT
+                    g.Compania,
+                    g.NroDocumento,
+                    MAX(g.FechaPedido)       AS FechaPedido,
+                    MAX(g.Estado)            AS Estado,
+                    MAX(g.OrdenCompra)       AS OrdenCompra,
+                    MAX(g.Cliente)           AS Cliente,
+                    MAX(g.Vendedor)          AS Vendedor,
+                    MAX(g.UsuarioCreo)       AS UsuarioCreo,
+                    MAX(g.FechaCreacion)     AS FechaCreacion,
+                    MAX(g.UsuarioAprobo)     AS UsuarioAprobo,
+                    MAX(g.FechaAprobacion)   AS FechaAprobacion,
+                    MIN(g.FechaCumplimiento) AS FechaCumplimiento,
+                    SUM(g.CantPedida)        AS CantPedida,
+                    SUM(g.CantFacturada)     AS CantFacturada,
+                    SUM(g.CantPendiente)     AS CantPendiente,
+                    SUM(g.SubtotalLinea)     AS SubtotalPendiente
+                FROM dbo.vw_CRM_Gestion_Cartera g
+                WHERE 1 = 1
+                  {$whereCompania}
+                  {$whereHoy}
+                  {$whereBuscar}
+                  {$whereNoResuelto}
+                GROUP BY g.Compania, g.NroDocumento
+                ORDER BY MIN(g.FechaCumplimiento), g.NroDocumento
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+            ";
+
+            $data = collect(DB::connection('erp_contiflex')->select($sql, [...$bindings, ($pagina - 1) * $porPagina, $porPagina]))
+                ->map(fn ($r) => (array) $r)
+                ->toArray();
+
+            return compact('data', 'total', 'pagina', 'porPagina');
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
+    public function notificarCartera(array $pedidos): int
+    {
+        $pedidos = collect($pedidos)
+            ->filter(fn ($p) => ! empty($p['compania']) && ! empty($p['nro_documento']) && ! empty($p['fecha_inicio_cobro']))
+            ->values();
+
+        if ($pedidos->isEmpty()) {
+            return 0;
+        }
+
+        try {
+            $totalInsertados = 0;
+
+            foreach ($pedidos->groupBy(fn ($p) => (int) $p['compania']) as $compania => $grupo) {
+                $nroDocumentos = $grupo->pluck('nro_documento')->unique()->values()->all();
+                $placeholders  = implode(',', array_fill(0, count($nroDocumentos), '?'));
+
+                $existentes = collect(DB::connection('erp_contiflex')->select("
+                    SELECT NroDocumento FROM dbo.CRM_Notificaciones_Cartera
+                    WHERE Compania = ? AND NroDocumento IN ({$placeholders})
+                ", [$compania, ...$nroDocumentos]))->pluck('NroDocumento')->all();
+
+                // Cada pedido trae su propia fecha_inicio_cobro (no se comparte entre
+                // pedidos), así que se inserta uno por uno en vez de un solo INSERT
+                // masivo por compañía.
+                foreach ($grupo->unique('nro_documento') as $p) {
+                    if (in_array($p['nro_documento'], $existentes, true)) {
+                        continue;
+                    }
+
+                    DB::connection('erp_contiflex')->insert("
+                        INSERT INTO dbo.CRM_Notificaciones_Cartera
+                            (Compania, NroDocumento, Cliente, Vendedor, FechaPedido, FechaCumplimiento, SubtotalPendiente, FechaInicioCobro)
+                        SELECT
+                            g.Compania,
+                            g.NroDocumento,
+                            MAX(g.Cliente),
+                            MAX(g.Vendedor),
+                            MAX(g.FechaPedido),
+                            MIN(g.FechaCumplimiento),
+                            SUM(g.SubtotalLinea),
+                            ?
+                        FROM dbo.vw_CRM_Gestion_Cartera g
+                        WHERE g.Compania = ?
+                          AND g.NroDocumento = ?
+                          AND NOT EXISTS (
+                                SELECT 1 FROM dbo.CRM_Notificaciones_Cartera n
+                                WHERE n.Compania = g.Compania AND n.NroDocumento = g.NroDocumento)
+                        GROUP BY g.Compania, g.NroDocumento
+                    ", [$p['fecha_inicio_cobro'], $compania, $p['nro_documento']]);
+
+                    $totalInsertados++;
+                }
+            }
+
+            return $totalInsertados;
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
+    public function notificacionesCarteraPendientes(int $compania = 0): array
+    {
+        try {
+            return DB::connection('erp_contiflex')
+                ->table('dbo.CRM_Notificaciones_Cartera')
+                ->where('Notificado', 0)
+                ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+                ->orderByDesc('FechaRegistro')
+                ->get()
+                ->map(fn ($r) => (array) $r)
+                ->toArray();
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
+    public function marcarNotificacionCarteraResuelta(int $compania, string $nroDocumento): bool
+    {
+        try {
+            return DB::connection('erp_contiflex')
+                ->table('dbo.CRM_Notificaciones_Cartera')
+                ->where('Compania', $compania)
+                ->where('NroDocumento', $nroDocumento)
+                ->where('Notificado', 0)
+                ->update([
+                    'Notificado' => 1,
+                    'FechaNotificacion' => now(),
+                ]) > 0;
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
     public function isAvailable(): bool
     {
         try {

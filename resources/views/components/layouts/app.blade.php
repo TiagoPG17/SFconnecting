@@ -84,7 +84,8 @@
             </x-ui.nav-item>
             @endrole
 
-            {{-- Comercial --}}
+            {{-- Comercial (todos los roles menos cartera, que solo ve Gestión de Cartera y Solicitudes de Crédito) --}}
+            @hasanyrole('admin|gerente|comercial|produccion|contabilidad_formacol|contabilidad_contiflex')
             <div class="pt-4 pb-1 px-3">
                 <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Comercial</p>
             </div>
@@ -97,11 +98,13 @@
             <x-ui.nav-item href="{{ route('negocios.kanban') }}" :active="request()->routeIs('negocios.kanban')" icon="layout">
                 Pipeline Kanban
             </x-ui.nav-item>
-            @role('admin')
+            @endhasanyrole
+
+            @hasanyrole('admin|gerente|cartera')
             <x-ui.nav-item href="{{ route('solicitudes-credito.index') }}" :active="request()->routeIs('solicitudes-credito.*')" icon="file-text">
                 Solicitudes de Crédito
             </x-ui.nav-item>
-            @endrole
+            @endhasanyrole
 
             @hasanyrole('contabilidad_formacol|contabilidad_contiflex|admin')
             <x-ui.nav-item href="{{ route('contabilidad.index') }}" :active="request()->routeIs('contabilidad.*')" icon="file-text">
@@ -109,7 +112,14 @@
             </x-ui.nav-item>
             @endhasanyrole
 
-            {{-- Clientes --}}
+            @hasanyrole('cartera|admin|gerente')
+            <x-ui.nav-item href="{{ route('gestion-cartera.index') }}" :active="request()->routeIs('gestion-cartera.*')" icon="clock">
+                Gestión de Cartera
+            </x-ui.nav-item>
+            @endhasanyrole
+
+            {{-- Clientes (todos los roles menos cartera) --}}
+            @hasanyrole('admin|gerente|comercial|produccion|contabilidad_formacol|contabilidad_contiflex')
             <div class="pt-4 pb-1 px-3">
                 <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Clientes</p>
             </div>
@@ -125,6 +135,7 @@
             <x-ui.nav-item href="{{ route('calendario.index') }}" :active="request()->routeIs('calendario.*')" icon="calendar">
                 Calendario
             </x-ui.nav-item>
+            @endhasanyrole
 
             {{-- Análisis (admin + gerente) --}}
             @role('admin|gerente')

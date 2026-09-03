@@ -21,6 +21,7 @@ use App\Http\Controllers\Web\AdminGestionWebController;
 use App\Http\Controllers\Web\ContactoWebController;
 use App\Http\Controllers\Web\UsuarioWebController;
 use App\Http\Controllers\Web\ExistenciasMPWebController;
+use App\Http\Controllers\Web\CarteraWebController;
 use Illuminate\Support\Facades\Route;
 
 // Auth pública (5 intentos de login por minuto por IP)
@@ -41,8 +42,16 @@ Route::middleware(['auth'])->group(function () {
         if ($user->hasRole('produccion')) {
             return redirect()->route('existencias-mp.index');
         }
+        if ($user->hasRole('cartera') && ! $user->hasAnyRole(['admin', 'comercial'])) {
+            return redirect()->route('gestion-cartera.index');
+        }
         return redirect()->route('dash.vendedor');
     };
+
+    // Roles con acceso al resto del CRM aparte de Gestión de Cartera y Solicitudes
+    // de Crédito. "cartera" queda deliberadamente fuera: solo puede entrar a esas
+    // dos pantallas y a nada más.
+    $rolesCrmGeneral = 'admin|gerente|comercial|produccion|contabilidad_formacol|contabilidad_contiflex';
 
     Route::get('/', $homeRedirect);
     Route::get('/dashboard', $homeRedirect)->name('dashboard');
@@ -55,24 +64,26 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/gerencial/informe-comercial', [DashboardWebController::class, 'informeComercial'])->name('gerencial.informe-comercial')->middleware('role:gerente|admin');
     Route::get('/gerencial/informe-comercial/detalle-cliente', [DashboardWebController::class, 'informeComercialDetalleCliente'])->name('gerencial.informe-comercial.detalle-cliente')->middleware('role:gerente|admin');
 
-    // Calendario
-    Route::get('/calendario', [CalendarioWebController::class, 'index'])->name('calendario.index');
-    Route::get('/calendario/eventos', [CalendarioWebController::class, 'eventos'])->name('calendario.eventos');
+    Route::middleware("role:{$rolesCrmGeneral}")->group(function () {
+        // Calendario
+        Route::get('/calendario', [CalendarioWebController::class, 'index'])->name('calendario.index');
+        Route::get('/calendario/eventos', [CalendarioWebController::class, 'eventos'])->name('calendario.eventos');
 
-    // Prospectos — estáticas antes del wildcard
-    Route::get('/prospectos/kanban',           [ProspectoWebController::class, 'kanban'])->name('prospectos.kanban');
-    Route::get('/prospectos/create',           [ProspectoWebController::class, 'create'])->name('prospectos.create')->middleware('role:admin|comercial');
-    Route::get('/prospectos/{prospecto}/edit',      [ProspectoWebController::class, 'edit'])->name('prospectos.edit')->middleware('role:admin|comercial');
-    Route::get('/prospectos/{prospecto}/convertir', [ProspectoWebController::class, 'convertir'])->name('prospectos.convertir');
-    Route::get('/prospectos/{prospecto}',      [ProspectoWebController::class, 'show'])->name('prospectos.show');
-    Route::get('/prospectos',                  [ProspectoWebController::class, 'index'])->name('prospectos.index');
+        // Prospectos — estáticas antes del wildcard
+        Route::get('/prospectos/kanban',           [ProspectoWebController::class, 'kanban'])->name('prospectos.kanban');
+        Route::get('/prospectos/create',           [ProspectoWebController::class, 'create'])->name('prospectos.create')->middleware('role:admin|comercial');
+        Route::get('/prospectos/{prospecto}/edit',      [ProspectoWebController::class, 'edit'])->name('prospectos.edit')->middleware('role:admin|comercial');
+        Route::get('/prospectos/{prospecto}/convertir', [ProspectoWebController::class, 'convertir'])->name('prospectos.convertir');
+        Route::get('/prospectos/{prospecto}',      [ProspectoWebController::class, 'show'])->name('prospectos.show');
+        Route::get('/prospectos',                  [ProspectoWebController::class, 'index'])->name('prospectos.index');
 
-    // Negocios — estáticas antes del wildcard
-    Route::get('/negocios/kanban',           [NegocioWebController::class, 'kanban'])->name('negocios.kanban');
-    Route::get('/negocios/create',           [NegocioWebController::class, 'create'])->name('negocios.create')->middleware('role:admin|comercial');
-    Route::get('/negocios/{negocio}/edit',   [NegocioWebController::class, 'edit'])->name('negocios.edit')->middleware('role:admin|comercial');
-    Route::get('/negocios/{negocio}',        [NegocioWebController::class, 'show'])->name('negocios.show');
-    Route::get('/negocios',                  [NegocioWebController::class, 'index'])->name('negocios.index');
+        // Negocios — estáticas antes del wildcard
+        Route::get('/negocios/kanban',           [NegocioWebController::class, 'kanban'])->name('negocios.kanban');
+        Route::get('/negocios/create',           [NegocioWebController::class, 'create'])->name('negocios.create')->middleware('role:admin|comercial');
+        Route::get('/negocios/{negocio}/edit',   [NegocioWebController::class, 'edit'])->name('negocios.edit')->middleware('role:admin|comercial');
+        Route::get('/negocios/{negocio}',        [NegocioWebController::class, 'show'])->name('negocios.show');
+        Route::get('/negocios',                  [NegocioWebController::class, 'index'])->name('negocios.index');
+    });
 
     // Solicitudes de Crédito — estáticas antes del wildcard
     Route::get('/solicitudes-credito/create',              [SolicitudCreditoWebController::class, 'create'])->name('solicitudes-credito.create')->middleware('role:admin|gerente|cartera');
@@ -86,27 +97,34 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/consultas-lotes', [ExistenciasMPWebController::class, 'index'])->name('existencias-mp.index')->middleware('role:produccion|admin');
     Route::patch('/consultas-lotes/actualizar', [ExistenciasMPWebController::class, 'actualizarCampo'])->name('existencias-mp.actualizar')->middleware('role:produccion|admin');
 
-    // Clientes huérfanos (todos los roles)
-    Route::patch('/contactos/{contacto}/toggle', [ContactoWebController::class, 'toggle'])->name('contactos.toggle');
+    // Gestión de Cartera (independiente del CRM) — cartera/admin editan, gerencia solo ve
+    Route::get('/gestion-cartera', [CarteraWebController::class, 'index'])->name('gestion-cartera.index')->middleware('role:cartera|admin|gerente');
+    Route::post('/gestion-cartera/notificar', [CarteraWebController::class, 'notificar'])->name('gestion-cartera.notificar')->middleware('role:cartera|admin');
+    Route::patch('/gestion-cartera/resolver', [CarteraWebController::class, 'resolver'])->name('gestion-cartera.resolver')->middleware('role:cartera|admin');
 
-    Route::get('/clientes-huerfanos', [ClientesHuerfanosWebController::class, 'index'])->name('clientes-huerfanos.index');
-    Route::post('/clientes-huerfanos/{nit}/reclamar', [ClientesHuerfanosWebController::class, 'reclamar'])->name('clientes-huerfanos.reclamar');
+    Route::middleware("role:{$rolesCrmGeneral}")->group(function () {
+        // Clientes huérfanos
+        Route::patch('/contactos/{contacto}/toggle', [ContactoWebController::class, 'toggle'])->name('contactos.toggle');
 
-    // Clientes
-    Route::post('/clientes/sincronizar-cartera', [ClienteWebController::class, 'sincronizarCartera'])->name('clientes.sincronizar');
-    Route::get('/clientes/create',        [ClienteWebController::class, 'create'])->name('clientes.create');
-    Route::get('/clientes/erp/{nit}',     [ClienteWebController::class, 'showErp'])->name('clientes.erp.show');
-    Route::get('/clientes/{cliente}/edit',[ClienteWebController::class, 'edit'])->name('clientes.edit');
-    Route::get('/clientes/{cliente}',     [ClienteWebController::class, 'show'])->name('clientes.show');
-    Route::get('/clientes',               [ClienteWebController::class, 'index'])->name('clientes.index');
+        Route::get('/clientes-huerfanos', [ClientesHuerfanosWebController::class, 'index'])->name('clientes-huerfanos.index');
+        Route::post('/clientes-huerfanos/{nit}/reclamar', [ClientesHuerfanosWebController::class, 'reclamar'])->name('clientes-huerfanos.reclamar');
 
-    // Seguimientos
-    Route::get('/seguimientos', [SeguimientoWebController::class, 'index'])->name('seguimientos.index');
-    Route::patch('/seguimientos/{seguimiento}/resultado', [SeguimientoWebController::class, 'actualizarResultado'])->name('seguimientos.resultado');
+        // Clientes
+        Route::post('/clientes/sincronizar-cartera', [ClienteWebController::class, 'sincronizarCartera'])->name('clientes.sincronizar');
+        Route::get('/clientes/create',        [ClienteWebController::class, 'create'])->name('clientes.create');
+        Route::get('/clientes/erp/{nit}',     [ClienteWebController::class, 'showErp'])->name('clientes.erp.show');
+        Route::get('/clientes/{cliente}/edit',[ClienteWebController::class, 'edit'])->name('clientes.edit');
+        Route::get('/clientes/{cliente}',     [ClienteWebController::class, 'show'])->name('clientes.show');
+        Route::get('/clientes',               [ClienteWebController::class, 'index'])->name('clientes.index');
 
-    // Maestros y Reportes reales
-    Route::get('/maestros', [MaestroWebController::class, 'index'])->name('maestros.index');
-    Route::get('/reportes', [ReporteWebController::class, 'index'])->name('reportes.index');
+        // Seguimientos
+        Route::get('/seguimientos', [SeguimientoWebController::class, 'index'])->name('seguimientos.index');
+        Route::patch('/seguimientos/{seguimiento}/resultado', [SeguimientoWebController::class, 'actualizarResultado'])->name('seguimientos.resultado');
+
+        // Maestros y Reportes reales
+        Route::get('/maestros', [MaestroWebController::class, 'index'])->name('maestros.index');
+        Route::get('/reportes', [ReporteWebController::class, 'index'])->name('reportes.index');
+    });
 
     // Presupuestos (admin y gerente)
     Route::post('/presupuestos/meses', [PresupuestoWebController::class, 'storeMeses'])
@@ -123,8 +141,8 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('role:admin')
         ->parameters(['mapeo-vendedores' => 'mapeoVendedor']);
 
-    // Auditoría (admin only)
-    Route::get('/auditoria', [AuditoriaWebController::class, 'index'])->name('auditoria.index')->middleware('role:admin|gerente|cartera');
+    // Auditoría
+    Route::get('/auditoria', [AuditoriaWebController::class, 'index'])->name('auditoria.index')->middleware('role:admin|gerente');
 
     // Gestión de registros (admin only)
     Route::middleware('role:admin')->group(function () {
@@ -139,8 +157,11 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/admin/gestion/prospectos/{id}/restore',       [AdminGestionWebController::class, 'restoreProspecto'])->name('admin.gestion.prospectos.restore');
     });
 
-    // Usuarios (admin only)
-    Route::get('/usuarios/create',        [UsuarioWebController::class, 'create'])->name('usuarios.create');
-    Route::get('/usuarios/{usuario}/edit',[UsuarioWebController::class, 'edit'])->name('usuarios.edit');
-    Route::get('/usuarios',               [UsuarioWebController::class, 'index'])->name('usuarios.index');
+    // Usuarios (admin only) — el comentario ya decía esto pero antes no estaba
+    // aplicado en el middleware; se corrige de paso.
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/usuarios/create',        [UsuarioWebController::class, 'create'])->name('usuarios.create');
+        Route::get('/usuarios/{usuario}/edit',[UsuarioWebController::class, 'edit'])->name('usuarios.edit');
+        Route::get('/usuarios',               [UsuarioWebController::class, 'index'])->name('usuarios.index');
+    });
 });

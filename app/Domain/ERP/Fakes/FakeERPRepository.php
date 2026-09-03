@@ -18,6 +18,8 @@ class FakeERPRepository implements ERPRepositoryInterface
     private array $clientesVendedor = [];
     private array $facturas = [];
     private array $existenciasMP = [];
+    private array $gestionCartera = [];
+    private array $notificacionesCartera = [];
 
     public function clientePorNit(string $nit): ?array
     {
@@ -244,6 +246,112 @@ class FakeERPRepository implements ERPRepositoryInterface
     public function agregarExistenciasMP(array $filas): void
     {
         $this->existenciasMP = $filas;
+    }
+
+    public function gestionCartera(
+        int $compania = 0,
+        bool $soloHoy = false,
+        ?string $buscar = null,
+        int $pagina = 1,
+        int $porPagina = 20
+    ): array {
+        $this->checkAvailability();
+
+        $resueltos = collect($this->notificacionesCartera)
+            ->filter(fn (array $n) => (int) ($n['Notificado'] ?? 0) === 1)
+            ->map(fn (array $n) => ($n['Compania'] ?? 0).'|'.($n['NroDocumento'] ?? ''))
+            ->all();
+
+        $todos = array_values(array_filter(
+            $this->gestionCartera,
+            fn (array $r) => ($compania === 0 || (int) ($r['Compania'] ?? 0) === $compania)
+                && (! $soloHoy || ($r['_creadoHoy'] ?? false) === true)
+                && (! $buscar || str_contains(strtolower($r['NroDocumento'] ?? ''), strtolower($buscar)))
+                && ! in_array(($r['Compania'] ?? 0).'|'.($r['NroDocumento'] ?? ''), $resueltos, true)
+        ));
+
+        $total = count($todos);
+        $data  = array_slice($todos, ($pagina - 1) * $porPagina, $porPagina);
+
+        return compact('data', 'total', 'pagina', 'porPagina');
+    }
+
+    public function agregarGestionCartera(array $filas): void
+    {
+        $this->gestionCartera = $filas;
+    }
+
+    public function notificarCartera(array $pedidos): int
+    {
+        $this->checkAvailability();
+
+        $insertados = 0;
+
+        foreach ($pedidos as $p) {
+            $compania = (int) ($p['compania'] ?? 0);
+            $nro      = $p['nro_documento'] ?? null;
+            $fecha    = $p['fecha_inicio_cobro'] ?? null;
+            if (! $compania || ! $nro || ! $fecha) {
+                continue;
+            }
+
+            $yaExiste = collect($this->notificacionesCartera)->contains(
+                fn (array $n) => (int) ($n['Compania'] ?? 0) === $compania && ($n['NroDocumento'] ?? null) === $nro
+            );
+            if ($yaExiste) {
+                continue;
+            }
+
+            $pedido = collect($this->gestionCartera)->first(
+                fn (array $r) => (int) ($r['Compania'] ?? 0) === $compania && ($r['NroDocumento'] ?? null) === $nro
+            );
+
+            $this->notificacionesCartera[] = [
+                'Compania'          => $compania,
+                'NroDocumento'      => $nro,
+                'Cliente'           => $pedido['Cliente'] ?? null,
+                'Vendedor'          => $pedido['Vendedor'] ?? null,
+                'FechaPedido'       => $pedido['FechaPedido'] ?? null,
+                'FechaCumplimiento' => $pedido['FechaCumplimiento'] ?? null,
+                'SubtotalPendiente' => $pedido['SubtotalPendiente'] ?? 0,
+                'FechaInicioCobro'  => $fecha,
+                'Notificado'        => 0,
+                'FechaRegistro'     => now()->toDateTimeString(),
+            ];
+            $insertados++;
+        }
+
+        return $insertados;
+    }
+
+    public function notificacionesCarteraPendientes(int $compania = 0): array
+    {
+        $this->checkAvailability();
+
+        return array_values(array_filter(
+            $this->notificacionesCartera,
+            fn (array $n) => (int) ($n['Notificado'] ?? 0) === 0
+                && ($compania === 0 || (int) ($n['Compania'] ?? 0) === $compania)
+        ));
+    }
+
+    public function marcarNotificacionCarteraResuelta(int $compania, string $nroDocumento): bool
+    {
+        $this->checkAvailability();
+
+        foreach ($this->notificacionesCartera as &$n) {
+            if ((int) ($n['Compania'] ?? 0) === $compania
+                && ($n['NroDocumento'] ?? null) === $nroDocumento
+                && (int) ($n['Notificado'] ?? 0) === 0
+            ) {
+                $n['Notificado'] = 1;
+                $n['FechaNotificacion'] = now()->toDateTimeString();
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function actualizarLoteExistenciaMP(

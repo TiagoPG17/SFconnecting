@@ -1,0 +1,128 @@
+{
+  "name": "Gestión Cartera - Notificación 3 días antes de FechaInicioCobro",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "d1a1a1a1-0001-4000-8000-000000000001",
+      "name": "Cada día 8:00am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-600, 0]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    Compania,\n    NroDocumento,\n    Cliente,\n    Vendedor,\n    FechaPedido,\n    FechaCumplimiento,\n    FechaInicioCobro,\n    SubtotalPendiente\nFROM dbo.CRM_Notificaciones_Cartera\nWHERE Notificado = 0\n  AND FechaInicioCobro IS NOT NULL\n  AND CAST(FechaInicioCobro AS date) = CAST(DATEADD(day, 3, GETDATE()) AS date)\nORDER BY FechaInicioCobro, NroDocumento;"
+      },
+      "id": "d1a1a1a1-0002-4000-8000-000000000002",
+      "name": "Leer pedidos a 3 días de FechaInicioCobro",
+      "type": "n8n-nodes-base.microsoftSql",
+      "typeVersion": 1,
+      "position": [-380, 0],
+      "credentials": {
+        "microsoftSql": {
+          "name": "ERP Contiflex (SQL Server)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst fmtFecha = (v) => {\n  if (!v) return '—';\n  const m = String(v).match(/^(\\d{4})-(\\d{2})-(\\d{2})/);\n  return m ? `${m[3]}/${m[2]}/${m[1]}` : String(v);\n};\nconst fmtMoneda = (v) => {\n  const n = Number(v || 0);\n  return '$' + n.toLocaleString('es-CO', { maximumFractionDigits: 0 });\n};\nconst companias = { 1: 'FORMACOL', 2: 'CONTIFLEX' };\n\nconst filas = items.map((item, idx) => {\n  const d = item.json;\n  const compania = companias[d.Compania] || ('Compañía ' + d.Compania);\n  const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';\n  return `\n    <tr style=\"background:${bg};\">\n      <td style=\"padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#64748b;\">${compania}</td>\n      <td style=\"padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:600;color:#1e293b;font-family:monospace;\">${d.NroDocumento || ''}</td>\n      <td style=\"padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#1e293b;\">${d.Cliente || ''}</td>\n      <td style=\"padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#64748b;\">${d.Vendedor || ''}</td>\n      <td style=\"padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#64748b;\">${fmtFecha(d.FechaCumplimiento)}</td>\n      <td style=\"padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:12px;font-weight:600;color:#1d4ed8;\">${fmtFecha(d.FechaInicioCobro)}</td>\n      <td style=\"padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:600;color:#1e293b;text-align:right;\">${fmtMoneda(d.SubtotalPendiente)}</td>\n    </tr>`;\n}).join('');\n\nconst html = `\n<div style=\"font-family:Arial,Helvetica,sans-serif;max-width:1000px;margin:0 auto;background:#f8fafc;padding:24px;\">\n  <div style=\"background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;\">\n    <div style=\"padding:20px 24px;border-bottom:1px solid #e2e8f0;\">\n      <h2 style=\"margin:0;font-size:16px;color:#1e293b;\">Gestión de Cartera · Pedidos pendientes</h2>\n      <p style=\"margin:4px 0 0;font-size:12px;color:#94a3b8;\">${items.length} pedido(s) marcados para seguimiento</p>\n    </div>\n    <table style=\"width:100%;border-collapse:collapse;\">\n      <thead>\n        <tr style=\"background:#f1f5f9;\">\n          <th style=\"padding:12px 16px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:#64748b;\">Compañía</th>\n          <th style=\"padding:12px 16px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:#64748b;\">Pedido</th>\n          <th style=\"padding:12px 16px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:#64748b;\">Cliente</th>\n          <th style=\"padding:12px 16px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:#64748b;\">Vendedor</th>\n          <th style=\"padding:12px 16px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:#64748b;\">F. Cumplimiento</th>\n          <th style=\"padding:12px 16px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:#64748b;\">Empezar a avisar</th>\n          <th style=\"padding:12px 16px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:#64748b;\">Subtotal</th>\n        </tr>\n      </thead>\n      <tbody>${filas}</tbody>\n    </table>\n  </div>\n</div>`;\n\nreturn [{ json: { html, total: items.length } }];\n"
+      },
+      "id": "d1a1a1a1-0005-4000-8000-000000000005",
+      "name": "Armar tabla HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-160, -80]
+    },
+    {
+      "parameters": {
+        "sendTo": "cartera@tudominio.com",
+        "subject": "=Pedidos pendientes de notificar - {{$json[\"total\"]}} pedido(s)",
+        "emailType": "html",
+        "message": "={{$json[\"html\"]}}",
+        "options": {}
+      },
+      "id": "d1a1a1a1-0003-4000-8000-000000000003",
+      "name": "Enviar correo (Gmail)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [60, -80],
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE dbo.CRM_Notificaciones_Cartera\nSET Notificado = 1,\n    FechaNotificacion = GETDATE()\nWHERE Compania = {{$json[\"Compania\"]}}\n  AND NroDocumento = '{{$json[\"NroDocumento\"]}}';"
+      },
+      "id": "d1a1a1a1-0004-4000-8000-000000000004",
+      "name": "Marcar como notificado",
+      "type": "n8n-nodes-base.microsoftSql",
+      "typeVersion": 1,
+      "position": [60, 120],
+      "credentials": {
+        "microsoftSql": {
+          "name": "ERP Contiflex (SQL Server)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cada día 8:00am": {
+      "main": [
+        [
+          {
+            "node": "Leer pedidos a 3 días de FechaInicioCobro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer pedidos a 3 días de FechaInicioCobro": {
+      "main": [
+        [
+          {
+            "node": "Armar tabla HTML",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Marcar como notificado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar tabla HTML": {
+      "main": [
+        [
+          {
+            "node": "Enviar correo (Gmail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
