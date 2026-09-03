@@ -46,14 +46,23 @@
                             @endforeach
                         </x-ui.select>
 
-                        <x-ui.select name="tipo_negocio_id" label="Tipo de negocio">
-                            <option value="">Sin tipo</option>
-                            @foreach($tipos as $t)
-                                <option value="{{ $t->id }}" {{ $negocio->tipo_negocio_id == $t->id ? 'selected' : '' }}>
-                                    {{ $t->nombre }}
-                                </option>
-                            @endforeach
-                        </x-ui.select>
+                        <div>
+                            <x-ui.select name="tipo_negocio_id" label="Tipo de negocio"
+                                :required="$requiereNuevoTipo"
+                                :placeholder="$requiereNuevoTipo ? 'Selecciona un tipo' : 'Sin tipo'">
+                                @unless($requiereNuevoTipo)
+                                    <option value="">Sin tipo</option>
+                                @endunless
+                                @foreach($tipos as $t)
+                                    <option value="{{ $t->id }}" {{ $negocio->tipo_negocio_id == $t->id ? 'selected' : '' }}>
+                                        {{ $t->nombre }}
+                                    </option>
+                                @endforeach
+                            </x-ui.select>
+                            @if($requiereNuevoTipo)
+                                <p class="text-xs text-amber-600 mt-1">El tipo anterior fue desactivado. Selecciona uno nuevo para poder guardar.</p>
+                            @endif
+                        </div>
 
                         <x-ui.select name="sector_id" label="Sector">
                             <option value="">Sin sector</option>

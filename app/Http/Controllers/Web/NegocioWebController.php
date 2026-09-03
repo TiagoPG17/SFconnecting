@@ -77,8 +77,9 @@ class NegocioWebController extends Controller
         $sectores          = $this->maestros->porTipo('sector');
         $motivos           = $this->maestros->porTipo('motivo_perdida');
         $estadosPerdidoIds = $estados->where('es_perdido', true)->pluck('id')->values()->toArray();
+        $requiereNuevoTipo = $negocio->tipo_negocio_id !== null && ! $tipos->contains('id', $negocio->tipo_negocio_id);
 
-        return view('negocios.edit', compact('negocio', 'estados', 'tipos', 'sectores', 'motivos', 'estadosPerdidoIds'));
+        return view('negocios.edit', compact('negocio', 'estados', 'tipos', 'sectores', 'motivos', 'estadosPerdidoIds', 'requiereNuevoTipo'));
     }
 
     public function kanban(): View
