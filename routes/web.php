@@ -48,9 +48,9 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('dash.vendedor');
     };
 
-    // Roles con acceso al resto del CRM aparte de Gestión de Cartera y Solicitudes
-    // de Crédito. "cartera" queda deliberadamente fuera: solo puede entrar a esas
-    // dos pantallas y a nada más.
+    // Roles con acceso al resto del CRM aparte de Gestión de Cartera. "cartera"
+    // queda deliberadamente fuera: por ahora solo puede entrar a esa pantalla
+    // (Solicitudes de Crédito también quedó fuera de cartera, temporal).
     $rolesCrmGeneral = 'admin|gerente|comercial|produccion|contabilidad_formacol|contabilidad_contiflex';
 
     Route::get('/', $homeRedirect);
@@ -86,9 +86,9 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Solicitudes de Crédito — estáticas antes del wildcard
-    Route::get('/solicitudes-credito/create',              [SolicitudCreditoWebController::class, 'create'])->name('solicitudes-credito.create')->middleware('role:admin|gerente|cartera');
-    Route::get('/solicitudes-credito/{solicitudCredito}',  [SolicitudCreditoWebController::class, 'show'])->name('solicitudes-credito.show')->middleware('role:admin|gerente|cartera');
-    Route::get('/solicitudes-credito',                     [SolicitudCreditoWebController::class, 'index'])->name('solicitudes-credito.index')->middleware('role:admin|gerente|cartera');
+    Route::get('/solicitudes-credito/create',              [SolicitudCreditoWebController::class, 'create'])->name('solicitudes-credito.create')->middleware('role:admin|gerente'); // cartera queda fuera por ahora, temporal
+    Route::get('/solicitudes-credito/{solicitudCredito}',  [SolicitudCreditoWebController::class, 'show'])->name('solicitudes-credito.show')->middleware('role:admin|gerente'); // cartera queda fuera por ahora, temporal
+    Route::get('/solicitudes-credito',                     [SolicitudCreditoWebController::class, 'index'])->name('solicitudes-credito.index')->middleware('role:admin|gerente'); // cartera queda fuera por ahora, temporal
 
     // Contabilidad — estáticas antes del wildcard
     Route::get('/contabilidad/{cliente}', [ContabilidadWebController::class, 'show'])->name('contabilidad.show')->middleware('role:contabilidad_formacol|contabilidad_contiflex|admin');

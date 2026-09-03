@@ -100,27 +100,21 @@
         <div class="overflow-x-auto">
             <table class="w-full text-sm whitespace-nowrap">
                 <thead class="bg-gradient-to-b from-slate-50 to-slate-100/70 border-b-2 border-slate-200">
-                    <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    <tr class="text-left text-sm font-bold text-slate-700">
                         @if($puedeEditar)
                         <th class="px-4 py-3 w-8"></th>
                         @endif
                         <th class="px-4 py-3">Compañía</th>
-                        <th class="px-4 py-3">Nro. Documento</th>
+                        <th class="px-4 py-3">Nro. Pedido</th>
                         <th class="px-4 py-3">Cliente</th>
                         <th class="px-4 py-3">Vendedor</th>
                         <th class="px-4 py-3">Estado</th>
-                        <th class="px-4 py-3">Orden Compra</th>
-                        <th class="px-4 py-3">F. Pedido</th>
                         <th class="px-4 py-3">F. Cumplimiento</th>
                         @if($puedeEditar)
                         <th class="px-4 py-3">F. Inicio Aviso</th>
                         @endif
-                        <th class="px-4 py-3">Creó</th>
-                        <th class="px-4 py-3">F. Creación</th>
-                        <th class="px-4 py-3 text-right">Cant. Pedida</th>
-                        <th class="px-4 py-3 text-right">Cant. Facturada</th>
                         <th class="px-4 py-3 text-right">Cant. Pendiente</th>
-                        <th class="px-4 py-3 text-right">Subtotal Pendiente</th>
+                        <th class="px-4 py-3 text-right">Valor Pendiente</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -135,15 +129,19 @@
                         <td class="px-4 py-3">
                             <span class="text-xs font-semibold text-slate-500" x-text="item.CompaniaLabel"></span>
                         </td>
-                        <td class="px-4 py-3 font-mono text-xs font-semibold text-slate-800" x-text="item.NroDocumento"></td>
-                        <td class="px-4 py-3 font-medium text-slate-900 whitespace-normal min-w-[180px]" x-text="item.Cliente"></td>
-                        <td class="px-4 py-3 text-slate-500" x-text="item.Vendedor"></td>
+                        <td class="px-4 py-3">
+                            <p class="font-mono text-xs font-semibold text-slate-800" x-text="item.NroDocumento"></p>
+                            <p class="text-[11px] text-slate-400 mt-0.5" x-text="'OC: ' + item.OrdenCompra"></p>
+                        </td>
+                        <td class="px-4 py-3 font-medium text-slate-900 whitespace-normal min-w-[160px]" x-text="item.Cliente"></td>
+                        <td class="px-4 py-3 text-slate-500 whitespace-normal min-w-[140px]" x-text="item.Vendedor"></td>
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600" x-text="item.Estado"></span>
                         </td>
-                        <td class="px-4 py-3 text-xs text-slate-500" x-text="item.OrdenCompra"></td>
-                        <td class="px-4 py-3 text-xs text-slate-500" x-text="item.FechaPedido"></td>
-                        <td class="px-4 py-3 text-xs text-slate-500" x-text="item.FechaCumplimiento"></td>
+                        <td class="px-4 py-3">
+                            <p class="text-xs font-medium text-slate-700" x-text="item.FechaCumplimiento"></p>
+                            <p class="text-[11px] text-slate-400 mt-0.5" x-text="'Pedido: ' + item.FechaPedido"></p>
+                        </td>
                         @if($puedeEditar)
                         <td class="px-4 py-3">
                             <template x-if="estaSeleccionado(item)">
@@ -156,11 +154,10 @@
                             </template>
                         </td>
                         @endif
-                        <td class="px-4 py-3 text-xs text-slate-500" x-text="item.UsuarioCreo"></td>
-                        <td class="px-4 py-3 text-xs text-slate-500" x-text="item.FechaCreacion"></td>
-                        <td class="px-4 py-3 text-right text-slate-600" x-text="item.CantPedida"></td>
-                        <td class="px-4 py-3 text-right text-slate-600" x-text="item.CantFacturada"></td>
-                        <td class="px-4 py-3 text-right font-semibold text-slate-800" x-text="item.CantPendiente"></td>
+                        <td class="px-4 py-3 text-right">
+                            <p class="font-semibold text-slate-800" x-text="item.CantPendiente"></p>
+                            <p class="text-[11px] text-slate-400 mt-0.5" x-text="'de ' + item.CantPedida + ' pedidas'"></p>
+                        </td>
                         <td class="px-4 py-3 text-right font-semibold text-slate-800" x-text="'$' + item.SubtotalPendiente"></td>
                     </tr>
                     </template>
@@ -242,16 +239,14 @@
             <div class="overflow-x-auto">
                 <table class="w-full text-sm whitespace-nowrap">
                     <thead class="bg-gradient-to-b from-slate-50 to-slate-100/70 border-b-2 border-slate-200">
-                        <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        <tr class="text-left text-sm font-bold text-slate-700">
                             <th class="px-4 py-3">Compañía</th>
                             <th class="px-4 py-3">Nro. Documento</th>
                             <th class="px-4 py-3">Cliente</th>
                             <th class="px-4 py-3">Vendedor</th>
-                            <th class="px-4 py-3">F. Pedido</th>
                             <th class="px-4 py-3">F. Cumplimiento</th>
                             <th class="px-4 py-3">Empezar a avisar</th>
                             <th class="px-4 py-3 text-right">Subtotal Pendiente</th>
-                            <th class="px-4 py-3">Registrado</th>
                             @if($puedeEditar)
                             <th class="px-4 py-3"></th>
                             @endif
@@ -268,12 +263,16 @@
                             <td class="px-4 py-3 text-xs font-semibold text-slate-500">{{ $companias[$compania] ?? 'Compañía '.$compania }}</td>
                             <td class="px-4 py-3 font-mono text-xs font-semibold text-slate-800">{{ $nroDocumento ?: '—' }}</td>
                             <td class="px-4 py-3 font-medium text-slate-900 whitespace-normal min-w-[180px]">{{ $n['Cliente'] ?? '—' }}</td>
-                            <td class="px-4 py-3 text-slate-500">{{ $n['Vendedor'] ?? '—' }}</td>
-                            <td class="px-4 py-3 text-xs text-slate-500">{{ !empty($n['FechaPedido']) ? \Carbon\Carbon::parse($n['FechaPedido'])->format('d/m/Y') : '—' }}</td>
-                            <td class="px-4 py-3 text-xs text-slate-500">{{ !empty($n['FechaCumplimiento']) ? \Carbon\Carbon::parse($n['FechaCumplimiento'])->format('d/m/Y') : '—' }}</td>
-                            <td class="px-4 py-3 text-xs font-semibold text-blue-700">{{ !empty($n['FechaInicioCobro']) ? \Carbon\Carbon::parse($n['FechaInicioCobro'])->format('d/m/Y') : '—' }}</td>
+                            <td class="px-4 py-3 text-slate-500 whitespace-normal min-w-[140px]">{{ $n['Vendedor'] ?? '—' }}</td>
+                            <td class="px-4 py-3">
+                                <p class="text-xs font-medium text-slate-700">{{ !empty($n['FechaCumplimiento']) ? \Carbon\Carbon::parse($n['FechaCumplimiento'])->format('d/m/Y') : '—' }}</p>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Pedido: {{ !empty($n['FechaPedido']) ? \Carbon\Carbon::parse($n['FechaPedido'])->format('d/m/Y') : '—' }}</p>
+                            </td>
+                            <td class="px-4 py-3">
+                                <p class="text-xs font-semibold text-blue-700">{{ !empty($n['FechaInicioCobro']) ? \Carbon\Carbon::parse($n['FechaInicioCobro'])->format('d/m/Y') : '—' }}</p>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Registrado: {{ !empty($n['FechaRegistro']) ? \Carbon\Carbon::parse($n['FechaRegistro'])->format('d/m/Y') : '—' }}</p>
+                            </td>
                             <td class="px-4 py-3 text-right font-semibold text-slate-800">${{ number_format((float) ($n['SubtotalPendiente'] ?? 0), 0, ',', '.') }}</td>
-                            <td class="px-4 py-3 text-xs text-slate-500">{{ !empty($n['FechaRegistro']) ? \Carbon\Carbon::parse($n['FechaRegistro'])->format('d/m/Y H:i') : '—' }}</td>
                             @if($puedeEditar)
                             <td class="px-4 py-3">
                                 <button type="button"

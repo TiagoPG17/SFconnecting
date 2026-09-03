@@ -100,7 +100,14 @@
             </x-ui.nav-item>
             @endhasanyrole
 
-            @hasanyrole('admin|gerente|cartera')
+            @hasanyrole('cartera|admin|gerente')
+            <x-ui.nav-item href="{{ route('gestion-cartera.index') }}" :active="request()->routeIs('gestion-cartera.*')" icon="clock">
+                Gestión de Cartera
+            </x-ui.nav-item>
+            @endhasanyrole
+
+            {{-- cartera queda fuera por ahora, temporal --}}
+            @hasanyrole('admin|gerente')
             <x-ui.nav-item href="{{ route('solicitudes-credito.index') }}" :active="request()->routeIs('solicitudes-credito.*')" icon="file-text">
                 Solicitudes de Crédito
             </x-ui.nav-item>
@@ -109,12 +116,6 @@
             @hasanyrole('contabilidad_formacol|contabilidad_contiflex|admin')
             <x-ui.nav-item href="{{ route('contabilidad.index') }}" :active="request()->routeIs('contabilidad.*')" icon="file-text">
                 Contabilidad
-            </x-ui.nav-item>
-            @endhasanyrole
-
-            @hasanyrole('cartera|admin|gerente')
-            <x-ui.nav-item href="{{ route('gestion-cartera.index') }}" :active="request()->routeIs('gestion-cartera.*')" icon="clock">
-                Gestión de Cartera
             </x-ui.nav-item>
             @endhasanyrole
 
