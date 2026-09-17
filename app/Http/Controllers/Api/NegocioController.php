@@ -11,12 +11,15 @@ use App\Domain\Negocios\Exceptions\NegocioException;
 use App\Domain\Negocios\Models\Negocio;
 use App\Domain\Negocios\Repositories\NegocioRepositoryInterface;
 use App\Domain\Negocios\Services\NegocioService;
+use App\Domain\Prospectos\Models\Prospecto;
 use App\Domain\SolicitudesCotizacion\Repositories\SolicitudCotizacionRepositoryInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Negocios\ActualizarNegocioRequest;
 use App\Http\Requests\Negocios\CrearNegocioRequest;
 use App\Http\Resources\Negocios\NegocioResource;
 use App\Http\Responses\ApiResponse;
+use App\Support\AccesoSgp;
+use App\Support\NombreEmpresa;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -103,52 +106,91 @@ class NegocioController extends Controller
     }
 
     /**
-     * Solicitudes de cotización de SGP con cliente asignado, para el modal
-     * "Cargar desde cotizaciones" de la pantalla de Negocios. Solo se listan las
-     * que resuelven a un Cliente real (por NIT) en SFconnecting — si el NIT no
-     * cruza localmente, no se ofrece aquí (le toca al flujo de Prospectos).
-     * Excluye las que ya se usaron para crear un negocio (nro_solicitud_cotizacion)
-     * y prellena valor_estimado con la suma de las escalas cotizadas.
+     * Solicitudes de cotización de SGP, para el modal "Cargar desde cotizaciones"
+     * de la pantalla de Negocios. No se filtra por situacion_cliente de SGP —
+     * se resuelve el vínculo contra lo que ya existe en SFconnecting: primero
+     * por NIT contra Cliente (match exacto y confiable); si no hay Cliente, por
+     * nombre normalizado contra Prospecto (la empresa puede ya estar en
+     * seguimiento como prospecto, con o sin cliente asignado en SGP). Si no
+     * resuelve a ninguno de los dos, no se ofrece aquí (le toca al modal de
+     * Prospectos, para crear uno nuevo). Excluye las que ya se usaron para
+     * crear un negocio y prellena valor_estimado con la suma de las escalas.
      */
     public function candidatosSgp(Request $request): JsonResponse
     {
         $this->authorize('create', Negocio::class);
 
+        if (! AccesoSgp::permitido($request->user())) {
+            return ApiResponse::error('Esta función es exclusiva de comerciales de Formacol.', [], 403);
+        }
+
         try {
+            $vendedorSgp = $this->vendedorSgpDelUsuario($request);
+            if ($vendedorSgp === false) {
+                return ApiResponse::error('Tu usuario no tiene un código de SGP asignado. Pídele a un administrador que te lo configure en Usuarios.', [], 422);
+            }
+
             $yaConvertidos = Negocio::whereNotNull('nro_solicitud_cotizacion')
                 ->pluck('nro_solicitud_cotizacion');
 
             $candidatos = $this->cotizaciones
-                ->candidatosNegocio($request->query('buscar'))
+                ->candidatosVinculacion($request->query('buscar'), $vendedorSgp)
                 ->reject(fn ($s) => $yaConvertidos->contains((string) $s->nro_solicitud));
 
             $nits = $candidatos->pluck('nit')->filter()->map(fn ($nit) => trim((string) $nit))->unique();
 
-            $clientesPorNit = Cliente::whereIn('nit', $nits)
-                ->pluck('id', 'nit');
+            $clientesPorNit = Cliente::whereIn('nit', $nits)->pluck('id', 'nit');
 
-            $candidatos = $candidatos->filter(
-                fn ($s) => $s->nit && $clientesPorNit->has(trim((string) $s->nit))
-            );
+            $prospectosPorNombre = Prospecto::query()
+                ->select('id', 'empresa')
+                ->get()
+                ->reduce(function (array $acc, Prospecto $p) {
+                    $acc[NombreEmpresa::normalizar($p->empresa)] = $p->id;
+
+                    return $acc;
+                }, []);
+
+            $vinculo = function ($s) use ($clientesPorNit, $prospectosPorNombre) {
+                if ($s->nit && $clientesPorNit->has(trim((string) $s->nit))) {
+                    return ['tipo' => 'cliente', 'id' => $clientesPorNit->get(trim((string) $s->nit))];
+                }
+
+                $nombreNormalizado = NombreEmpresa::normalizar($s->cliente ?: $s->cliente_digitado);
+                if ($nombreNormalizado !== '' && isset($prospectosPorNombre[$nombreNormalizado])) {
+                    return ['tipo' => 'prospecto', 'id' => $prospectosPorNombre[$nombreNormalizado]];
+                }
+
+                return null;
+            };
+
+            $candidatos = $candidatos
+                ->map(fn ($s) => [$s, $vinculo($s)])
+                ->filter(fn ($par) => $par[1] !== null);
 
             $valoresTotales = $this->cotizaciones->valorTotalPorSolicitud(
-                $candidatos->pluck('nro_solicitud')->all()
+                $candidatos->map(fn ($par) => $par[0]->nro_solicitud)->all()
             );
 
-            $resultado = $candidatos->map(fn ($s) => [
-                'nro_solicitud'   => $s->nro_solicitud,
-                'fecha_solicitud' => $s->fecha_solicitud?->format('d/m/Y'),
-                'comercial'       => $s->nombre_vendedor ?: $s->vendedor,
-                'nit'             => $s->nit,
-                'cliente'         => $s->cliente,
-                'cliente_id'      => $clientesPorNit->get(trim((string) $s->nit)),
-                'tipo_cotizacion' => $s->tipo_cotizacion,
-                'descripcion'     => $s->descripcion,
-                'valor_estimado'  => (float) ($valoresTotales->get($s->nro_solicitud) ?? 0),
-                'escalas'         => $s->escalas,
-                'escalas_con_precio' => $s->escalas_con_precio,
-                'partes'          => $s->partes,
-            ])->values();
+            $resultado = $candidatos->map(function ($par) use ($valoresTotales) {
+                [$s, $vinculo] = $par;
+
+                return [
+                    'nro_solicitud'   => $s->nro_solicitud,
+                    'fecha_solicitud' => $s->fecha_solicitud?->format('d/m/Y'),
+                    'comercial'       => $s->nombre_vendedor ?: $s->vendedor,
+                    'nit'             => $s->nit,
+                    'cliente'         => $s->cliente ?: $s->cliente_digitado,
+                    'vinculo_tipo'    => $vinculo['tipo'],
+                    'cliente_id'      => $vinculo['tipo'] === 'cliente' ? $vinculo['id'] : null,
+                    'prospecto_id'    => $vinculo['tipo'] === 'prospecto' ? $vinculo['id'] : null,
+                    'tipo_cotizacion' => $s->tipo_cotizacion,
+                    'descripcion'     => $s->descripcion,
+                    'valor_estimado'  => (float) ($valoresTotales->get($s->nro_solicitud) ?? 0),
+                    'escalas'         => $s->escalas,
+                    'escalas_con_precio' => $s->escalas_con_precio,
+                    'partes'          => $s->partes,
+                ];
+            })->values();
 
             return ApiResponse::success($resultado);
         } catch (Throwable $e) {
@@ -166,6 +208,10 @@ class NegocioController extends Controller
     public function escalasSgp(string $nroSolicitud): JsonResponse
     {
         $this->authorize('create', Negocio::class);
+
+        if (! AccesoSgp::permitido(auth()->user())) {
+            return ApiResponse::error('Esta función es exclusiva de comerciales de Formacol.', [], 403);
+        }
 
         try {
             $escalas = $this->cotizaciones->escalasActivasDeSolicitud($nroSolicitud)
@@ -186,5 +232,22 @@ class NegocioController extends Controller
 
             return ApiResponse::error('Sin conexión al ERP. No se pueden cargar las escalas en este momento.', [], 503);
         }
+    }
+
+    /**
+     * Restringe los candidatos de SGP al código de vendedor del comercial que
+     * los pide. Admin/gerente ven todo (null = sin restricción). Un comercial
+     * sin código asignado devuelve `false` — la ruta lo traduce en un error
+     * explícito en vez de mostrarle todo o dejarlo con la lista vacía sin explicar por qué.
+     */
+    private function vendedorSgpDelUsuario(Request $request): string|false|null
+    {
+        $user = $request->user();
+
+        if ($user->hasAnyRole(['admin', 'gerente'])) {
+            return null;
+        }
+
+        return $user->vendedor_sgp ?: false;
     }
 }

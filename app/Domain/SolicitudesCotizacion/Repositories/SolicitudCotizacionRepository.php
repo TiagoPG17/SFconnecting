@@ -90,35 +90,19 @@ class SolicitudCotizacionRepository implements SolicitudCotizacionRepositoryInte
             ->paginate($porPagina);
     }
 
-    public function candidatosProspecto(?string $buscar = null, int $limite = 50): Collection
+    public function candidatosVinculacion(?string $buscar = null, ?string $vendedorSgp = null, int $limite = 100): Collection
     {
         return SolicitudCotizacion::query()
             ->activo()
-            ->sinClienteAsignado()
             ->ultimosDias(30)
             ->buscarCliente($buscar)
+            ->delVendedor($vendedorSgp)
             ->orderByDesc('fecha_solicitud')
             ->limit($limite)
             ->get([
                 'nro_solicitud', 'fecha_solicitud', 'vendedor', 'nombre_vendedor',
                 'nit', 'cliente', 'cliente_digitado', 'situacion_cliente',
-                'tipo_cotizacion', 'escalas', 'partes',
-            ]);
-    }
-
-    public function candidatosNegocio(?string $buscar = null, int $limite = 50): Collection
-    {
-        return SolicitudCotizacion::query()
-            ->activo()
-            ->clienteAsignado()
-            ->ultimosDias(30)
-            ->buscarCliente($buscar)
-            ->orderByDesc('fecha_solicitud')
-            ->limit($limite)
-            ->get([
-                'nro_solicitud', 'fecha_solicitud', 'vendedor', 'nombre_vendedor',
-                'nit', 'cliente', 'tipo_cotizacion', 'descripcion',
-                'escalas', 'escalas_con_precio', 'partes',
+                'tipo_cotizacion', 'descripcion', 'escalas', 'escalas_con_precio', 'partes',
             ]);
     }
 

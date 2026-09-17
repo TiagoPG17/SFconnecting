@@ -28,11 +28,13 @@ interface SolicitudCotizacionRepositoryInterface
     /** Auditoría de solicitudes dadas de baja en SGP (soft delete). */
     public function bajas(int $porPagina = 20): LengthAwarePaginator;
 
-    /** Solicitudes activas sin cliente asignado — candidatas a convertirse en Prospecto. */
-    public function candidatosProspecto(?string $buscar = null, int $limite = 50): Collection;
-
-    /** Solicitudes activas con cliente asignado — candidatas a convertirse en Negocio. */
-    public function candidatosNegocio(?string $buscar = null, int $limite = 50): Collection;
+    /**
+     * Solicitudes activas de los últimos 30 días, sin importar situacion_cliente.
+     * Prospectos y Negocios deciden a quién le toca cada una cruzándolas contra
+     * Cliente/Prospecto ya existentes en SFconnecting, no contra ese campo de SGP.
+     * $vendedorSgp restringe al código SGP de un comercial puntual (null = todos).
+     */
+    public function candidatosVinculacion(?string $buscar = null, ?string $vendedorSgp = null, int $limite = 100): Collection;
 
     /** Suma de valor_total_escala (escalas activas) por nro_solicitud, para prellenar valor_estimado. */
     public function valorTotalPorSolicitud(array $nrosSolicitud): Collection;

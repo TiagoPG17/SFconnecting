@@ -32,4 +32,11 @@ interface NegocioRepositoryInterface
 
     /** Reasigna a otro asesor los negocios de esos clientes que hoy son de $deUserId. */
     public function reasignarPorClientes(array $clienteIds, int $deUserId, int $aUserId): Collection;
+
+    /**
+     * Al convertir un Prospecto en Cliente, vincula también sus negocios existentes
+     * al cliente nuevo (sin quitarles el prospecto_id, para no perder de dónde vinieron).
+     * Devuelve cuántos se actualizaron.
+     */
+    public function vincularClientePorProspecto(int $prospectoId, int $clienteId): int;
 }

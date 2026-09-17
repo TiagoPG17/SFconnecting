@@ -179,4 +179,11 @@ class NegocioRepository implements NegocioRepositoryInterface
             ->with('pipelineEstado')
             ->get();
     }
+
+    public function vincularClientePorProspecto(int $prospectoId, int $clienteId): int
+    {
+        return Negocio::where('prospecto_id', $prospectoId)
+            ->whereNull('cliente_id')
+            ->update(['cliente_id' => $clienteId]);
+    }
 }

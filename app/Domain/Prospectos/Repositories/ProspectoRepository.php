@@ -55,6 +55,10 @@ class ProspectoRepository implements ProspectoRepositoryInterface
             $query->where('origen_id', $filtros['origen_id']);
         }
 
+        if (! empty($filtros['sin_convertir'])) {
+            $query->whereNull('convertido_cliente_id');
+        }
+
         if (! empty($filtros['buscar'])) {
             $t = $filtros['buscar'];
             $query->where(fn ($q) => $q

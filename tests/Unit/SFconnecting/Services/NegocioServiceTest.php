@@ -168,6 +168,43 @@ class NegocioServiceTest extends TestCase
         ]);
     }
 
+    public function test_mover_negocio_ganado_a_otro_estado_lanza_excepcion(): void
+    {
+        $user    = User::factory()->create();
+        $cliente = Cliente::factory()->create();
+        $negocio = $this->service->crear($this->dtoBase($user->id, clienteId: $cliente->id));
+
+        $this->service->actualizar($negocio, ActualizarNegocioDTO::fromArray([
+            'pipeline_estado_id' => $this->estadoGanado->id,
+        ]));
+        $negocio->refresh();
+
+        $this->expectException(NegocioException::class);
+        $this->expectExceptionMessageMatches('/estado final/i');
+
+        $this->service->actualizar($negocio, ActualizarNegocioDTO::fromArray([
+            'pipeline_estado_id' => $this->estadoInicial->id,
+        ]));
+    }
+
+    public function test_editar_negocio_ganado_sin_cambiar_estado_no_lanza_excepcion(): void
+    {
+        $user    = User::factory()->create();
+        $cliente = Cliente::factory()->create();
+        $negocio = $this->service->crear($this->dtoBase($user->id, clienteId: $cliente->id));
+
+        $this->service->actualizar($negocio, ActualizarNegocioDTO::fromArray([
+            'pipeline_estado_id' => $this->estadoGanado->id,
+        ]));
+        $negocio->refresh();
+
+        $actualizado = $this->service->actualizar($negocio, ActualizarNegocioDTO::fromArray([
+            'descripcion' => 'Nota agregada después del cierre',
+        ]));
+
+        $this->assertSame('Nota agregada después del cierre', $actualizado->descripcion);
+    }
+
     // â€” ELIMINAR â€”
 
     public function test_elimina_negocio_con_soft_delete(): void

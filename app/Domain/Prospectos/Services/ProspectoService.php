@@ -10,6 +10,7 @@ use App\Domain\Clientes\Repositories\ClienteRepositoryInterface;
 use App\Domain\Dashboard\Models\VendedorEquivalencia;
 use App\Domain\Dashboard\Repositories\DashboardVendedorRepositoryInterface;
 use App\Domain\Negocios\Models\AuditoriaPipeline;
+use App\Domain\Negocios\Repositories\NegocioRepositoryInterface;
 use App\Domain\Seguimientos\Repositories\SeguimientoRepositoryInterface;
 use App\Domain\Prospectos\DTOs\ActualizarProspectoDTO;
 use App\Domain\Prospectos\DTOs\ConvertirProspectoDTO;
@@ -31,6 +32,7 @@ class ProspectoService
         private readonly ProspectoRepositoryInterface $repo,
         private readonly ClienteRepositoryInterface $clienteRepo,
         private readonly SeguimientoRepositoryInterface $seguimientoRepo,
+        private readonly NegocioRepositoryInterface $negocioRepo,
         private readonly DashboardVendedorRepositoryInterface $vendedorRepo,
         private readonly SolicitudCreditoService $solicitudCreditoService,
     ) {}
@@ -107,6 +109,7 @@ class ProspectoService
             }
 
             $seguimientosMigrados = $this->seguimientoRepo->migrarACliente($prospecto->id, $cliente->id);
+            $negociosVinculados   = $this->negocioRepo->vincularClientePorProspecto($prospecto->id, $cliente->id);
 
             $convertido = $this->repo->marcarConvertido($prospecto, $cliente->id, $dto->usuarioId);
 
@@ -114,6 +117,7 @@ class ProspectoService
                 'cliente_id'            => $cliente->id,
                 'empresa'               => $prospecto->empresa,
                 'seguimientos_migrados' => $seguimientosMigrados,
+                'negocios_vinculados'   => $negociosVinculados,
             ]);
 
             ActividadLog::registrar('convertir', 'prospectos', "Prospecto '{$prospecto->empresa}' convertido a cliente (#{$prospecto->codigo})", $dto->usuarioId);

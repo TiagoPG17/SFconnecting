@@ -38,13 +38,19 @@
                     <x-ui.input name="nombre_negocio" label="Nombre del negocio" :value="$negocio->nombre_negocio" required/>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <x-ui.select name="pipeline_estado_id" label="Estado pipeline" required x-model="estadoId">
-                            @foreach($estados as $e)
-                                <option value="{{ $e->id }}" {{ $negocio->pipeline_estado_id == $e->id ? 'selected' : '' }}>
-                                    {{ $e->nombre }}
-                                </option>
-                            @endforeach
-                        </x-ui.select>
+                        <div>
+                            <x-ui.select name="pipeline_estado_id" label="Estado pipeline" required x-model="estadoId"
+                                :disabled="$negocio->pipelineEstado?->es_final">
+                                @foreach($estados as $e)
+                                    <option value="{{ $e->id }}" {{ $negocio->pipeline_estado_id == $e->id ? 'selected' : '' }}>
+                                        {{ $e->nombre }}
+                                    </option>
+                                @endforeach
+                            </x-ui.select>
+                            @if($negocio->pipelineEstado?->es_final)
+                                <p class="text-xs text-slate-400 mt-1">{{ $negocio->pipelineEstado->nombre }} es una etapa final: el negocio ya no puede moverse de ahí.</p>
+                            @endif
+                        </div>
 
                         <div>
                             <x-ui.select name="tipo_negocio_id" label="Tipo de negocio"

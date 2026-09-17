@@ -11,6 +11,7 @@
         form: {
             name: '{{ addslashes($usuario->name) }}',
             email: '{{ $usuario->email }}',
+            vendedor_sgp: '{{ addslashes($usuario->vendedor_sgp ?? '') }}',
             password: '',
             password_confirmation: '',
             rol: '{{ $usuario->getRoleNames()->first() ?? '' }}',
@@ -80,6 +81,18 @@
                         x-model="form.email"
                         @input="delete errors.email"
                         x-error="errors.email"/>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">
+                        Usuario SGP
+                    </label>
+                    <x-ui.input
+                        x-model="form.vendedor_sgp"
+                        @input="delete errors.vendedor_sgp"
+                        x-error="errors.vendedor_sgp"
+                        placeholder="Ej: ADRIANA.MEDELLIN"
+                        hint="Código de SGP de este comercial — filtra qué solicitudes de cotización ve en los modales de Prospectos/Negocios. Déjalo vacío si no aplica."/>
                 </div>
 
                 <div class="border-t border-slate-100 pt-4">

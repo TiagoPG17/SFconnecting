@@ -111,10 +111,14 @@ body.sorting, body.sorting * {
                 class="flex-1 space-y-2 rounded-xl bg-slate-100/70 p-2 min-h-24"
                 x-sort:group="negocios"
                 x-sort="mover($item, $position, '{{ $columna['estado']->id }}')"
+                @if($columna['estado']->es_final)
+                x-sort:config="{ group: { name: 'negocios', pull: false, put: true } }"
+                @endif
                 data-estado-id="{{ $columna['estado']->id }}"
             >
                 @forelse($columna['negocios'] as $negocio)
                 @php
+                    $esFinal = $columna['estado']->es_final;
                     $vencido = $negocio->fecha_estimada_cierre && $negocio->fecha_estimada_cierre->isPast();
                     $diasRestantes = $negocio->fecha_estimada_cierre
                         ? (int) now()->diffInDays($negocio->fecha_estimada_cierre, false)
@@ -151,18 +155,18 @@ body.sorting, body.sorting * {
                     role="button"
                     tabindex="0"
                     aria-label="Ver detalle de {{ $negocio->nombre_negocio }}"
-                    class="relative bg-white rounded-xl p-3 shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    class="relative bg-white rounded-xl p-3 shadow-sm border border-slate-200 {{ $esFinal ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing' }} hover:shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     style="border-left: 3px solid {{ $color }}"
+                    @if($esFinal) title="{{ $columna['estado']->nombre }}: etapa final, ya no se puede mover" @endif
                 >
-                    {{-- Handle de arrastre --}}
-                    <div x-sort:handle
-                         @click.stop
-                         title="Arrastrar para mover de etapa"
-                         class="absolute top-2 right-2 w-6 h-6 rounded-md flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-100 cursor-grab active:cursor-grabbing">
+                    {{-- Icono de arrastre (decorativo; toda la tarjeta es arrastrable) --}}
+                    @unless($esFinal)
+                    <div class="absolute top-2 right-2 w-6 h-6 rounded-md flex items-center justify-center text-slate-300 pointer-events-none">
                         <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M7 4a1 1 0 110 2 1 1 0 010-2zm6 0a1 1 0 110 2 1 1 0 010-2zM7 9a1 1 0 110 2 1 1 0 010-2zm6 0a1 1 0 110 2 1 1 0 010-2zm-6 5a1 1 0 110 2 1 1 0 010-2zm6 0a1 1 0 110 2 1 1 0 010-2z"/>
                         </svg>
                     </div>
+                    @endunless
 
                     {{-- Nombre --}}
                     <div class="mb-1.5 flex items-start justify-between gap-1.5 pr-6">

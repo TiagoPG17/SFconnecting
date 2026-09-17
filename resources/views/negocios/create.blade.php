@@ -68,13 +68,15 @@
                         x-show="tipoVinculo === 'prospecto'"
                         x-transition
                         x-data="{
-                            query: '', selectedId: null, results: [], open: false, loading: false, timer: null,
+                            query: {{ Illuminate\Support\Js::from(request('prospecto_label', '')) }},
+                            selectedId: {{ request('prospecto_id') ? (int) request('prospecto_id') : 'null' }},
+                            results: [], open: false, loading: false, timer: null,
                             buscar() {
                                 clearTimeout(this.timer);
                                 if (this.query.length < 2) { this.results = []; this.open = false; return; }
                                 this.timer = setTimeout(async () => {
                                     this.loading = true;
-                                    const r = await $api('GET', '/api/prospectos?buscar=' + encodeURIComponent(this.query) + '&per_page=10');
+                                    const r = await $api('GET', '/api/prospectos?buscar=' + encodeURIComponent(this.query) + '&per_page=10&sin_convertir=1');
                                     this.results = r.data?.data ?? [];
                                     this.open = this.results.length > 0;
                                     this.loading = false;

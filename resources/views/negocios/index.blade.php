@@ -1,22 +1,18 @@
 <x-layouts.app title="Negocios">
     <x-slot name="actions">
+        <div class="flex items-center gap-2">
         <x-ui.button href="{{ route('negocios.kanban') }}" variant="secondary" size="sm">
             <x-ui.icon name="layout" class="w-4 h-4"/> Kanban
         </x-ui.button>
-        <x-ui.button href="{{ route('negocios.create') }}" variant="primary" size="sm">
-            <x-ui.icon name="plus" class="w-4 h-4"/> Nuevo negocio
-        </x-ui.button>
-    </x-slot>
-
-    @can('create', \App\Domain\Negocios\Models\Negocio::class)
-    <div class="mb-4" x-data="candidatosNegocioSgp()">
+        @if(auth()->user()->can('create', \App\Domain\Negocios\Models\Negocio::class) && \App\Support\AccesoSgp::permitido(auth()->user()))
+        <div x-data="candidatosNegocioSgp()">
         <button type="button" @click="abrir()"
-                class="inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-medium transition-colors">
-            <x-ui.icon name="bar-chart" class="w-3.5 h-3.5"/>
-            Cargar solicitudes de cotización (SGP)
+                class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 font-medium shadow-sm transition-colors">
+            <x-ui.icon name="bar-chart" class="w-4 h-4"/>
+            Cargar solicitudes de cotización
         </button>
 
-        <x-ui.modal title="Solicitudes de cotización con cliente asignado" size="xl">
+        <x-ui.modal title="Solicitudes de cotización — cliente o prospecto existente" size="xl">
             {{-- Paso 1: lista de solicitudes --}}
             <div class="space-y-3" x-show="!solicitudActual">
                 <div class="flex items-center justify-between gap-3">
@@ -45,6 +41,7 @@
                             <thead class="sticky top-0 bg-slate-50 border-b border-slate-200">
                                 <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
                                     <th class="px-3 py-2.5">Cliente</th>
+                                    <th class="px-3 py-2.5">Vínculo</th>
                                     <th class="px-3 py-2.5">Solicitud</th>
                                     <th class="px-3 py-2.5">Fecha</th>
                                     <th class="px-3 py-2.5">Comercial</th>
@@ -58,6 +55,11 @@
                                         <td class="px-3 py-2.5 max-w-[200px]">
                                             <p class="font-medium text-slate-900 truncate" x-text="item.cliente"></p>
                                             <p class="text-xs text-slate-400" x-text="'NIT: ' + (item.nit || '—')"></p>
+                                        </td>
+                                        <td class="px-3 py-2.5">
+                                            <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full border"
+                                                  :class="item.vinculo_tipo === 'cliente' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-blue-100 text-blue-700 border-blue-200'"
+                                                  x-text="item.vinculo_tipo === 'cliente' ? 'Cliente' : 'Prospecto'"></span>
                                         </td>
                                         <td class="px-3 py-2.5 font-mono text-xs text-slate-600 whitespace-nowrap" x-text="item.nro_solicitud"></td>
                                         <td class="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap" x-text="item.fecha_solicitud"></td>
@@ -141,7 +143,12 @@
             </div>
         </x-ui.modal>
     </div>
-    @endcan
+        @endif
+        <x-ui.button href="{{ route('negocios.create') }}" variant="primary" size="sm">
+            <x-ui.icon name="plus" class="w-4 h-4"/> Nuevo negocio
+        </x-ui.button>
+        </div>
+    </x-slot>
 
     {{-- Filtros --}}
     <x-ui.card class="p-4 mb-4"
@@ -344,13 +351,18 @@
             urlCrear(escala) {
                 const item = this.solicitudActual;
                 const params = new URLSearchParams({
-                    cliente_id: item.cliente_id,
-                    cliente_label: item.cliente + (item.nit ? ' — ' + item.nit : ''),
                     nombre_negocio: item.cliente || '',
                     valor_estimado: escala.valor_total_escala || 0,
                     descripcion: `Escala ${escala.escala} · ${item.tipo_cotizacion || ''} ${item.descripcion || ''}`.trim(),
                     nro_solicitud_cotizacion: item.nro_solicitud,
                 });
+                if (item.vinculo_tipo === 'prospecto') {
+                    params.set('prospecto_id', item.prospecto_id);
+                    params.set('prospecto_label', item.cliente + ' (' + item.nro_solicitud + ')');
+                } else {
+                    params.set('cliente_id', item.cliente_id);
+                    params.set('cliente_label', item.cliente + (item.nit ? ' — ' + item.nit : ''));
+                }
                 return '{{ route('negocios.create') }}?' + params.toString();
             },
         };

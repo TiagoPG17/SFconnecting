@@ -45,7 +45,11 @@ class NegocioService
         $estadoAnteriorId = $negocio->pipeline_estado_id;
         $estadoAnterior   = $negocio->pipelineEstado?->nombre;
 
-        if ($dto->pipelineEstadoId !== null) {
+        if ($dto->pipelineEstadoId !== null && $dto->pipelineEstadoId !== $estadoAnteriorId) {
+            if ($negocio->pipelineEstado?->es_final) {
+                throw NegocioException::yaFinalizado($negocio->nombre_negocio);
+            }
+
             /** @var PipelineEstado|null $nuevoEstado */
             $nuevoEstado = PipelineEstado::find($dto->pipelineEstadoId);
 

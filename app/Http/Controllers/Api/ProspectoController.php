@@ -21,10 +21,11 @@ use App\Http\Requests\Prospectos\ConvertirProspectoRequest;
 use App\Http\Requests\Prospectos\CrearProspectoRequest;
 use App\Http\Resources\Prospectos\ProspectoResource;
 use App\Http\Responses\ApiResponse;
+use App\Support\AccesoSgp;
+use App\Support\NombreEmpresa;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Throwable;
 
 class ProspectoController extends Controller
@@ -41,7 +42,7 @@ class ProspectoController extends Controller
 
         $filtros = $request->only([
             'estado_pipeline_id', 'asesor_id', 'prioridad_id', 'origen_id',
-            'buscar', 'fecha_desde', 'fecha_hasta',
+            'buscar', 'fecha_desde', 'fecha_hasta', 'sin_convertir',
         ]);
 
         $resultado = $this->repo->paginar($filtros, (int) $request->get('per_page', 15));
@@ -121,19 +122,28 @@ class ProspectoController extends Controller
     }
 
     /**
-     * Solicitudes de cotización de SGP sin cliente asignado, para el modal
-     * "Cargar desde cotizaciones" de la pantalla de Prospectos. Excluye las que
-     * ya se usaron para crear un prospecto (nro_solicitud_cotizacion) y las que
-     * ya son cliente en SFconnecting (por NIT, aunque SGP no las haya cruzado
-     * contra su propio maestro). Marca con posible_duplicado_prospecto las que
-     * coinciden por nombre normalizado con un prospecto ya existente (Prospecto
-     * no guarda NIT, así que aquí solo se avisa, no se excluye).
+     * Solicitudes de cotización de SGP que todavía NO existen en SFconnecting
+     * (ni como Cliente por NIT, ni como Prospecto por nombre), para el modal
+     * "Cargar desde cotizaciones" de la pantalla de Prospectos — son leads
+     * genuinamente nuevos. No se filtra por situacion_cliente de SGP: si la
+     * empresa ya es Cliente o Prospecto, le toca al modal de Negocios (puede
+     * tener una negociación), no a este. Excluye las que ya se usaron para
+     * crear un prospecto (nro_solicitud_cotizacion).
      */
     public function candidatosSgp(Request $request): JsonResponse
     {
         $this->authorize('create', Prospecto::class);
 
+        if (! AccesoSgp::permitido($request->user())) {
+            return ApiResponse::error('Esta función es exclusiva de comerciales de Formacol.', [], 403);
+        }
+
         try {
+            $vendedorSgp = $this->vendedorSgpDelUsuario($request);
+            if ($vendedorSgp === false) {
+                return ApiResponse::error('Tu usuario no tiene un código de SGP asignado. Pídele a un administrador que te lo configure en Usuarios.', [], 422);
+            }
+
             $yaConvertidas = Prospecto::whereNotNull('nro_solicitud_cotizacion')
                 ->pluck('nro_solicitud_cotizacion');
 
@@ -144,30 +154,29 @@ class ProspectoController extends Controller
                 ->flip();
 
             $prospectosPorNombre = Prospecto::pluck('empresa')
-                ->map(fn ($empresa) => $this->normalizarNombre($empresa))
+                ->map(fn ($empresa) => NombreEmpresa::normalizar($empresa))
                 ->filter()
                 ->flip();
 
             $candidatos = $this->cotizaciones
-                ->candidatosProspecto($request->query('buscar'))
+                ->candidatosVinculacion($request->query('buscar'), $vendedorSgp)
                 ->reject(fn ($s) => $yaConvertidas->contains((string) $s->nro_solicitud))
                 ->reject(fn ($s) => $s->nit && $nitsClientes->has(trim((string) $s->nit)))
-                ->map(function ($s) use ($prospectosPorNombre) {
-                    $nombreCliente = $s->cliente ?: $s->cliente_digitado;
+                ->reject(function ($s) use ($prospectosPorNombre) {
+                    $nombre = NombreEmpresa::normalizar($s->cliente ?: $s->cliente_digitado);
 
-                    return [
-                        'nro_solicitud'   => $s->nro_solicitud,
-                        'fecha_solicitud' => $s->fecha_solicitud?->format('d/m/Y'),
-                        'comercial'       => $s->nombre_vendedor ?: $s->vendedor,
-                        'nit'             => $s->nit,
-                        'cliente'         => $nombreCliente,
-                        'tipo_cotizacion' => $s->tipo_cotizacion,
-                        'escalas'         => $s->escalas,
-                        'partes'          => $s->partes,
-                        'posible_duplicado_prospecto' => $nombreCliente !== null
-                            && $prospectosPorNombre->has($this->normalizarNombre($nombreCliente)),
-                    ];
+                    return $nombre !== '' && $prospectosPorNombre->has($nombre);
                 })
+                ->map(fn ($s) => [
+                    'nro_solicitud'   => $s->nro_solicitud,
+                    'fecha_solicitud' => $s->fecha_solicitud?->format('d/m/Y'),
+                    'comercial'       => $s->nombre_vendedor ?: $s->vendedor,
+                    'nit'             => $s->nit,
+                    'cliente'         => $s->cliente ?: $s->cliente_digitado,
+                    'tipo_cotizacion' => $s->tipo_cotizacion,
+                    'escalas'         => $s->escalas,
+                    'partes'          => $s->partes,
+                ])
                 ->values();
 
             return ApiResponse::success($candidatos);
@@ -178,17 +187,20 @@ class ProspectoController extends Controller
         }
     }
 
-    /** Mayúsculas, sin tildes/puntos/espacios, SAS≈SA — mismo criterio que usa SGP para cruzar clientes. */
-    private function normalizarNombre(?string $nombre): string
+    /**
+     * Restringe los candidatos de SGP al código de vendedor del comercial que
+     * los pide. Admin/gerente ven todo (null = sin restricción). Un comercial
+     * sin código asignado devuelve `false` — la ruta lo traduce en un error
+     * explícito en vez de mostrarle todo o dejarlo con la lista vacía sin explicar por qué.
+     */
+    private function vendedorSgpDelUsuario(Request $request): string|false|null
     {
-        if (! $nombre) {
-            return '';
+        $user = $request->user();
+
+        if ($user->hasAnyRole(['admin', 'gerente'])) {
+            return null;
         }
 
-        $normalizado = Str::of($nombre)->ascii()->upper()->toString();
-        $normalizado = preg_replace('/[^A-Z0-9 ]/', '', $normalizado);
-        $normalizado = trim(preg_replace('/\bSAS\b/', 'SA', $normalizado));
-
-        return str_replace(' ', '', $normalizado);
+        return $user->vendedor_sgp ?: false;
     }
 }

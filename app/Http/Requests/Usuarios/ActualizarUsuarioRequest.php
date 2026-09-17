@@ -23,8 +23,9 @@ class ActualizarUsuarioRequest extends FormRequest
         return [
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'email', 'max:254', Rule::unique('users', 'email')->ignore($userId)],
-            'password' => ['nullable', 'string', 'min:8', 'max:72', 'confirmed'],
-            'rol'      => ['required', 'string', "in:{$rolesValidos}"],
+            'password'     => ['nullable', 'string', 'min:8', 'max:72', 'confirmed'],
+            'rol'          => ['required', 'string', "in:{$rolesValidos}"],
+            'vendedor_sgp' => ['nullable', 'string', 'max:100'],
         ];
     }
 

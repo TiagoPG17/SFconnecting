@@ -59,8 +59,9 @@ class UsuarioController extends Controller
     public function update(ActualizarUsuarioRequest $request, User $usuario): JsonResponse
     {
         $datos = [
-            'name'  => $request->name,
-            'email' => $request->email,
+            'name'         => $request->name,
+            'email'        => $request->email,
+            'vendedor_sgp' => $request->vendedor_sgp,
         ];
 
         if ($request->filled('password')) {
