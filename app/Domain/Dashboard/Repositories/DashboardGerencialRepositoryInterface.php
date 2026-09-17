@@ -27,9 +27,6 @@ interface DashboardGerencialRepositoryInterface
     /** Facturado del mes/año dado, agrupado por compañía (dbo.vw_CRM_Facturacion_Mes). */
     public function facturadoDelMes(int $compania, int $anio, int $mes): Collection;
 
-    /** Pedidos pendientes del mes/año dado (por fecha de pedido), agrupado por compañía. */
-    public function pendienteDelMes(int $compania, int $anio, int $mes): Collection;
-
     /** Resumen de pedidos con entrega mañana/pasado mañana, agrupado por cierre y compañía. */
     public function cierresProximos(int $compania): Collection;
 
@@ -42,12 +39,12 @@ interface DashboardGerencialRepositoryInterface
     /** Ranking de clientes por facturación del mes/año dado. */
     public function facturacionPorCliente(int $compania, int $anio, int $mes, int $limite = 12): Collection;
 
-    /** Ranking de clientes por valor de pedidos pendientes del mes/año dado (por fecha de pedido). */
-    public function pedidosPendientesPorCliente(int $compania, int $anio, int $mes, int $limite = 12): Collection;
-
-    /** Drill-down: líneas de pedidos pendientes de un cliente puntual en el mes/año dado. */
-    public function pedidosPendientesDetallePorCliente(int $compania, int $anio, int $mes, string $cliente): Collection;
-
     /** Facturación del mes/año dado, agrupada por vendedor y compañía. */
     public function facturacionPorVendedor(int $compania, int $anio, int $mes): Collection;
+
+    /** Canasta futura (resumen): pedidos pendientes agrupados por mes de compromiso, desde el mes actual en adelante. */
+    public function canastaFuturaResumen(int $compania): Collection;
+
+    /** Canasta futura (detalle): líneas de pedidos pendientes desde el mes actual en adelante, por fecha de compromiso. */
+    public function canastaFuturaDetalle(int $compania, int $limite = 500): Collection;
 }

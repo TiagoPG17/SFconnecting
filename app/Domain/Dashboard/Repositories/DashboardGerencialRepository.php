@@ -160,23 +160,6 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->get();
     }
 
-    public function pendienteDelMes(int $compania, int $anio, int $mes): Collection
-    {
-        return DB::connection('erp_contiflex')
-            ->table('dbo.vw_CRM_Pedidos_Pendientes')
-            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
-            ->whereYear('FechaPedido', $anio)
-            ->whereMonth('FechaPedido', $mes)
-            ->selectRaw('
-                Compania                     AS compania,
-                COUNT(DISTINCT NroDocumento) AS num_pedidos,
-                SUM(ValorSubtotalLocal)      AS subtotal_pendiente
-            ')
-            ->groupBy('Compania')
-            ->orderBy('Compania')
-            ->get();
-    }
-
     public function cierresProximos(int $compania): Collection
     {
         $cierre = "CASE WHEN CAST(FechaEntrega AS date) = CAST(DATEADD(DAY,1,GETDATE()) AS date)
@@ -279,50 +262,6 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->get();
     }
 
-    public function pedidosPendientesPorCliente(int $compania, int $anio, int $mes, int $limite = 12): Collection
-    {
-        return DB::connection('erp_contiflex')
-            ->table('dbo.vw_CRM_Pedidos_Pendientes')
-            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
-            ->whereYear('FechaPedido', $anio)
-            ->whereMonth('FechaPedido', $mes)
-            ->selectRaw('
-                Compania                     AS compania,
-                RazonSocialCliente           AS cliente,
-                COUNT(DISTINCT NroDocumento) AS num_pedidos,
-                SUM(CantPendiente)           AS cant_pendiente,
-                SUM(ValorSubtotalLocal)      AS total_pendiente
-            ')
-            ->groupBy('Compania', 'RazonSocialCliente')
-            ->orderByDesc('total_pendiente')
-            ->limit($limite)
-            ->get();
-    }
-
-    public function pedidosPendientesDetallePorCliente(int $compania, int $anio, int $mes, string $cliente): Collection
-    {
-        return DB::connection('erp_contiflex')
-            ->table('dbo.vw_CRM_Pedidos_Pendientes')
-            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
-            ->whereYear('FechaPedido', $anio)
-            ->whereMonth('FechaPedido', $mes)
-            ->where('RazonSocialCliente', $cliente)
-            ->selectRaw('
-                Compania             AS compania,
-                RazonSocialCliente   AS cliente,
-                NroDocumento         AS nro_documento,
-                FechaPedido          AS fecha_pedido,
-                FechaEntrega         AS fecha_entrega,
-                DescItem             AS desc_item,
-                CantPendiente        AS cant_pendiente,
-                PrecioUnit           AS precio_unit,
-                ValorSubtotalLocal   AS valor_subtotal,
-                Estado               AS estado
-            ')
-            ->orderBy('NroDocumento')
-            ->get();
-    }
-
     public function facturacionPorVendedor(int $compania, int $anio, int $mes): Collection
     {
         return DB::connection('erp_contiflex')
@@ -338,6 +277,54 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ')
             ->groupBy('Compania', 'CodVendedor')
             ->orderByDesc('facturado')
+            ->get();
+    }
+
+    public function canastaFuturaResumen(int $compania): Collection
+    {
+        $desde = \Carbon\Carbon::now()->startOfMonth();
+
+        return DB::connection('erp_contiflex')
+            ->table('dbo.vw_CRM_Pedidos_Pendientes')
+            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+            ->where('FechaEntrega', '>=', $desde)
+            ->where(fn ($q) => $q->where('Compania', '!=', 2)->orWhere('RazonSocialCliente', '!=', 'FORMACOL S.A.'))
+            ->selectRaw('
+                Compania                     AS compania,
+                YEAR(FechaEntrega)           AS anio_entrega,
+                MONTH(FechaEntrega)          AS mes_entrega,
+                COUNT(DISTINCT NroDocumento) AS num_pedidos,
+                SUM(CantPendiente)           AS cant_pendiente,
+                SUM(ValorSubtotalLocal)      AS total_comprometido
+            ')
+            ->groupByRaw('Compania, YEAR(FechaEntrega), MONTH(FechaEntrega)')
+            ->orderByRaw('Compania, YEAR(FechaEntrega), MONTH(FechaEntrega)')
+            ->get();
+    }
+
+    public function canastaFuturaDetalle(int $compania, int $limite = 500): Collection
+    {
+        $desde = \Carbon\Carbon::now()->startOfMonth();
+
+        return DB::connection('erp_contiflex')
+            ->table('dbo.vw_CRM_Pedidos_Pendientes')
+            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+            ->where('FechaEntrega', '>=', $desde)
+            ->where(fn ($q) => $q->where('Compania', '!=', 2)->orWhere('RazonSocialCliente', '!=', 'FORMACOL S.A.'))
+            ->selectRaw('
+                Compania             AS compania,
+                YEAR(FechaEntrega)   AS anio_entrega,
+                MONTH(FechaEntrega)  AS mes_entrega,
+                RazonSocialCliente   AS cliente,
+                NroDocumento         AS nro_documento,
+                FechaEntrega         AS fecha_entrega,
+                DescItem             AS desc_item,
+                CantPendiente        AS cant_pendiente,
+                ValorSubtotalLocal   AS valor_subtotal,
+                Estado               AS estado
+            ')
+            ->orderByRaw('YEAR(FechaEntrega), MONTH(FechaEntrega), RazonSocialCliente')
+            ->limit($limite)
             ->get();
     }
 

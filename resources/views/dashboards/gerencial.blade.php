@@ -625,9 +625,9 @@
         <p class="text-[11px] text-slate-400 mt-0.5" x-text="totalDocumentosFacturados + ' facturas'"></p>
       </div>
       <div class="dash-card p-4">
-        <p class="text-xs text-slate-500">Pendiente del mes</p>
+        <p class="text-xs text-slate-500">Pendiente (canasta)</p>
         <p class="text-2xl font-bold mt-1 tnum text-slate-900" x-text="money(totalPendiente)"></p>
-        <p class="text-[11px] text-slate-400 mt-0.5" x-text="totalNumPedidos + ' pedidos'"></p>
+        <p class="text-[11px] text-slate-400 mt-0.5" x-text="totalNumPedidos + ' pedidos · mes actual y siguientes'"></p>
       </div>
       <div class="dash-card p-4">
         <p class="text-xs text-slate-500">Cierra mañana</p>
@@ -642,17 +642,17 @@
     </div>
 
     {{-- Desglose por compañía (sólo cuando se ven "Todas") --}}
-    <div class="flex flex-wrap items-center gap-2 mb-5" x-show="filtro.cia === 0 && (facturadoMes.length > 1 || pendienteMes.length > 1)">
+    <div class="flex flex-wrap items-center gap-2 mb-5" x-show="filtro.cia === 0 && (facturadoMes.length > 1 || canastaPorCompania.length > 1)">
       <template x-for="f in facturadoMes" :key="'fact-'+f.compania">
         <span class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1">
           <span class="font-semibold text-slate-700" x-text="ciaName(f.compania)"></span> facturado:
           <span class="tnum font-medium text-teal-700" x-text="money(f.subtotal_mes)"></span>
         </span>
       </template>
-      <template x-for="p in pendienteMes" :key="'pend-'+p.compania">
+      <template x-for="p in canastaPorCompania" :key="'pend-'+p.compania">
         <span class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1">
           <span class="font-semibold text-slate-700" x-text="ciaName(p.compania)"></span> pendiente:
-          <span class="tnum font-medium text-amber-700" x-text="money(p.subtotal_pendiente)"></span>
+          <span class="tnum font-medium text-amber-700" x-text="money(p.total_comprometido)"></span>
         </span>
       </template>
     </div>
@@ -702,34 +702,71 @@
 
     <div class="grid lg:grid-cols-2 gap-5">
 
-      {{-- Top clientes con pedidos pendientes (click = drill-down) --}}
+      {{-- Canasta futura: pedidos pendientes por mes de compromiso (mes actual + próximos) --}}
       <div class="dash-card">
         <div class="h-1.5 w-full rounded-t-xl bg-gradient-to-r from-amber-500 to-amber-400"></div>
         <div class="p-5">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="font-semibold text-slate-800">Top clientes · pedidos pendientes</h2>
-            <span class="text-[11px] text-slate-400">Click en un cliente para ver el detalle</span>
+            <h2 class="font-semibold text-slate-800">Canasta futura · pedidos pendientes</h2>
+            <span class="text-[11px] text-slate-400">Click en un mes para ver el detalle</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-xs">
               <thead>
                 <tr class="border-b border-slate-100 bg-slate-50/70">
-                  <th @click="sortOnCliente('cliente')" :class="sortCliente.by==='cliente'?'text-amber-700':'text-slate-500'" class="text-left py-2.5 pr-3 pl-3 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors"><span class="flex items-center gap-1">Cliente <span x-text="arrowCliente('cliente')" class="opacity-50"></span></span></th>
-                  <th @click="sortOnCliente('num_pedidos')" :class="sortCliente.by==='num_pedidos'?'text-amber-700':'text-slate-500'" class="text-center py-2.5 px-2 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors"><span class="flex items-center justify-center gap-1">Pedidos <span x-text="arrowCliente('num_pedidos')" class="opacity-50"></span></span></th>
-                  <th @click="sortOnCliente('total_pendiente')" :class="sortCliente.by==='total_pendiente'?'text-amber-700':'text-slate-500'" class="text-right py-2.5 pl-2 pr-3 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors"><span class="flex items-center justify-end gap-1">Valor pendiente <span x-text="arrowCliente('total_pendiente')" class="opacity-50"></span></span></th>
+                  <th class="text-left py-2.5 pr-3 pl-3 font-semibold text-slate-500">Mes de compromiso</th>
+                  <th class="text-center py-2.5 px-2 font-semibold text-slate-500">Pedidos</th>
+                  <th class="text-right py-2.5 px-2 font-semibold text-slate-500">Cant. pendiente</th>
+                  <th class="text-right py-2.5 pl-2 pr-3 font-semibold text-slate-500">Total comprometido</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-50">
-                <template x-for="(c, idx) in pedidosClienteOrdenado" :key="idx">
-                  <tr class="hover:bg-amber-50/60 cursor-pointer transition-colors" @click="abrirDetalleCliente(c.cliente)">
-                    <td class="py-2.5 pr-3 pl-3 font-medium text-slate-800"><span x-text="c.cliente"></span><span x-show="filtro.cia===0" class="text-slate-400 font-normal" x-text="' · '+ciaName(c.compania)"></span></td>
-                    <td class="text-center py-2.5 px-2 text-slate-500" x-text="c.num_pedidos"></td>
-                    <td class="text-right py-2.5 pl-2 pr-3 font-bold text-amber-700 whitespace-nowrap" x-text="money(c.total_pendiente)"></td>
+                <template x-for="(m, idx) in canastaResumen" :key="idx">
+                  <tr class="hover:bg-amber-50/60 cursor-pointer transition-colors" @click="toggleMes(m)">
+                    <td class="py-2.5 pr-3 pl-3 font-medium text-slate-800">
+                      <span class="inline-block mr-1 text-slate-400" x-text="mesAbierto===claveMes(m) ? '▾' : '▸'"></span>
+                      <span x-text="nombresMesCorto[m.mes_entrega-1] + ' ' + m.anio_entrega"></span>
+                      <span x-show="filtro.cia===0" class="text-slate-400 font-normal" x-text="' · '+ciaName(m.compania)"></span>
+                    </td>
+                    <td class="text-center py-2.5 px-2 text-slate-500" x-text="m.num_pedidos"></td>
+                    <td class="text-right py-2.5 px-2 text-slate-600 tnum" x-text="Number(m.cant_pendiente||0).toLocaleString('es-CO')"></td>
+                    <td class="text-right py-2.5 pl-2 pr-3 font-bold text-amber-700 whitespace-nowrap" x-text="money(m.total_comprometido)"></td>
                   </tr>
                 </template>
-                <tr x-show="pedidosCliente.length === 0"><td colspan="3" class="py-6 text-center text-sm text-slate-400">Sin pedidos pendientes en este período.</td></tr>
+                <tr x-show="canastaResumen.length === 0"><td colspan="4" class="py-6 text-center text-sm text-slate-400">Sin pedidos pendientes desde el mes actual en adelante.</td></tr>
               </tbody>
             </table>
+          </div>
+
+          {{-- Detalle del mes seleccionado --}}
+          <div x-show="mesAbierto" class="mt-4 border-t border-slate-100 pt-4">
+            <div class="overflow-x-auto max-h-72 overflow-y-auto">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr class="border-b border-slate-100 bg-slate-50/70 sticky top-0">
+                    <th class="text-left py-2 px-3 font-semibold text-slate-400 uppercase tracking-wider">Cliente</th>
+                    <th class="text-left py-2 px-3 font-semibold text-slate-400 uppercase tracking-wider">Documento</th>
+                    <th class="text-left py-2 px-3 font-semibold text-slate-400 uppercase tracking-wider">Ítem</th>
+                    <th class="text-right py-2 px-3 font-semibold text-slate-400 uppercase tracking-wider">Entrega</th>
+                    <th class="text-right py-2 px-3 font-semibold text-slate-400 uppercase tracking-wider">Valor</th>
+                    <th class="text-left py-2 px-3 font-semibold text-slate-400 uppercase tracking-wider">Estado</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                  <template x-for="(l, idx) in canastaDetalleMesAbierto" :key="idx">
+                    <tr class="hover:bg-slate-50/60 transition-colors">
+                      <td class="py-2 px-3 font-medium text-slate-700" x-text="l.cliente"></td>
+                      <td class="py-2 px-3 font-mono text-slate-500 whitespace-nowrap" x-text="l.nro_documento"></td>
+                      <td class="py-2 px-3 text-slate-600" x-text="l.desc_item"></td>
+                      <td class="py-2 px-3 text-right whitespace-nowrap text-slate-500" x-text="l.fecha_entrega ? new Date(l.fecha_entrega).toLocaleDateString('es-CO') : '—'"></td>
+                      <td class="py-2 px-3 text-right font-semibold whitespace-nowrap text-slate-700" x-text="money(l.valor_subtotal)"></td>
+                      <td class="py-2 px-3 text-slate-500" x-text="l.estado"></td>
+                    </tr>
+                  </template>
+                  <tr x-show="canastaDetalleMesAbierto.length === 0"><td colspan="6" class="py-6 text-center text-sm text-slate-400">Sin líneas pendientes para este mes.</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -764,67 +801,8 @@
       </div>
 
     </div>
-
     </div>
     {{-- ===== FIN SECCIÓN 3 ===== --}}
-
-    {{-- Modal drill-down: líneas de pedidos pendientes de un cliente --}}
-    <div x-show="detalle.abierto"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0 scale-95"
-         x-transition:enter-end="opacity-100 scale-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100 scale-100"
-         x-transition:leave-end="opacity-0 scale-95"
-         class="fixed inset-0 z-50 flex items-center justify-center p-6"
-         style="display:none">
-      <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" @click="cerrarDetalleCliente()"></div>
-      <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
-        <div class="bg-gradient-to-r from-amber-500 to-amber-400 px-6 py-4 flex items-center justify-between gap-4">
-          <div class="min-w-0">
-            <p class="text-white/70 text-xs font-semibold uppercase tracking-widest">Pedidos pendientes</p>
-            <h3 class="text-white font-bold text-lg leading-tight truncate mt-0.5" x-text="detalle.cliente"></h3>
-          </div>
-          <button @click="cerrarDetalleCliente()" class="flex-shrink-0 text-white/70 hover:text-white hover:bg-white/15 transition p-2 rounded-xl">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
-        </div>
-        <div class="flex-1 overflow-y-auto">
-          <div x-show="detalle.cargando" class="flex flex-col items-center justify-center py-20 gap-3">
-            <svg class="animate-spin w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-            </svg>
-          </div>
-          <div x-show="detalle.error && !detalle.cargando" class="text-center text-sm text-red-400 py-20" x-text="detalle.error"></div>
-          <table x-show="!detalle.cargando && !detalle.error && detalle.lineas.length > 0" class="w-full text-xs">
-            <thead>
-              <tr class="border-b-2 border-slate-100 bg-slate-50/80 sticky top-0">
-                <th class="text-left py-3 px-5 font-semibold text-slate-400 uppercase tracking-wider">Documento</th>
-                <th class="text-left py-3 px-3 font-semibold text-slate-400 uppercase tracking-wider">Ítem</th>
-                <th class="text-right py-3 px-3 font-semibold text-slate-400 uppercase tracking-wider">Cant. pend.</th>
-                <th class="text-right py-3 px-3 font-semibold text-slate-400 uppercase tracking-wider">Entrega</th>
-                <th class="text-right py-3 px-3 font-semibold text-slate-400 uppercase tracking-wider">Valor</th>
-                <th class="text-left py-3 px-5 font-semibold text-slate-400 uppercase tracking-wider">Estado</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-50">
-              <template x-for="(l, idx) in detalle.lineas" :key="idx">
-                <tr class="hover:bg-slate-50/60 transition-colors">
-                  <td class="py-2.5 px-5 font-mono text-slate-600 whitespace-nowrap" x-text="l.nro_documento"></td>
-                  <td class="py-2.5 px-3 text-slate-700" x-text="l.desc_item"></td>
-                  <td class="py-2.5 px-3 text-right tnum text-slate-600" x-text="Number(l.cant_pendiente||0).toLocaleString('es-CO')"></td>
-                  <td class="py-2.5 px-3 text-right whitespace-nowrap text-slate-500" x-text="l.fecha_entrega ? new Date(l.fecha_entrega).toLocaleDateString('es-CO') : '—'"></td>
-                  <td class="py-2.5 px-3 text-right font-semibold whitespace-nowrap text-slate-800" x-text="money(l.valor_subtotal)"></td>
-                  <td class="py-2.5 px-5 text-slate-500" x-text="l.estado"></td>
-                </tr>
-              </template>
-            </tbody>
-          </table>
-          <div x-show="!detalle.cargando && !detalle.error && detalle.lineas.length === 0" class="text-center text-sm text-slate-400 py-20">Sin líneas pendientes para este cliente en el período seleccionado.</div>
-        </div>
-      </div>
-    </div>
 
   </div>
 
@@ -1110,29 +1088,37 @@ function informeComercial(datos){
     cargando: false,
 
     facturadoMes:         datos.facturadoMes ?? [],
-    pendienteMes:         datos.pendienteMes ?? [],
     cierresProximos:      datos.cierresProximos ?? [],
     pedidosPorCerrar:      datos.pedidosPorCerrar ?? [],
     facturacionTendencia: datos.facturacionTendencia ?? [],
     facturacionCliente:   datos.facturacionCliente ?? [],
-    pedidosCliente:       datos.pedidosCliente ?? [],
+    canastaResumen:       datos.canastaFuturaResumen ?? [],
+    canastaDetalle:       datos.canastaFuturaDetalle ?? [],
+    mesAbierto: null,
 
     nombresMes: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
     nombresMesCorto: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
     aniosDisponibles: [{{ now()->year - 1 }}, {{ now()->year }}, {{ now()->year + 1 }}],
 
-    sortCliente: { by: 'total_pendiente', dir: -1 },
     sortFactura: { by: 'facturado', dir: -1 },
-
-    detalle: { abierto: false, cargando: false, cliente: '', lineas: [], error: null },
 
     get totalFacturado(){ return this.facturadoMes.reduce((s,f)=>s+Number(f.subtotal_mes||0),0); },
     get totalDocumentosFacturados(){ return this.facturadoMes.reduce((s,f)=>s+Number(f.documentos||0),0); },
-    get totalPendiente(){ return this.pendienteMes.reduce((s,p)=>s+Number(p.subtotal_pendiente||0),0); },
-    get totalNumPedidos(){ return this.pendienteMes.reduce((s,p)=>s+Number(p.num_pedidos||0),0); },
+    get totalPendiente(){ return this.canastaResumen.reduce((s,m)=>s+Number(m.total_comprometido||0),0); },
+    get totalNumPedidos(){ return this.canastaResumen.reduce((s,m)=>s+Number(m.num_pedidos||0),0); },
+    get canastaPorCompania(){
+      const map = {};
+      this.canastaResumen.forEach(m => { map[m.compania] = (map[m.compania]||0) + Number(m.total_comprometido||0); });
+      return Object.keys(map).map(k => ({ compania: Number(k), total_comprometido: map[k] }));
+    },
 
-    get pedidosClienteOrdenado(){ return this.ordenar(this.pedidosCliente, this.sortCliente); },
     get facturacionClienteOrdenado(){ return this.ordenar(this.facturacionCliente, this.sortFactura); },
+
+    claveMes(m){ return m.compania+'-'+m.anio_entrega+'-'+m.mes_entrega; },
+    toggleMes(m){ const k = this.claveMes(m); this.mesAbierto = (this.mesAbierto === k) ? null : k; },
+    get canastaDetalleMesAbierto(){
+      return this.mesAbierto ? this.canastaDetalle.filter(l => this.claveMes(l) === this.mesAbierto) : [];
+    },
 
     ordenar(arr, s){
       return [...arr].sort((a,b)=>{
@@ -1142,9 +1128,7 @@ function informeComercial(datos){
         return (x<y?-1:x>y?1:0)*s.dir;
       });
     },
-    sortOnCliente(f){ this.sortCliente.by===f ? this.sortCliente.dir*=-1 : (this.sortCliente.by=f, this.sortCliente.dir=1); },
     sortOnFactura(f){ this.sortFactura.by===f ? this.sortFactura.dir*=-1 : (this.sortFactura.by=f, this.sortFactura.dir=1); },
-    arrowCliente(f){ return this.sortCliente.by!==f ? '↕' : this.sortCliente.dir===1 ? '↑' : '↓'; },
     arrowFactura(f){ return this.sortFactura.by!==f ? '↕' : this.sortFactura.dir===1 ? '↑' : '↓'; },
 
     cierreCant(tipo){ return this.cierresProximos.filter(c=>c.cierre===tipo).reduce((s,c)=>s+Number(c.num_pedidos||0),0); },
@@ -1161,12 +1145,13 @@ function informeComercial(datos){
         if (!res.ok) throw new Error();
         const data = await res.json();
         this.facturadoMes         = data.facturadoMes ?? [];
-        this.pendienteMes         = data.pendienteMes ?? [];
         this.cierresProximos      = data.cierresProximos ?? [];
         this.pedidosPorCerrar     = data.pedidosPorCerrar ?? [];
         this.facturacionTendencia = data.facturacionTendencia ?? [];
         this.facturacionCliente   = data.facturacionCliente ?? [];
-        this.pedidosCliente       = data.pedidosCliente ?? [];
+        this.canastaResumen       = data.canastaFuturaResumen ?? [];
+        this.canastaDetalle       = data.canastaFuturaDetalle ?? [];
+        this.mesAbierto           = null;
         this.$nextTick(() => this.renderChart());
       } catch {
         // Si falla, se deja lo último cargado en pantalla (no se rompe la vista).
@@ -1174,25 +1159,6 @@ function informeComercial(datos){
         this.cargando = false;
       }
     },
-
-    async abrirDetalleCliente(cliente){
-      this.detalle.cliente  = cliente;
-      this.detalle.abierto  = true;
-      this.detalle.cargando = true;
-      this.detalle.lineas   = [];
-      this.detalle.error    = null;
-      try {
-        const url = `{{ route('gerencial.informe-comercial.detalle-cliente') }}?cliente=${encodeURIComponent(cliente)}&anio=${this.filtro.anio}&mes=${this.filtro.mes}&cia=${this.filtro.cia}`;
-        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-        if (!res.ok) throw new Error();
-        this.detalle.lineas = await res.json();
-      } catch {
-        this.detalle.error = 'No se pudo cargar el detalle. Intenta de nuevo.';
-      } finally {
-        this.detalle.cargando = false;
-      }
-    },
-    cerrarDetalleCliente(){ this.detalle.abierto = false; this.detalle.lineas = []; this.detalle.error = null; },
 
     construirDatasetsTendencia(){
       // El driver de SQL Server suele devolver los enteros como texto (ej. "8" en vez de 8).

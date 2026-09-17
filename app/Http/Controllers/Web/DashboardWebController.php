@@ -141,21 +141,6 @@ class DashboardWebController extends Controller
         return response()->json($svc->informeComercial($compania, $anio, $mes));
     }
 
-    /** Drill-down: líneas de pedidos pendientes de un cliente puntual. */
-    public function informeComercialDetalleCliente(Request $request): JsonResponse
-    {
-        [$compania, $anio, $mes] = $this->parametrosInformeComercial($request);
-        $cliente = (string) $request->input('cliente', '');
-
-        if ($cliente === '') {
-            return response()->json(['error' => 'Cliente requerido'], 422);
-        }
-
-        $svc = new DashboardGerencialService($this->gerencialRepo, $compania, $anio, [sprintf('%d-%02d', $anio, $mes)]);
-
-        return response()->json($svc->pedidosPendientesDetalleCliente($compania, $anio, $mes, $cliente));
-    }
-
     /** @return array{0: int, 1: int, 2: int} [compania, anio, mes] */
     private function parametrosInformeComercial(Request $request): array
     {
