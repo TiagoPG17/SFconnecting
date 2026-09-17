@@ -6,12 +6,14 @@ namespace App\Domain\Prospectos\Models;
 
 use App\Domain\Clientes\Models\Cliente;
 use App\Domain\Maestros\Models\MaestroComercial;
+use App\Domain\Negocios\Models\Negocio;
 use App\Domain\Pipeline\Models\PipelineEstado;
 use App\Models\User;
 use Database\Factories\ProspectoFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -82,6 +84,11 @@ class Prospecto extends Model
     public function convertidoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'convertido_por');
+    }
+
+    public function negocios(): HasMany
+    {
+        return $this->hasMany(Negocio::class, 'prospecto_id')->latest();
     }
 
     public function auditoria(): MorphMany

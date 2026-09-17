@@ -57,7 +57,13 @@ class SeguimientoRepository implements SeguimientoRepositoryInterface
 
     public function paginar(array $filtros = [], int $porPagina = 15): LengthAwarePaginator
     {
-        $query = Seguimiento::with(['cliente', 'prospecto', 'negocio', 'asesor', 'contacto']);
+        $query = Seguimiento::with([
+            'cliente', 'asesor', 'contacto',
+            'prospecto.estadoPipeline',
+            'prospecto.negocios.pipelineEstado',
+            'negocio.pipelineEstado',
+            'negocio.prospecto.estadoPipeline',
+        ]);
 
         if (! empty($filtros['cliente_id'])) {
             $query->where('cliente_id', $filtros['cliente_id']);
@@ -65,8 +71,8 @@ class SeguimientoRepository implements SeguimientoRepositoryInterface
 
         if (($filtros['entidad'] ?? null) === 'prospecto') {
             $query->whereNotNull('prospecto_id');
-        } elseif (($filtros['entidad'] ?? null) === 'negocio') {
-            $query->whereNotNull('negocio_id');
+        } elseif (($filtros['entidad'] ?? null) === 'cliente') {
+            $query->whereNotNull('cliente_id');
         }
 
         if (! empty($filtros['user_id'])) {

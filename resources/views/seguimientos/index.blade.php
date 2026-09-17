@@ -59,7 +59,7 @@ $resColors = [
                         class="text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-300">
                     <option value="">Todos</option>
                     <option value="prospecto">Prospectos</option>
-                    <option value="negocio">Negocios</option>
+                    <option value="cliente">Clientes</option>
                 </select>
             </div>
             <div>
@@ -137,7 +137,7 @@ $sortIcon = function(string $col) use ($sortActual, $dirActual): string {
     <p class="text-sm text-slate-400 mt-1">Los seguimientos se registran desde la ficha de cada cliente.</p>
 </div>
 @else
-<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden" x-data="{ open: false, detalle: null }">
     <table class="w-full text-sm">
         <thead>
             <tr class="border-b border-slate-100 bg-slate-50">
@@ -183,13 +183,57 @@ $sortIcon = function(string $col) use ($sortActual, $dirActual): string {
                             {{ $seg->cliente->razon_social }}
                         </a>
                     @elseif($seg->prospecto)
-                        <span class="font-semibold text-slate-800">{{ $seg->prospecto->empresa }}</span>
+                        @php
+                            $detalleProspecto = [
+                                'tipo' => 'prospecto',
+                                'prospecto' => [
+                                    'empresa'  => $seg->prospecto->empresa,
+                                    'codigo'   => $seg->prospecto->codigo,
+                                    'contacto' => $seg->prospecto->contacto,
+                                    'email'    => $seg->prospecto->email,
+                                    'telefono' => $seg->prospecto->telefono,
+                                    'estado'   => $seg->prospecto->estadoPipeline?->nombre,
+                                    'color'    => $seg->prospecto->estadoPipeline?->color,
+                                    'url'      => route('prospectos.show', $seg->prospecto->id),
+                                ],
+                                'negocios' => $seg->prospecto->negocios->map(fn ($n) => [
+                                    'id'     => $n->id,
+                                    'nombre' => $n->nombre_negocio,
+                                    'estado' => $n->pipelineEstado?->nombre,
+                                    'color'  => $n->pipelineEstado?->color,
+                                    'valor'  => (float) $n->valor_estimado,
+                                    'url'    => route('negocios.show', $n->id),
+                                ])->values(),
+                            ];
+                        @endphp
+                        <button type="button" @click="detalle = @js($detalleProspecto); open = true"
+                                class="font-semibold text-slate-800 hover:text-blue-600 transition-colors">
+                            {{ $seg->prospecto->empresa }}
+                        </button>
                         <span class="ml-1.5 text-xs text-slate-400">(prospecto)</span>
                     @elseif($seg->negocio)
-                        <a href="{{ route('negocios.show', $seg->negocio) }}"
-                           class="font-semibold text-slate-800 hover:text-blue-600 transition-colors">
+                        @php
+                            $detalleNegocio = [
+                                'tipo' => 'negocio',
+                                'negocio' => [
+                                    'nombre' => $seg->negocio->nombre_negocio,
+                                    'estado' => $seg->negocio->pipelineEstado?->nombre,
+                                    'color'  => $seg->negocio->pipelineEstado?->color,
+                                    'valor'  => (float) $seg->negocio->valor_estimado,
+                                    'url'    => route('negocios.show', $seg->negocio->id),
+                                ],
+                                'prospecto' => $seg->negocio->prospecto ? [
+                                    'empresa' => $seg->negocio->prospecto->empresa,
+                                    'estado'  => $seg->negocio->prospecto->estadoPipeline?->nombre,
+                                    'color'   => $seg->negocio->prospecto->estadoPipeline?->color,
+                                    'url'     => route('prospectos.show', $seg->negocio->prospecto->id),
+                                ] : null,
+                            ];
+                        @endphp
+                        <button type="button" @click="detalle = @js($detalleNegocio); open = true"
+                                class="font-semibold text-slate-800 hover:text-blue-600 transition-colors">
                             {{ $seg->negocio->nombre_negocio }}
-                        </a>
+                        </button>
                         <span class="ml-1.5 text-xs text-slate-400">(negocio)</span>
                     @else
                         <span class="text-slate-400">—</span>
@@ -264,6 +308,130 @@ $sortIcon = function(string $col) use ($sortActual, $dirActual): string {
         {{ $seguimientos->withQueryString()->links() }}
     </div>
     @endif
+
+    {{-- Modal detalle prospecto/negocio --}}
+    <x-ui.modal size="md">
+        <template x-if="detalle?.tipo === 'prospecto'">
+            <div class="-mx-6 -mt-5">
+                {{-- Encabezado --}}
+                <div class="flex items-start justify-between gap-3 px-6 py-5 bg-gradient-to-br from-blue-50 to-white border-b border-slate-100 rounded-t-2xl">
+                    <div class="flex items-start gap-3 min-w-0">
+                        <div class="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                            <x-ui.icon name="user-plus" class="w-5 h-5"/>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-semibold text-blue-600 uppercase tracking-widest">Prospecto</p>
+                            <a :href="detalle.prospecto.url" class="block text-lg font-bold text-slate-900 hover:text-blue-600 transition-colors truncate" x-text="detalle.prospecto.empresa"></a>
+                            <p class="text-xs text-slate-400 font-mono" x-text="detalle.prospecto.codigo"></p>
+                        </div>
+                    </div>
+                    <button type="button" @click="open = false" aria-label="Cerrar"
+                            class="shrink-0 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg p-1.5 transition-colors">
+                        <x-ui.icon name="x" class="w-5 h-5"/>
+                    </button>
+                </div>
+
+                <div class="px-6 py-5 space-y-4">
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <p class="text-xs text-slate-500">Contacto</p>
+                        <p class="text-slate-800" x-text="detalle.prospecto.contacto || '—'"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500">Estado</p>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+                              :style="'background:' + (detalle.prospecto.color || '#94a3b8') + '1a; color:' + (detalle.prospecto.color || '#94a3b8')"
+                              x-text="detalle.prospecto.estado || '—'"></span>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500">Email</p>
+                        <p class="text-slate-800" x-text="detalle.prospecto.email || '—'"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500">Teléfono</p>
+                        <p class="text-slate-800" x-text="detalle.prospecto.telefono || '—'"></p>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Negocios vinculados</p>
+                        <span class="text-xs text-slate-400" x-text="detalle.negocios.length + ' en total'" x-show="detalle.negocios.length > 0"></span>
+                    </div>
+                    <template x-if="detalle.negocios.length === 0">
+                        <p class="text-sm text-slate-400">Este prospecto todavía no tiene negocios creados.</p>
+                    </template>
+                    <div class="space-y-2 max-h-52 overflow-y-auto pr-1">
+                        <template x-for="n in detalle.negocios" :key="n.id">
+                            <a :href="n.url" class="block px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-colors">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-sm font-medium text-slate-900 truncate" x-text="n.nombre"></span>
+                                    <span class="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full"
+                                          :style="'background:' + (n.color || '#94a3b8') + '1a; color:' + (n.color || '#94a3b8')"
+                                          x-text="n.estado || '—'"></span>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-0.5" x-text="'$' + Number(n.valor).toLocaleString('es-CO')"></p>
+                            </a>
+                        </template>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </template>
+
+        <template x-if="detalle?.tipo === 'negocio'">
+            <div class="-mx-6 -mt-5">
+                {{-- Encabezado --}}
+                <div class="flex items-start justify-between gap-3 px-6 py-5 bg-gradient-to-br from-indigo-50 to-white border-b border-slate-100 rounded-t-2xl">
+                    <div class="flex items-start gap-3 min-w-0">
+                        <div class="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                            <x-ui.icon name="briefcase" class="w-5 h-5"/>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-semibold text-indigo-600 uppercase tracking-widest">Negocio</p>
+                            <a :href="detalle.negocio.url" class="block text-lg font-bold text-slate-900 hover:text-indigo-600 transition-colors truncate" x-text="detalle.negocio.nombre"></a>
+                        </div>
+                    </div>
+                    <button type="button" @click="open = false" aria-label="Cerrar"
+                            class="shrink-0 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg p-1.5 transition-colors">
+                        <x-ui.icon name="x" class="w-5 h-5"/>
+                    </button>
+                </div>
+
+                <div class="px-6 py-5 space-y-4">
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <p class="text-xs text-slate-500">Estado</p>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+                              :style="'background:' + (detalle.negocio.color || '#94a3b8') + '1a; color:' + (detalle.negocio.color || '#94a3b8')"
+                              x-text="detalle.negocio.estado || '—'"></span>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500">Valor estimado</p>
+                        <p class="text-slate-800 font-semibold" x-text="'$' + Number(detalle.negocio.valor).toLocaleString('es-CO')"></p>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Prospecto de origen</p>
+                    <template x-if="!detalle.prospecto">
+                        <p class="text-sm text-slate-400">Este negocio no viene de un prospecto (se creó directo con un cliente).</p>
+                    </template>
+                    <template x-if="detalle.prospecto">
+                        <a :href="detalle.prospecto.url" class="block px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-colors">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm font-medium text-slate-900 truncate" x-text="detalle.prospecto.empresa"></span>
+                                <span class="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full"
+                                      :style="'background:' + (detalle.prospecto.color || '#94a3b8') + '1a; color:' + (detalle.prospecto.color || '#94a3b8')"
+                                      x-text="detalle.prospecto.estado || '—'"></span>
+                            </div>
+                        </a>
+                    </template>
+                </div>
+                </div>
+            </div>
+        </template>
+    </x-ui.modal>
 </div>
 @endif
 
