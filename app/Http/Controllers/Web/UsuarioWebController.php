@@ -4,14 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Web;
 
+use App\Domain\SolicitudesCotizacion\Repositories\SolicitudCotizacionRepositoryInterface;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
+use Throwable;
 
 class UsuarioWebController extends Controller
 {
+    public function __construct(
+        private readonly SolicitudCotizacionRepositoryInterface $cotizaciones,
+    ) {}
+
     public function index(Request $request): View
     {
         abort_unless(auth()->user()?->can('usuarios.gestionar'), 403);
@@ -49,6 +56,13 @@ class UsuarioWebController extends Controller
 
         $roles = Role::orderBy('name')->pluck('name');
 
-        return view('usuarios.edit', compact('usuario', 'roles'));
+        try {
+            $vendedoresSgp = $this->cotizaciones->vendedoresDisponibles();
+        } catch (Throwable $e) {
+            $vendedoresSgp = collect();
+            Log::warning('usuarios.edit: ERP no disponible al listar vendedores SGP', ['exception' => $e->getMessage()]);
+        }
+
+        return view('usuarios.edit', compact('usuario', 'roles', 'vendedoresSgp'));
     }
 }

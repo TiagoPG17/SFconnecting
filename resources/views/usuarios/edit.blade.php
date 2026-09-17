@@ -85,14 +85,18 @@
 
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">
-                        Usuario SGP
+                        Usuario del cotizador (SGP)
                     </label>
-                    <x-ui.input
+                    <x-ui.select
                         x-model="form.vendedor_sgp"
-                        @input="delete errors.vendedor_sgp"
+                        @change="delete errors.vendedor_sgp"
                         x-error="errors.vendedor_sgp"
-                        placeholder="Ej: ADRIANA.MEDELLIN"
-                        hint="Código de SGP de este comercial — filtra qué solicitudes de cotización ve en los modales de Prospectos/Negocios. Déjalo vacío si no aplica."/>
+                        placeholder="Sin código asignado">
+                        @foreach($vendedoresSgp as $v)
+                            <option value="{{ $v->vendedor }}">{{ $v->nombre_vendedor ?: $v->vendedor }} ({{ $v->vendedor }})</option>
+                        @endforeach
+                    </x-ui.select>
+                    <p class="text-xs text-slate-500 mt-1">Filtra qué solicitudes de cotización ve este comercial en los modales de Prospectos/Negocios. Sin código, no ve ninguna.</p>
                 </div>
 
                 <div class="border-t border-slate-100 pt-4">
