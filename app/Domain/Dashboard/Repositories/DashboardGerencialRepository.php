@@ -280,14 +280,18 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->get();
     }
 
-    public function canastaFuturaResumen(int $compania): Collection
+    public function canastaResumen(int $compania, int $mes, bool $incluirFuturos): Collection
     {
-        $desde = \Carbon\Carbon::now()->startOfMonth();
+        $anio = now()->year;
 
         return DB::connection('erp_contiflex')
             ->table('dbo.vw_CRM_Pedidos_Pendientes')
             ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
-            ->where('FechaEntrega', '>=', $desde)
+            ->when(
+                $incluirFuturos,
+                fn ($q) => $q->where('FechaEntrega', '>=', \Carbon\Carbon::create($anio, $mes, 1)->startOfMonth()),
+                fn ($q) => $q->whereYear('FechaEntrega', $anio)->whereMonth('FechaEntrega', $mes)
+            )
             ->where(fn ($q) => $q->where('Compania', '!=', 2)->orWhere('RazonSocialCliente', '!=', 'FORMACOL S.A.'))
             ->selectRaw('
                 Compania                     AS compania,
@@ -302,14 +306,18 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->get();
     }
 
-    public function canastaFuturaDetalle(int $compania, int $limite = 500): Collection
+    public function canastaDetalle(int $compania, int $mes, bool $incluirFuturos, int $limite = 500): Collection
     {
-        $desde = \Carbon\Carbon::now()->startOfMonth();
+        $anio = now()->year;
 
         return DB::connection('erp_contiflex')
             ->table('dbo.vw_CRM_Pedidos_Pendientes')
             ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
-            ->where('FechaEntrega', '>=', $desde)
+            ->when(
+                $incluirFuturos,
+                fn ($q) => $q->where('FechaEntrega', '>=', \Carbon\Carbon::create($anio, $mes, 1)->startOfMonth()),
+                fn ($q) => $q->whereYear('FechaEntrega', $anio)->whereMonth('FechaEntrega', $mes)
+            )
             ->where(fn ($q) => $q->where('Compania', '!=', 2)->orWhere('RazonSocialCliente', '!=', 'FORMACOL S.A.'))
             ->selectRaw('
                 Compania             AS compania,

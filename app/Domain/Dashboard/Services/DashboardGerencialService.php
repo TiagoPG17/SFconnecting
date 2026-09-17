@@ -81,7 +81,7 @@ class DashboardGerencialService
      * para un año, mes y compañía dados. Independiente del período (mes/trimestre/año)
      * del resto del dashboard, porque este bloque tiene su propio filtro local (Año/Mes/Compañía).
      */
-    public function informeComercial(?int $compania = null, ?int $anio = null, ?int $mes = null): array
+    public function informeComercial(?int $compania = null, ?int $anio = null, ?int $mes = null, bool $incluirFuturos = false): array
     {
         $compania ??= $this->compania;
         $anio     ??= $this->anio;
@@ -93,14 +93,15 @@ class DashboardGerencialService
             'compania'             => $compania,
             'anio'                 => $anio,
             'mes'                  => $mes,
+            'incluirFuturos'       => $incluirFuturos,
             'facturadoMes'         => $safe(fn () => $this->repo->facturadoDelMes($compania, $anio, $mes)),
             'cierresProximos'      => $safe(fn () => $this->repo->cierresProximos($compania)),
             'pedidosPorCerrar'     => $safe(fn () => $this->repo->pedidosPorCerrarDetalle($compania)),
             'facturacionTendencia' => $safe(fn () => $this->repo->facturacionMensualTendencia($compania, $anio, $mes)),
             'facturacionCliente'   => $safe(fn () => $this->repo->facturacionPorCliente($compania, $anio, $mes)),
             'facturacionVendedor'  => $safe(fn () => $this->repo->facturacionPorVendedor($compania, $anio, $mes)),
-            'canastaFuturaResumen' => $safe(fn () => $this->repo->canastaFuturaResumen($compania)),
-            'canastaFuturaDetalle' => $safe(fn () => $this->repo->canastaFuturaDetalle($compania)),
+            'canastaResumen'       => $safe(fn () => $this->repo->canastaResumen($compania, $mes, $incluirFuturos)),
+            'canastaDetalle'       => $safe(fn () => $this->repo->canastaDetalle($compania, $mes, $incluirFuturos)),
         ];
     }
 

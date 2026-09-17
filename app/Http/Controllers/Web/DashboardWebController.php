@@ -135,10 +135,11 @@ class DashboardWebController extends Controller
     public function informeComercial(Request $request): JsonResponse
     {
         [$compania, $anio, $mes] = $this->parametrosInformeComercial($request);
+        $incluirFuturos = $request->boolean('futuros');
 
         $svc = new DashboardGerencialService($this->gerencialRepo, $compania, $anio, [sprintf('%d-%02d', $anio, $mes)]);
 
-        return response()->json($svc->informeComercial($compania, $anio, $mes));
+        return response()->json($svc->informeComercial($compania, $anio, $mes, $incluirFuturos));
     }
 
     /** @return array{0: int, 1: int, 2: int} [compania, anio, mes] */

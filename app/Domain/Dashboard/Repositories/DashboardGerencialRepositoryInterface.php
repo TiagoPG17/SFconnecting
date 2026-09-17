@@ -42,9 +42,9 @@ interface DashboardGerencialRepositoryInterface
     /** Facturación del mes/año dado, agrupada por vendedor y compañía. */
     public function facturacionPorVendedor(int $compania, int $anio, int $mes): Collection;
 
-    /** Canasta futura (resumen): pedidos pendientes agrupados por mes de compromiso, desde el mes actual en adelante. */
-    public function canastaFuturaResumen(int $compania): Collection;
+    /** Canasta (resumen): pedidos pendientes agrupados por mes de compromiso. Usa el $mes dado sobre el año actual real (el filtro Año del resto del bloque no le aplica todavía). Si $incluirFuturos, desde ese mes en adelante; si no, solo ese mes exacto. */
+    public function canastaResumen(int $compania, int $mes, bool $incluirFuturos): Collection;
 
-    /** Canasta futura (detalle): líneas de pedidos pendientes desde el mes actual en adelante, por fecha de compromiso. */
-    public function canastaFuturaDetalle(int $compania, int $limite = 500): Collection;
+    /** Canasta (detalle): líneas de pedidos pendientes por fecha de compromiso, con el mismo criterio de rango que canastaResumen(). */
+    public function canastaDetalle(int $compania, int $mes, bool $incluirFuturos, int $limite = 500): Collection;
 }

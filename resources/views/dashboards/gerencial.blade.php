@@ -625,9 +625,9 @@
         <p class="text-[11px] text-slate-400 mt-0.5" x-text="totalDocumentosFacturados + ' facturas'"></p>
       </div>
       <div class="dash-card p-4">
-        <p class="text-xs text-slate-500">Pendiente (canasta)</p>
+        <p class="text-xs text-slate-500">Pendiente</p>
         <p class="text-2xl font-bold mt-1 tnum text-slate-900" x-text="money(totalPendiente)"></p>
-        <p class="text-[11px] text-slate-400 mt-0.5" x-text="totalNumPedidos + ' pedidos · mes actual y siguientes'"></p>
+        <p class="text-[11px] text-slate-400 mt-0.5" x-text="totalNumPedidos + ' pedidos · ' + (filtro.futuros ? 'mes seleccionado y siguientes' : 'mes seleccionado')"></p>
       </div>
       <div class="dash-card p-4">
         <p class="text-xs text-slate-500">Cierra mañana</p>
@@ -702,13 +702,19 @@
 
     <div class="grid lg:grid-cols-2 gap-5">
 
-      {{-- Canasta futura: pedidos pendientes por mes de compromiso (mes actual + próximos) --}}
+      {{-- Pedidos pendientes por mes de compromiso (el checkbox "Incluir meses futuros" define el rango) --}}
       <div class="dash-card">
         <div class="h-1.5 w-full rounded-t-xl bg-gradient-to-r from-amber-500 to-amber-400"></div>
         <div class="p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="font-semibold text-slate-800">Canasta futura · pedidos pendientes</h2>
-            <span class="text-[11px] text-slate-400">Click en un mes para ver el detalle</span>
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <h2 class="font-semibold text-slate-800">Pedidos pendientes</h2>
+              <span class="text-[11px] text-slate-400">Click en un mes para ver el detalle</span>
+            </div>
+            <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-lg py-1 px-2 cursor-pointer select-none">
+              <input type="checkbox" x-model="filtro.futuros" @change="cargar()" class="rounded border-slate-300">
+              Incluir meses futuros
+            </label>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-xs">
@@ -1084,7 +1090,7 @@ function informeComercial(datos){
   let chart = null; // fuera del objeto reactivo de Alpine para no proxear la instancia de Chart.js
 
   return {
-    filtro: { anio: datos.anio, mes: datos.mes, cia: datos.compania },
+    filtro: { anio: datos.anio, mes: datos.mes, cia: datos.compania, futuros: datos.incluirFuturos ?? false },
     cargando: false,
 
     facturadoMes:         datos.facturadoMes ?? [],
@@ -1092,8 +1098,8 @@ function informeComercial(datos){
     pedidosPorCerrar:      datos.pedidosPorCerrar ?? [],
     facturacionTendencia: datos.facturacionTendencia ?? [],
     facturacionCliente:   datos.facturacionCliente ?? [],
-    canastaResumen:       datos.canastaFuturaResumen ?? [],
-    canastaDetalle:       datos.canastaFuturaDetalle ?? [],
+    canastaResumen:       datos.canastaResumen ?? [],
+    canastaDetalle:       datos.canastaDetalle ?? [],
     mesAbierto: null,
 
     nombresMes: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
@@ -1140,7 +1146,7 @@ function informeComercial(datos){
     async cargar(){
       this.cargando = true;
       try {
-        const url = `{{ route('gerencial.informe-comercial') }}?anio=${this.filtro.anio}&mes=${this.filtro.mes}&cia=${this.filtro.cia}`;
+        const url = `{{ route('gerencial.informe-comercial') }}?anio=${this.filtro.anio}&mes=${this.filtro.mes}&cia=${this.filtro.cia}&futuros=${this.filtro.futuros ? 1 : 0}`;
         const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
         if (!res.ok) throw new Error();
         const data = await res.json();
@@ -1149,8 +1155,8 @@ function informeComercial(datos){
         this.pedidosPorCerrar     = data.pedidosPorCerrar ?? [];
         this.facturacionTendencia = data.facturacionTendencia ?? [];
         this.facturacionCliente   = data.facturacionCliente ?? [];
-        this.canastaResumen       = data.canastaFuturaResumen ?? [];
-        this.canastaDetalle       = data.canastaFuturaDetalle ?? [];
+        this.canastaResumen       = data.canastaResumen ?? [];
+        this.canastaDetalle       = data.canastaDetalle ?? [];
         this.mesAbierto           = null;
         this.$nextTick(() => this.renderChart());
       } catch {
