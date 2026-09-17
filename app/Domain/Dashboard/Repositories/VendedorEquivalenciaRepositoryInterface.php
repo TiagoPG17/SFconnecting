@@ -19,7 +19,7 @@ interface VendedorEquivalenciaRepositoryInterface
 
     public function buscarPorId(int $id): ?VendedorEquivalencia;
 
-    public function existe(int $asesorId, int $compania, ?int $exceptoId = null): bool;
+    public function existeCodigo(string $cod, int $compania, ?int $exceptoId = null): bool;
 
     public function vendedoresSiesa(int $compania): array;
 }

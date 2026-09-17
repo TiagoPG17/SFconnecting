@@ -10,6 +10,81 @@
         @endunlessrole
     </x-slot>
 
+    @can('create', \App\Domain\Prospectos\Models\Prospecto::class)
+    <div class="mb-4" x-data="candidatosSgp()">
+        <button type="button" @click="abrir()"
+                class="inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-medium transition-colors">
+            <x-ui.icon name="bar-chart" class="w-3.5 h-3.5"/>
+            Cargar solicitudes de cotización (SGP)
+        </button>
+
+        <x-ui.modal title="Solicitudes de cotización sin cliente asignado" size="xl">
+            <div class="space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="relative flex-1">
+                        <x-ui.icon name="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
+                        <input type="text" x-model="buscar" @input.debounce.400ms="cargar()"
+                               placeholder="Buscar por NIT o nombre del cliente..."
+                               class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <span class="shrink-0 text-xs text-slate-400">Últimos 30 días</span>
+                </div>
+
+                <template x-if="cargando">
+                    <p class="text-sm text-slate-400 text-center py-8">Cargando...</p>
+                </template>
+                <template x-if="!cargando && error">
+                    <p class="text-sm text-red-600 text-center py-8" x-text="error"></p>
+                </template>
+                <template x-if="!cargando && !error && items.length === 0">
+                    <p class="text-sm text-slate-400 text-center py-8">No hay solicitudes pendientes por convertir.</p>
+                </template>
+
+                <div class="rounded-lg border border-slate-200 overflow-hidden" x-show="!cargando && !error && items.length > 0">
+                    <div class="max-h-96 overflow-y-auto">
+                        <table class="w-full text-sm">
+                            <thead class="sticky top-0 bg-slate-50 border-b border-slate-200">
+                                <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                    <th class="px-3 py-2.5">Cliente</th>
+                                    <th class="px-3 py-2.5">Solicitud</th>
+                                    <th class="px-3 py-2.5">Fecha</th>
+                                    <th class="px-3 py-2.5">Comercial</th>
+                                    <th class="px-3 py-2.5"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 bg-white">
+                                <template x-for="item in items" :key="item.nro_solicitud">
+                                    <tr class="hover:bg-slate-50 transition-colors">
+                                        <td class="px-3 py-2.5 max-w-[220px]">
+                                            <div class="flex items-center gap-1.5">
+                                                <p class="font-medium text-slate-900 truncate" x-text="item.cliente || 'Sin nombre'"></p>
+                                                <span x-show="item.posible_duplicado_prospecto"
+                                                      class="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                                                    Duplicado
+                                                </span>
+                                            </div>
+                                            <p class="text-xs text-slate-400" x-text="'NIT: ' + (item.nit || '—')"></p>
+                                        </td>
+                                        <td class="px-3 py-2.5 font-mono text-xs text-slate-600 whitespace-nowrap" x-text="item.nro_solicitud"></td>
+                                        <td class="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap" x-text="item.fecha_solicitud"></td>
+                                        <td class="px-3 py-2.5 text-xs text-slate-500 max-w-[140px] truncate" x-text="item.comercial"></td>
+                                        <td class="px-3 py-2.5 text-right">
+                                            <a :href="urlCrear(item)"
+                                               class="text-xs font-semibold text-blue-700 hover:underline whitespace-nowrap">
+                                                Usar este →
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </x-ui.modal>
+    </div>
+    @endcan
+
     {{-- Filtros --}}
     <x-ui.card class="p-4 mb-4"
         x-data="{
@@ -136,4 +211,54 @@
         @endif
         @endif
     </x-ui.card>
+
+@push('scripts')
+<script>
+    function candidatosSgp() {
+        return {
+            open: false,
+            cargando: false,
+            error: null,
+            buscar: '',
+            items: [],
+            abrir() {
+                this.open = true;
+                this.cargar();
+            },
+            async cargar() {
+                this.cargando = true;
+                this.error = null;
+                try {
+                    const url = new URL('{{ route('api.prospectos.candidatos-sgp') }}', window.location.origin);
+                    if (this.buscar) url.searchParams.set('buscar', this.buscar);
+                    const token = document.querySelector('meta[name="api-token"]')?.content;
+                    const res = await fetch(url.toString(), {
+                        headers: {
+                            'Accept': 'application/json',
+                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                        },
+                    });
+                    const r = await res.json();
+                    if (r.success) {
+                        this.items = r.data;
+                    } else {
+                        this.error = r.message || 'No se pudieron cargar las solicitudes.';
+                    }
+                } catch (e) {
+                    this.error = 'Error de conexión.';
+                } finally {
+                    this.cargando = false;
+                }
+            },
+            urlCrear(item) {
+                const params = new URLSearchParams({
+                    empresa: item.cliente || '',
+                    nro_solicitud_cotizacion: item.nro_solicitud,
+                });
+                return '{{ route('prospectos.create') }}?' + params.toString();
+            },
+        };
+    }
+</script>
+@endpush
 </x-layouts.app>

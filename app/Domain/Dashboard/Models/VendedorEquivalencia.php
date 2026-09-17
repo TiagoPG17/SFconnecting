@@ -19,11 +19,13 @@ class VendedorEquivalencia extends Model
         'rowid_vendedor_siesa',
         'nombre_vendedor',
         'activo',
+        'es_reemplazo',
     ];
 
     protected $casts = [
-        'activo'   => 'boolean',
-        'compania' => 'integer',
+        'activo'       => 'boolean',
+        'compania'     => 'integer',
+        'es_reemplazo' => 'boolean',
     ];
 
     public function asesor(): BelongsTo

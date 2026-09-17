@@ -21,15 +21,18 @@ class DashboardVendedorService
 
     public function presupuestoVsLogrado(): array
     {
-        $presupuesto  = (float) ($this->repo->presupuestoVendedor($this->asesorId, $this->compania, $this->anio)?->presupuesto ?? 0);
-        $codVendedor  = $this->repo->codVendedorSiesa($this->asesorId, $this->compania);
+        $presupuesto = (float) ($this->repo->presupuestoVendedor($this->asesorId, $this->compania, $this->anio)?->presupuesto ?? 0);
+        $codigos     = $this->repo->codigosVendedorSiesa($this->asesorId, $this->compania);
 
-        if (! $codVendedor) {
+        if (empty($codigos)) {
             return ['ok' => false, 'motivo' => 'Vendedor sin mapear en SIESA'];
         }
 
         try {
-            $logrado = $this->repo->logradoYtd($codVendedor, $this->compania, $this->meses);
+            $logrado = array_sum(array_map(
+                fn ($cod) => $this->repo->logradoYtd($cod, $this->compania, $this->meses),
+                $codigos
+            ));
         } catch (Throwable) {
             $logrado = 0.0;
         }
@@ -118,7 +121,7 @@ class DashboardVendedorService
 
     public function posicionEnEquipo(): array
     {
-        $codVendedor = $this->repo->codVendedorSiesa($this->asesorId, $this->compania);
+        $codigos = $this->repo->codigosVendedorSiesa($this->asesorId, $this->compania);
 
         try {
             $rows = $this->repo->rankingVendedores($this->compania, $this->meses);
@@ -126,13 +129,15 @@ class DashboardVendedorService
             $rows = collect();
         }
 
-        $idx = $rows->search(fn ($r) => $r->COD_VENDEDOR === $codVendedor);
+        $misFilas    = $rows->filter(fn ($r) => in_array($r->COD_VENDEDOR, $codigos, true));
+        $mejorCodigo = $misFilas->sortByDesc('logrado')->first()?->COD_VENDEDOR;
+        $idx         = $rows->search(fn ($r) => $r->COD_VENDEDOR === $mejorCodigo);
 
         return [
             'mi_puesto' => $idx === false ? null : $idx + 1,
             'total'     => $rows->count(),
             'lider'     => (float) ($rows->first()?->logrado ?? 0),
-            'mi_valor'  => (float) ($rows->firstWhere('COD_VENDEDOR', $codVendedor)?->logrado ?? 0),
+            'mi_valor'  => (float) $misFilas->sum('logrado'),
         ];
     }
 }

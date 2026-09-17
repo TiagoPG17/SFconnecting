@@ -95,6 +95,17 @@ class ClienteRepository implements ClienteRepositoryInterface
         return Cliente::where('user_id', $userId)->get();
     }
 
+    public function reasignarAsesor(int $deUserId, int $aUserId, int $compania): Collection
+    {
+        $clientes = Cliente::where('user_id', $deUserId)
+            ->where('compania', $compania)
+            ->get();
+
+        Cliente::whereIn('id', $clientes->pluck('id'))->update(['user_id' => $aUserId]);
+
+        return $clientes;
+    }
+
     public function existeNit(string $nit, int $compania, ?int $exceptoId = null): bool
     {
         $query = Cliente::where('nit', $nit)->where('compania', $compania);

@@ -23,3 +23,9 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Bloquear extensiones que nunca deberían servirse desde public/,
+# aunque un archivo de este tipo caiga aquí por accidente.
+<FilesMatch "\.(sql|env|log|lock|sqlite|bak|backup)$">
+    Require all denied
+</FilesMatch>

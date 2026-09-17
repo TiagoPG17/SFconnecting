@@ -44,6 +44,7 @@ class CalendarioWebController extends Controller
         $query = Seguimiento::with([
                 'cliente:id,razon_social',
                 'prospecto:id,empresa',
+                'negocio:id,nombre_negocio',
                 'asesor:id,name',
             ])
             ->where(function ($q) use ($start, $end) {
@@ -71,12 +72,15 @@ class CalendarioWebController extends Controller
         $eventos = [];
 
         foreach ($query->get() as $s) {
-            $entidad   = $s->cliente?->razon_social ?? $s->prospecto?->empresa ?? 'Sin cliente';
+            $entidad   = $s->cliente?->razon_social ?? $s->prospecto?->empresa ?? $s->negocio?->nombre_negocio ?? 'Sin cliente';
             $color     = self::COLORES[$s->tipo] ?? '#94a3b8';
             $tipoLabel = ucfirst($s->tipo);
-            $url       = $s->cliente_id
-                ? route('clientes.show', $s->cliente_id)
-                : ($s->prospecto_id ? route('prospectos.show', $s->prospecto_id) : null);
+            $url       = match (true) {
+                (bool) $s->cliente_id   => route('clientes.show', $s->cliente_id),
+                (bool) $s->prospecto_id => route('prospectos.show', $s->prospecto_id),
+                (bool) $s->negocio_id   => route('negocios.show', $s->negocio_id),
+                default                 => null,
+            };
 
             // Actividad realizada (fecha_seguimiento)
             if ($s->fecha_seguimiento?->between($start, $end)) {

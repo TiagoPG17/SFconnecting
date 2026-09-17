@@ -24,8 +24,19 @@ RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc \
 
 RUN docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd
 
-# Permitir certificados SSL débiles del SQL Server (ODBC Driver 18 + OpenSSL)
-RUN echo '\n[openssl_init]\nssl_conf = ssl_sect\n[ssl_sect]\nsystem_default = system_default_sect\n[system_default_sect]\nCipherString = DEFAULT@SECLEVEL=0\nMinProtocol = TLSv1' >> /etc/ssl/openssl.cnf
+RUN pecl install redis && docker-php-ext-enable redis
+
+# Config OpenSSL aislada para el handshake TLS legado del SQL Server del ERP
+# (certificado/protocolo viejo). Se parte de una copia del openssl.cnf real del
+# sistema (para heredar providers/secciones que Debian ya trae) y se le agrega
+# el mismo rebajo que antes se aplicaba globalmente. NO se toca /etc/ssl/openssl.cnf
+# del sistema — ScopedTlsSqlServerConnector (app/Support/Database) activa esta
+# copia solo durante la conexión al ERP, vía la variable OPENSSL_CONF. Si el ERP
+# sigue sin conectar tras probar esto, el rebajo puede necesitar volver a ser
+# global; en ese caso restaurar:
+#   RUN echo '\n[openssl_init]\nssl_conf = ssl_sect\n[ssl_sect]\nsystem_default = system_default_sect\n[system_default_sect]\nCipherString = DEFAULT@SECLEVEL=0\nMinProtocol = TLSv1' >> /etc/ssl/openssl.cnf
+RUN cp /etc/ssl/openssl.cnf /etc/ssl/openssl-erp-legacy.cnf \
+    && printf '\n[openssl_init]\nssl_conf = ssl_sect\n[ssl_sect]\nsystem_default = system_default_sect\n[system_default_sect]\nCipherString = DEFAULT@SECLEVEL=0\nMinProtocol = TLSv1\n' >> /etc/ssl/openssl-erp-legacy.cnf
 RUN pecl install sqlsrv-5.12.0 pdo_sqlsrv-5.12.0 && docker-php-ext-enable sqlsrv pdo_sqlsrv
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

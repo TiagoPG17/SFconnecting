@@ -17,7 +17,8 @@ interface DashboardVendedorRepositoryInterface
 
     public function presupuestoVendedor(int $asesorId, int $compania, int $anio): ?object;
 
-    public function codVendedorSiesa(int $asesorId, int $compania): ?string;
+    /** @return string[] */
+    public function codigosVendedorSiesa(int $asesorId, int $compania): array;
 
     public function logradoYtd(string $nombreVendedor, int $compania, array $meses): float;
 

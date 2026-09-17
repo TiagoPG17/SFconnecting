@@ -12,8 +12,6 @@ class FakeERPRepository implements ERPRepositoryInterface
     private bool $available = true;
     private bool $throwOnQuery = false;
     private array $clientes = [];
-    private array $documentos = [];
-    private array $saldos = [];
     private array $cartera = [];
     private array $clientesVendedor = [];
     private array $facturas = [];
@@ -26,30 +24,6 @@ class FakeERPRepository implements ERPRepositoryInterface
         $this->checkAvailability();
 
         return $this->clientes[$nit] ?? null;
-    }
-
-    public function clientesPorNombre(string $nombre, int $limite = 20): array
-    {
-        $this->checkAvailability();
-
-        return array_filter(
-            $this->clientes,
-            fn(array $c) => str_contains(strtolower($c['nombre'] ?? ''), strtolower($nombre))
-        );
-    }
-
-    public function documentosPorCliente(string $nit, int $limite = 50): array
-    {
-        $this->checkAvailability();
-
-        return array_slice($this->documentos[$nit] ?? [], 0, $limite);
-    }
-
-    public function saldoPorCliente(string $nit): ?array
-    {
-        $this->checkAvailability();
-
-        return $this->saldos[$nit] ?? null;
     }
 
     public function carteraPorNit(string $nit): array
@@ -324,7 +298,7 @@ class FakeERPRepository implements ERPRepositoryInterface
         return $insertados;
     }
 
-    public function notificacionesCarteraPendientes(int $compania = 0): array
+    public function notificacionesCarteraPendientes(int $compania = 0, ?string $fechaCumplimiento = null): array
     {
         $this->checkAvailability();
 
@@ -332,6 +306,7 @@ class FakeERPRepository implements ERPRepositoryInterface
             $this->notificacionesCartera,
             fn (array $n) => (int) ($n['Notificado'] ?? 0) === 0
                 && ($compania === 0 || (int) ($n['Compania'] ?? 0) === $compania)
+                && (! $fechaCumplimiento || substr((string) ($n['FechaCumplimiento'] ?? ''), 0, 10) === $fechaCumplimiento)
         ));
     }
 
@@ -413,16 +388,6 @@ class FakeERPRepository implements ERPRepositoryInterface
     public function agregarCliente(string $nit, array $datos): void
     {
         $this->clientes[$nit] = array_merge(['nit' => $nit], $datos);
-    }
-
-    public function agregarDocumentos(string $nit, array $documentos): void
-    {
-        $this->documentos[$nit] = $documentos;
-    }
-
-    public function agregarSaldo(string $nit, array $saldo): void
-    {
-        $this->saldos[$nit] = $saldo;
     }
 
     public function agregarCartera(string $nit, array $filas): void

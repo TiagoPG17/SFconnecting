@@ -23,7 +23,7 @@ class SeguimientoWebController extends Controller
     {
         $this->authorize('viewAny', Seguimiento::class);
 
-        $filtros = $request->only(['cliente_id', 'tipo', 'resultado', 'fecha_desde', 'fecha_hasta', 'sort', 'dir']);
+        $filtros = $request->only(['cliente_id', 'entidad', 'tipo', 'resultado', 'fecha_desde', 'fecha_hasta', 'sort', 'dir']);
 
         if (auth()->user()->hasRole('comercial')) {
             $filtros['user_id'] = auth()->id();

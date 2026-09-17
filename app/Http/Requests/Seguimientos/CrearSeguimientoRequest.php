@@ -16,8 +16,9 @@ class CrearSeguimientoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cliente_id'        => ['required_without:prospecto_id', 'nullable', 'integer', 'exists:clientes,id'],
-            'prospecto_id'      => ['required_without:cliente_id', 'nullable', 'integer', 'exists:sf_prospectos,id'],
+            'cliente_id'        => ['required_without_all:prospecto_id,negocio_id', 'nullable', 'integer', 'exists:clientes,id'],
+            'prospecto_id'      => ['required_without_all:cliente_id,negocio_id', 'nullable', 'integer', 'exists:sf_prospectos,id'],
+            'negocio_id'        => ['required_without_all:cliente_id,prospecto_id', 'nullable', 'integer', 'exists:sf_negocios,id'],
             'contacto_id'       => ['nullable', 'integer', 'exists:contactos,id'],
             'tipo'              => ['required', 'string', 'in:llamada,reunion,email,visita,whatsapp,otro'],
             'resultado'         => ['required', 'string', 'in:exitoso,no_contactado,pendiente,cancelado'],
@@ -30,10 +31,12 @@ class CrearSeguimientoRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'cliente_id.required_without'   => 'El cliente es obligatorio.',
-            'cliente_id.exists'             => 'El cliente seleccionado no existe.',
-            'prospecto_id.required_without' => 'Debe indicar un cliente o un prospecto.',
-            'prospecto_id.exists'           => 'El prospecto seleccionado no existe.',
+            'cliente_id.required_without_all'   => 'Debe indicar un cliente, un prospecto o un negocio.',
+            'cliente_id.exists'                 => 'El cliente seleccionado no existe.',
+            'prospecto_id.required_without_all' => 'Debe indicar un cliente, un prospecto o un negocio.',
+            'prospecto_id.exists'               => 'El prospecto seleccionado no existe.',
+            'negocio_id.required_without_all'   => 'Debe indicar un cliente, un prospecto o un negocio.',
+            'negocio_id.exists'                 => 'El negocio seleccionado no existe.',
             'tipo.in'                       => 'El tipo de seguimiento no es válido.',
             'resultado.in'                  => 'El resultado no es válido.',
             'descripcion.min'               => 'La descripción debe tener al menos 10 caracteres.',

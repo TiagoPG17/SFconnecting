@@ -29,4 +29,7 @@ interface NegocioRepositoryInterface
     public function forecast(array $filtros = []): array;
 
     public function porProspecto(int $prospectoId): Collection;
+
+    /** Reasigna a otro asesor los negocios de esos clientes que hoy son de $deUserId. */
+    public function reasignarPorClientes(array $clienteIds, int $deUserId, int $aUserId): Collection;
 }

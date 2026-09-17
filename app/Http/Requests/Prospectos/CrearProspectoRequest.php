@@ -28,6 +28,7 @@ class CrearProspectoRequest extends FormRequest
             'fecha_proximo_contacto' => ['nullable', 'date', 'after_or_equal:today'],
             'observaciones'         => ['nullable', 'string', 'max:2000'],
             'compania'              => ['nullable', 'integer', 'in:1,2'],
+            'nro_solicitud_cotizacion' => ['nullable', 'string', 'max:20', 'unique:sf_prospectos,nro_solicitud_cotizacion'],
         ];
     }
 
@@ -45,6 +46,7 @@ class CrearProspectoRequest extends FormRequest
             'probabilidad_cierre.max'     => 'La probabilidad máxima es 100 %.',
             'fecha_proximo_contacto.date'             => 'La fecha de contacto no es válida.',
             'fecha_proximo_contacto.after_or_equal'   => 'La fecha de contacto no puede ser en el pasado.',
+            'nro_solicitud_cotizacion.unique'         => 'Esta solicitud de cotización ya se convirtió en un prospecto.',
         ];
     }
 }

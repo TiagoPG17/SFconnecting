@@ -37,6 +37,7 @@ class Prospecto extends Model
         'asesor_id',
         'compania',
         'observaciones',
+        'nro_solicitud_cotizacion',
         'convertido_cliente_id',
         'fecha_conversion',
         'convertido_por',

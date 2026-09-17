@@ -146,7 +146,12 @@ body.sorting, body.sorting * {
                 <div
                     x-sort:item="{{ $negocio->id }}"
                     @click="abrirPanel({{ Js::from($panelData) }})"
-                    class="relative bg-white rounded-xl p-3 shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition-all"
+                    @keydown.enter="abrirPanel({{ Js::from($panelData) }})"
+                    @keydown.space.prevent="abrirPanel({{ Js::from($panelData) }})"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Ver detalle de {{ $negocio->nombre_negocio }}"
+                    class="relative bg-white rounded-xl p-3 shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     style="border-left: 3px solid {{ $color }}"
                 >
                     {{-- Handle de arrastre --}}

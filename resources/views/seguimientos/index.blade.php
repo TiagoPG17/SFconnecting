@@ -20,12 +20,14 @@ $resColors = [
 {{-- Encabezado + Filtros unificados --}}
 <div class="bg-white border border-slate-200 rounded-2xl shadow-sm px-6 pt-5 pb-4 mb-6"
      x-data="{
+         entidad:   '{{ request('entidad') }}',
          tipo:      '{{ request('tipo') }}',
          resultado: '{{ request('resultado') }}',
          desde:     '{{ request('fecha_desde') }}',
          hasta:     '{{ request('fecha_hasta') }}',
          goFilter() {
              let url = new URL(window.location.href);
+             this.entidad   ? url.searchParams.set('entidad', this.entidad)     : url.searchParams.delete('entidad');
              this.tipo      ? url.searchParams.set('tipo', this.tipo)           : url.searchParams.delete('tipo');
              this.resultado ? url.searchParams.set('resultado', this.resultado) : url.searchParams.delete('resultado');
              this.desde     ? url.searchParams.set('fecha_desde', this.desde)   : url.searchParams.delete('fecha_desde');
@@ -51,6 +53,15 @@ $resColors = [
 
         {{-- Filtros derecha --}}
         <div class="flex items-end gap-3 shrink-0">
+            <div>
+                <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Entidad</p>
+                <select x-model="entidad" @change="goFilter()"
+                        class="text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-300">
+                    <option value="">Todos</option>
+                    <option value="prospecto">Prospectos</option>
+                    <option value="negocio">Negocios</option>
+                </select>
+            </div>
             <div>
                 <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Tipo</p>
                 <select x-model="tipo" @change="goFilter()"
@@ -85,7 +96,7 @@ $resColors = [
                 <input type="date" x-model="hasta" @change="goFilter()"
                        class="text-sm px-3 py-2 rounded-lg border border-slate-200 text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300">
             </div>
-            @if(request()->hasAny(['tipo', 'resultado', 'fecha_desde', 'fecha_hasta']))
+            @if(request()->hasAny(['entidad', 'tipo', 'resultado', 'fecha_desde', 'fecha_hasta']))
             <a href="{{ route('seguimientos.index', request()->only('cliente_id')) }}"
                class="text-xs text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1 pb-2.5">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -131,7 +142,7 @@ $sortIcon = function(string $col) use ($sortActual, $dirActual): string {
         <thead>
             <tr class="border-b border-slate-100 bg-slate-50">
                 <th class="text-left py-3 px-5 text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                    Cliente / Prospecto
+                    Cliente / Prospecto / Negocio
                 </th>
                 <th class="py-3 px-4">
                     <a href="{{ $sortUrl('tipo') }}" class="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide {{ $sortActual === 'tipo' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600' }} transition-colors">
@@ -174,6 +185,12 @@ $sortIcon = function(string $col) use ($sortActual, $dirActual): string {
                     @elseif($seg->prospecto)
                         <span class="font-semibold text-slate-800">{{ $seg->prospecto->empresa }}</span>
                         <span class="ml-1.5 text-xs text-slate-400">(prospecto)</span>
+                    @elseif($seg->negocio)
+                        <a href="{{ route('negocios.show', $seg->negocio) }}"
+                           class="font-semibold text-slate-800 hover:text-blue-600 transition-colors">
+                            {{ $seg->negocio->nombre_negocio }}
+                        </a>
+                        <span class="ml-1.5 text-xs text-slate-400">(negocio)</span>
                     @else
                         <span class="text-slate-400">—</span>
                     @endif

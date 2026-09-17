@@ -14,6 +14,7 @@ use App\Http\Controllers\Web\NegocioWebController;
 use App\Http\Controllers\Web\ProspectoWebController;
 use App\Http\Controllers\Web\ReporteWebController;
 use App\Http\Controllers\Web\SeguimientoWebController;
+use App\Http\Controllers\Web\SolicitudCotizacionWebController;
 use App\Http\Controllers\Web\SolicitudCreditoWebController;
 use App\Http\Controllers\Web\MapeoVendedorWebController;
 use App\Http\Controllers\Web\PresupuestoWebController;
@@ -48,9 +49,7 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('dash.vendedor');
     };
 
-    // Roles con acceso al resto del CRM aparte de Gestión de Cartera. "cartera"
-    // queda deliberadamente fuera: por ahora solo puede entrar a esa pantalla
-    // (Solicitudes de Crédito también quedó fuera de cartera, temporal).
+    // Roles con acceso al resto del CRM aparte de Gestión de Cartera.
     $rolesCrmGeneral = 'admin|gerente|comercial|produccion|contabilidad_formacol|contabilidad_contiflex';
 
     Route::get('/', $homeRedirect);
@@ -85,10 +84,19 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/negocios',                  [NegocioWebController::class, 'index'])->name('negocios.index');
     });
 
-    // Solicitudes de Crédito — estáticas antes del wildcard
-    Route::get('/solicitudes-credito/create',              [SolicitudCreditoWebController::class, 'create'])->name('solicitudes-credito.create')->middleware('role:admin|gerente'); // cartera queda fuera por ahora, temporal
-    Route::get('/solicitudes-credito/{solicitudCredito}',  [SolicitudCreditoWebController::class, 'show'])->name('solicitudes-credito.show')->middleware('role:admin|gerente'); // cartera queda fuera por ahora, temporal
-    Route::get('/solicitudes-credito',                     [SolicitudCreditoWebController::class, 'index'])->name('solicitudes-credito.index')->middleware('role:admin|gerente'); // cartera queda fuera por ahora, temporal
+    // Solicitudes de Crédito — estáticas antes del wildcard. "cartera" ve y revisa
+    // (solicitudes_credito.ver/revisar) pero no crea (sin solicitudes_credito.crear).
+    Route::get('/solicitudes-credito/create',              [SolicitudCreditoWebController::class, 'create'])->name('solicitudes-credito.create')->middleware('role:admin|gerente');
+    Route::get('/solicitudes-credito/{solicitudCredito}',  [SolicitudCreditoWebController::class, 'show'])->name('solicitudes-credito.show')->middleware('role:admin|gerente|cartera');
+    Route::get('/solicitudes-credito',                     [SolicitudCreditoWebController::class, 'index'])->name('solicitudes-credito.index')->middleware('role:admin|gerente|cartera');
+
+    // Solicitudes de Cotización (SGP) — estáticas antes del wildcard
+    Route::middleware('role:admin|gerente|comercial')->group(function () {
+        Route::get('/solicitudes-cotizacion/escalas', [SolicitudCotizacionWebController::class, 'escalas'])->name('solicitudes-cotizacion.escalas');
+        Route::get('/solicitudes-cotizacion/bajas',   [SolicitudCotizacionWebController::class, 'bajas'])->name('solicitudes-cotizacion.bajas')->middleware('role:admin|gerente');
+        Route::get('/solicitudes-cotizacion/{nroSolicitud}', [SolicitudCotizacionWebController::class, 'show'])->name('solicitudes-cotizacion.show');
+        Route::get('/solicitudes-cotizacion', [SolicitudCotizacionWebController::class, 'index'])->name('solicitudes-cotizacion.index');
+    });
 
     // Contabilidad — estáticas antes del wildcard
     Route::get('/contabilidad/{cliente}', [ContabilidadWebController::class, 'show'])->name('contabilidad.show')->middleware('role:contabilidad_formacol|contabilidad_contiflex|admin');

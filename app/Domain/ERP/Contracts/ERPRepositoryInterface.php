@@ -8,12 +8,6 @@ interface ERPRepositoryInterface
 {
     public function clientePorNit(string $nit): ?array;
 
-    public function clientesPorNombre(string $nombre, int $limite = 20): array;
-
-    public function documentosPorCliente(string $nit, int $limite = 50): array;
-
-    public function saldoPorCliente(string $nit): ?array;
-
     /** Retorna la cartera por cobrar del cliente (un registro por documento/cuota), con aging. */
     public function carteraPorNit(string $nit): array;
 
@@ -145,7 +139,7 @@ interface ERPRepositoryInterface
     public function notificarCartera(array $pedidos): int;
 
     /** Notificaciones de cartera pendientes de envío (Notificado = 0). */
-    public function notificacionesCarteraPendientes(int $compania = 0): array;
+    public function notificacionesCarteraPendientes(int $compania = 0, ?string $fechaCumplimiento = null): array;
 
     /**
      * Marca manualmente una notificación de cartera como resuelta (Notificado = 1),

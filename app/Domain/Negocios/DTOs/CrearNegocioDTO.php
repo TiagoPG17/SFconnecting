@@ -19,6 +19,7 @@ class CrearNegocioDTO
         public readonly ?int $probabilidadCierre = null,
         public readonly ?string $fechaEstimadaCierre = null,
         public readonly ?int $compania = null,
+        public readonly ?string $nroSolicitudCotizacion = null,
     ) {}
 
     public static function fromArray(array $data): self
@@ -36,6 +37,7 @@ class CrearNegocioDTO
             probabilidadCierre:  isset($data['probabilidad_cierre']) ? (int) $data['probabilidad_cierre'] : null,
             fechaEstimadaCierre: $data['fecha_estimada_cierre'] ?? null,
             compania:            isset($data['compania']) ? (int) $data['compania'] : null,
+            nroSolicitudCotizacion: $data['nro_solicitud_cotizacion'] ?? null,
         );
     }
 
@@ -54,6 +56,7 @@ class CrearNegocioDTO
             'probabilidad_cierre'  => $this->probabilidadCierre,
             'fecha_estimada_cierre' => $this->fechaEstimadaCierre,
             'compania'             => $this->compania,
+            'nro_solicitud_cotizacion' => $this->nroSolicitudCotizacion,
         ];
     }
 }

@@ -18,6 +18,7 @@ class CrearSeguimientoDTO
         public readonly ?int $contactoId = null,
         public readonly ?Carbon $proximaFecha = null,
         public readonly ?int $prospectoId = null,
+        public readonly ?int $negocioId = null,
     ) {}
 
     public static function fromArray(array $data): self
@@ -32,6 +33,7 @@ class CrearSeguimientoDTO
             contactoId:       isset($data['contacto_id']) ? (int) $data['contacto_id'] : null,
             proximaFecha:     isset($data['proxima_fecha']) ? Carbon::parse($data['proxima_fecha']) : null,
             prospectoId:      isset($data['prospecto_id']) ? (int) $data['prospecto_id'] : null,
+            negocioId:        isset($data['negocio_id']) ? (int) $data['negocio_id'] : null,
         );
     }
 
@@ -40,6 +42,7 @@ class CrearSeguimientoDTO
         return array_filter([
             'cliente_id'        => $this->clienteId,
             'prospecto_id'      => $this->prospectoId,
+            'negocio_id'        => $this->negocioId,
             'user_id'           => $this->userId,
             'contacto_id'       => $this->contactoId,
             'tipo'              => $this->tipo,

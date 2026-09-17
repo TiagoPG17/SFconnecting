@@ -6,6 +6,7 @@ namespace App\Domain\Seguimientos\Models;
 
 use App\Domain\Clientes\Models\Cliente;
 use App\Domain\Clientes\Models\Contacto;
+use App\Domain\Negocios\Models\Negocio;
 use App\Domain\Prospectos\Models\Prospecto;
 use App\Models\User;
 use Database\Factories\SeguimientoFactory;
@@ -21,6 +22,7 @@ class Seguimiento extends Model
     protected $fillable = [
         'cliente_id',
         'prospecto_id',
+        'negocio_id',
         'user_id',
         'contacto_id',
         'tipo',
@@ -44,6 +46,11 @@ class Seguimiento extends Model
     public function prospecto(): BelongsTo
     {
         return $this->belongsTo(Prospecto::class);
+    }
+
+    public function negocio(): BelongsTo
+    {
+        return $this->belongsTo(Negocio::class);
     }
 
     public function asesor(): BelongsTo

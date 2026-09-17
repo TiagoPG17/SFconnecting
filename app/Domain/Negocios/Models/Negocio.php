@@ -36,6 +36,7 @@ class Negocio extends Model
         'observacion_perdida',
         'asesor_id',
         'compania',
+        'nro_solicitud_cotizacion',
         'activo',
     ];
 
@@ -67,6 +68,12 @@ class Negocio extends Model
     public function tipoNegocio(): BelongsTo
     {
         return $this->belongsTo(MaestroComercial::class, 'tipo_negocio_id');
+    }
+
+    /** El tipo de negocio asignado fue desactivado después — hay que reasignar uno activo. */
+    public function requiereNuevoTipoNegocio(): bool
+    {
+        return $this->tipo_negocio_id !== null && ! $this->tipoNegocio?->activo;
     }
 
     public function sector(): BelongsTo

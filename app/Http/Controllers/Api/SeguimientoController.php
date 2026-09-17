@@ -34,6 +34,14 @@ class SeguimientoController extends Controller
             );
         }
 
+        if ($request->filled('negocio_id')) {
+            $seguimientos = $this->repo->porNegocio((int) $request->get('negocio_id'));
+
+            return ApiResponse::success(
+                SeguimientoResource::collection($seguimientos)->response()->getData(true)
+            );
+        }
+
         $clienteId = (int) $request->get('cliente_id');
         $pagina    = $this->repo->paginarPorCliente($clienteId);
 

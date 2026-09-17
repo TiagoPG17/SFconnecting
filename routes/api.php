@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CarteraNotificacionController;
 use App\Http\Controllers\Api\ClienteController;
 use App\Http\Controllers\Api\ContactoController;
 use App\Http\Controllers\Api\DashboardController;
@@ -71,12 +72,15 @@ Route::middleware('auth:sanctum')->name('api.')->group(function () {
 
     // Prospectos
     Route::get('prospectos/kanban', [ProspectoController::class, 'kanban'])->name('prospectos.kanban');
+    Route::get('prospectos/candidatos-sgp', [ProspectoController::class, 'candidatosSgp'])->name('prospectos.candidatos-sgp');
     Route::post('prospectos/{prospecto}/convertir', [ProspectoController::class, 'convertir'])->name('prospectos.convertir');
     Route::apiResource('prospectos', ProspectoController::class);
 
     // Negocios
     Route::get('negocios/kanban', [NegocioController::class, 'kanban'])->name('negocios.kanban');
     Route::get('negocios/forecast', [NegocioController::class, 'forecast'])->name('negocios.forecast');
+    Route::get('negocios/candidatos-sgp', [NegocioController::class, 'candidatosSgp'])->name('negocios.candidatos-sgp');
+    Route::get('negocios/candidatos-sgp/{nroSolicitud}/escalas', [NegocioController::class, 'escalasSgp'])->name('negocios.candidatos-sgp.escalas');
     Route::apiResource('negocios', NegocioController::class);
 
     // Solicitudes de Crédito
@@ -107,4 +111,11 @@ Route::middleware('auth:sanctum')->name('api.')->group(function () {
         Route::get('{tipo}', [MaestroController::class, 'porTipo'])->name('maestros.tipo');
     });
 
+});
+
+// Cartera — consumida por n8n con token propio (no Sanctum, no es un usuario de la app).
+// Ver docs/n8n/gestion-cartera-notificacion.md.
+Route::prefix('cartera')->middleware('n8n.token')->name('api.cartera.')->group(function () {
+    Route::get('pendientes', [CarteraNotificacionController::class, 'pendientes'])->name('pendientes');
+    Route::patch('{compania}/{nroDocumento}/notificar', [CarteraNotificacionController::class, 'notificar'])->name('notificar');
 });

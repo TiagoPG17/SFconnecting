@@ -42,10 +42,13 @@ use App\Domain\Seguimientos\Models\Seguimiento;
 use App\Domain\Seguimientos\Policies\SeguimientoPolicy;
 use App\Domain\Seguimientos\Repositories\SeguimientoRepository;
 use App\Domain\Seguimientos\Repositories\SeguimientoRepositoryInterface;
+use App\Domain\SolicitudesCotizacion\Repositories\SolicitudCotizacionRepository;
+use App\Domain\SolicitudesCotizacion\Repositories\SolicitudCotizacionRepositoryInterface;
 use App\Domain\SolicitudesCredito\Models\SolicitudCredito;
 use App\Domain\SolicitudesCredito\Policies\SolicitudCreditoPolicy;
 use App\Domain\SolicitudesCredito\Repositories\SolicitudCreditoRepository;
 use App\Domain\SolicitudesCredito\Repositories\SolicitudCreditoRepositoryInterface;
+use App\Support\Database\ScopedTlsSqlServerConnector;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -69,6 +72,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(NegocioRepositoryInterface::class, NegocioRepository::class);
         $this->app->bind(MaestroRepositoryInterface::class, MaestroRepository::class);
         $this->app->bind(SolicitudCreditoRepositoryInterface::class, SolicitudCreditoRepository::class);
+        $this->app->bind(SolicitudCotizacionRepositoryInterface::class, SolicitudCotizacionRepository::class);
 
         $this->app->bind(ERPRepositoryInterface::class, function () {
             if (app()->environment('testing') || config('database.connections.erp_contiflex.host') === '') {
@@ -77,10 +81,16 @@ class AppServiceProvider extends ServiceProvider
 
             return new \App\Domain\ERP\Repositories\ContiflexERPRepository();
         });
+
+        $this->app->bind('db.connector.sqlsrv', fn () => new ScopedTlsSqlServerConnector());
     }
 
     public function boot(): void
     {
+        if (app()->environment('production') && config('app.debug')) {
+            throw new \RuntimeException('APP_DEBUG no puede estar activo en producción (config/app.php).');
+        }
+
         Paginator::defaultView('pagination.default');
         Paginator::defaultSimpleView('pagination.simple');
 

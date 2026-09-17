@@ -27,6 +27,8 @@ interface SeguimientoRepositoryInterface
 
     public function porProspecto(int $prospectoId, int $limite = 20): Collection;
 
+    public function porNegocio(int $negocioId, int $limite = 20): Collection;
+
     public function migrarACliente(int $prospectoId, int $clienteId): int;
 
     public function eliminar(Seguimiento $seguimiento): void;

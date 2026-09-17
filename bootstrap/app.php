@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role'               => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission'         => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'n8n.token'          => \App\Http\Middleware\VerifyN8nToken::class,
         ]);
 
         // Auditoría automática en todas las rutas web autenticadas

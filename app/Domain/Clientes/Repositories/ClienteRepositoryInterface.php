@@ -32,6 +32,9 @@ interface ClienteRepositoryInterface
 
     public function porAsesor(int $userId): Collection;
 
+    /** Reasigna todos los clientes de un asesor (en una compañía) a otro. Retorna los movidos. */
+    public function reasignarAsesor(int $deUserId, int $aUserId, int $compania): Collection;
+
     public function existeNit(string $nit, int $compania, ?int $exceptoId = null): bool;
 
     public function existeEmail(string $email, ?int $exceptoId = null): bool;

@@ -100,14 +100,19 @@
             </x-ui.nav-item>
             @endhasanyrole
 
+            @hasanyrole('admin|gerente|comercial')
+            <x-ui.nav-item href="{{ route('solicitudes-cotizacion.index') }}" :active="request()->routeIs('solicitudes-cotizacion.*')" icon="bar-chart">
+                Solicitudes de Cotización
+            </x-ui.nav-item>
+            @endhasanyrole
+
             @hasanyrole('cartera|admin|gerente')
             <x-ui.nav-item href="{{ route('gestion-cartera.index') }}" :active="request()->routeIs('gestion-cartera.*')" icon="clock">
                 Gestión de Cartera
             </x-ui.nav-item>
             @endhasanyrole
 
-            {{-- cartera queda fuera por ahora, temporal --}}
-            @hasanyrole('admin|gerente')
+            @hasanyrole('admin|gerente|cartera')
             <x-ui.nav-item href="{{ route('solicitudes-credito.index') }}" :active="request()->routeIs('solicitudes-credito.*')" icon="file-text">
                 Solicitudes de Crédito
             </x-ui.nav-item>
@@ -206,7 +211,7 @@
                 class="lg:hidden text-slate-500 hover:text-slate-700 transition-colors p-1 -ml-1 rounded-lg hover:bg-slate-100 mr-2"
                 aria-label="Abrir menú"
             >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                 </svg>
             </button>
@@ -227,7 +232,7 @@
                         this.fecha = n.toLocaleDateString('es-CO', { timeZone: 'America/Bogota', weekday: 'short', day: 'numeric', month: 'short' });
                     }
                  }">
-                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75" aria-hidden="true">
                     <circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/>
                 </svg>
                 <span class="text-sm font-medium text-slate-700 tnum" x-text="hora"></span>
@@ -239,8 +244,11 @@
                 <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
                     <div class="relative">
                         <button @click="open = !open" title="Notificaciones"
+                                :aria-expanded="open.toString()"
+                                aria-haspopup="true"
+                                aria-controls="notif-panel"
                                 class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-500 hover:bg-amber-100 hover:text-amber-600 transition-colors">
-                            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                             </svg>
                         </button>
@@ -251,6 +259,7 @@
                     </div>
                     {{-- Panel dropdown --}}
                     <div x-show="open"
+                         id="notif-panel"
                          x-transition:enter="transition ease-out duration-150"
                          x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
                          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
@@ -310,9 +319,12 @@
                 <button
                     @click="$store.ui.a11yOpen = true"
                     title="Opciones de accesibilidad (Alt+A)"
+                    :aria-expanded="$store.ui.a11yOpen.toString()"
+                    aria-haspopup="dialog"
+                    aria-controls="a11y-panel"
                     class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
                 >
-                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a1 1 0 100 2 1 1 0 000-2zM12 5v4m0 0l-3 3m3-3l3 3M9 12v5a3 3 0 006 0v-5"/>
                     </svg>
                 </button>
@@ -398,6 +410,11 @@
 
     {{-- Panel --}}
     <div
+        id="a11y-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Accesibilidad"
+        x-trap="$store.ui.a11yOpen"
         x-show="$store.ui.a11yOpen"
         x-transition:enter="transition ease-out duration-250"
         x-transition:enter-start="opacity-0 translate-x-8"
@@ -412,7 +429,7 @@
         <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
             <div class="flex items-center gap-2.5">
                 <div class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
-                    <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a1 1 0 100 2 1 1 0 000-2zM12 5v4m0 0l-3 3m3-3l3 3M9 12v5a3 3 0 006 0v-5"/>
                     </svg>
                 </div>
@@ -421,8 +438,8 @@
                     <p class="text-xs text-slate-400">Personaliza tu experiencia</p>
                 </div>
             </div>
-            <button @click="$store.ui.a11yOpen = false" class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <button @click="$store.ui.a11yOpen = false" aria-label="Cerrar panel de accesibilidad" class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
             </button>

@@ -15,6 +15,46 @@ services:
     depends_on:
       - db
 
+  queue-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sfconnecting-queue
+    restart: unless-stopped
+    working_dir: /var/www/sfconnecting
+    command: php artisan queue:work --tries=3 --timeout=90 --sleep=3
+    volumes:
+      - ./.env:/var/www/sfconnecting/.env
+      - sfconnecting_storage:/var/www/sfconnecting/storage
+    networks:
+      - sfconnecting-network
+    depends_on:
+      - db
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sfconnecting-scheduler
+    restart: unless-stopped
+    working_dir: /var/www/sfconnecting
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"]
+    volumes:
+      - ./.env:/var/www/sfconnecting/.env
+      - sfconnecting_storage:/var/www/sfconnecting/storage
+    networks:
+      - sfconnecting-network
+    depends_on:
+      - db
+
+  redis:
+    image: redis:7-alpine
+    container_name: sfconnecting-redis
+    restart: unless-stopped
+    networks:
+      - sfconnecting-network
+
   nginx:
     image: nginx:alpine
     container_name: sfconnecting-nginx

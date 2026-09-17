@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Domain\Dashboard\Models\VendedorEquivalencia;
 use App\Domain\Dashboard\Repositories\VendedorEquivalenciaRepositoryInterface;
+use App\Domain\Dashboard\Services\ReemplazoTemporalService;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -17,22 +18,28 @@ class MapeoVendedorWebController extends Controller
 {
     public function __construct(
         private readonly VendedorEquivalenciaRepositoryInterface $repo,
+        private readonly ReemplazoTemporalService $reemplazoService,
     ) {}
 
     public function index(Request $request): View
     {
-        $compania          = in_array((int) $request->input('cia'), [1, 2]) ? (int) $request->input('cia') : 1;
-        $mapeos            = $this->repo->todos($compania);
-        $todosMapadosIds   = VendedorEquivalencia::pluck('asesor_id')->unique()->toArray();
-        $asesores          = User::role('comercial')
+        $compania           = in_array((int) $request->input('cia'), [1, 2]) ? (int) $request->input('cia') : 1;
+        $mapeos             = $this->repo->todos($compania);
+        $todosMapadosIds    = VendedorEquivalencia::pluck('asesor_id')->unique()->toArray();
+        $asesoresSinMapear  = User::role('comercial')
                                 ->whereNotIn('id', $todosMapadosIds)
                                 ->orderBy('name')
                                 ->get(['id', 'name', 'email']);
-        $vendedoresSiesa1  = $this->repo->vendedoresSiesa(1);
-        $vendedoresSiesa2  = $this->repo->vendedoresSiesa(2);
+        // Incluye a asesores que ya tienen mapeo: un asesor puede necesitar un segundo
+        // código en la misma compañía (ej. cubre a un compañero de vacaciones).
+        $todosLosAsesores   = User::role('comercial')
+                                ->orderBy('name')
+                                ->get(['id', 'name', 'email']);
+        $vendedoresSiesa1   = $this->repo->vendedoresSiesa(1);
+        $vendedoresSiesa2   = $this->repo->vendedoresSiesa(2);
 
         return view('mapeo-vendedores.index', compact(
-            'mapeos', 'asesores', 'vendedoresSiesa1', 'vendedoresSiesa2', 'compania'
+            'mapeos', 'asesoresSinMapear', 'todosLosAsesores', 'vendedoresSiesa1', 'vendedoresSiesa2', 'compania'
         ));
     }
 
@@ -43,10 +50,12 @@ class MapeoVendedorWebController extends Controller
             'compania'  => ['required', 'integer', 'in:0,1,2'],
         ]);
 
-        $asesorId = (int) $request->input('asesor_id');
-        $compania = (int) $request->input('compania');
-        $creados  = 0;
-        $errores  = [];
+        $asesorId    = (int) $request->input('asesor_id');
+        $compania    = (int) $request->input('compania');
+        $esReemplazo = $request->boolean('es_reemplazo');
+        $creados     = 0;
+        $movidos     = 0;
+        $errores     = [];
 
         $companias = $compania === 0 ? [1, 2] : [$compania];
 
@@ -58,19 +67,26 @@ class MapeoVendedorWebController extends Controller
                 continue;
             }
 
-            if ($this->repo->existe($asesorId, $cia)) {
-                $errores[] = ($cia === 1 ? 'Formacol' : 'Contiflex') . ': ya existe un mapeo para este asesor.';
+            // Un reemplazo usa a propósito el mismo código que su titular, así que
+            // no aplica la validación de "código ya mapeado a otro asesor".
+            if (! $esReemplazo && $this->repo->existeCodigo($cod, $cia)) {
+                $errores[] = ($cia === 1 ? 'Formacol' : 'Contiflex') . ': este código ya está mapeado a otro asesor.';
                 continue;
             }
 
-            $this->repo->crear([
+            $mapeo = $this->repo->crear([
                 'asesor_id'          => $asesorId,
                 'compania'           => $cia,
                 'cod_vendedor_siesa' => $cod,
                 'nombre_vendedor'    => $nombre,
                 'activo'             => true,
+                'es_reemplazo'       => $esReemplazo,
             ]);
             $creados++;
+
+            if ($esReemplazo) {
+                $movidos += $this->reemplazoService->activar($mapeo);
+            }
         }
 
         if (!empty($errores)) {
@@ -82,8 +98,13 @@ class MapeoVendedorWebController extends Controller
                 ->with('success', 'Vendedor mapeado. Ahora asígnale un presupuesto.');
         }
 
+        $mensaje = $creados . ' mapeo(s) creado(s) correctamente.';
+        if ($movidos > 0) {
+            $mensaje .= " {$movidos} cliente(s) reasignado(s) al reemplazante.";
+        }
+
         return redirect()->route('mapeo-vendedores.index', ['cia' => $compania === 0 ? 1 : $compania])
-            ->with('success', $creados . ' mapeo(s) creado(s) correctamente.');
+            ->with('success', $mensaje);
     }
 
     public function update(Request $request, VendedorEquivalencia $mapeoVendedor): RedirectResponse
@@ -97,21 +118,46 @@ class MapeoVendedorWebController extends Controller
             'cod_vendedor_siesa' => ['required', 'string', 'max:20'],
             'nombre_vendedor'    => ['required', 'string', 'max:200'],
             'activo'             => ['boolean'],
+            'es_reemplazo'       => ['boolean'],
         ]);
 
+        $eraReemplazoActivo = $mapeoVendedor->es_reemplazo && $mapeoVendedor->activo;
+
         try {
-            $this->repo->actualizar($mapeoVendedor, $data);
+            $mapeoVendedor = $this->repo->actualizar($mapeoVendedor, $data);
         } catch (\Throwable $e) {
             Log::error('[MapeoVendedor] error al actualizar', ['mapeo_id' => $mapeoVendedor->id, 'error' => $e->getMessage()]);
             return back()->withErrors(['general' => 'Error al guardar: ' . $e->getMessage()]);
         }
 
+        $esReemplazoActivoAhora = $mapeoVendedor->es_reemplazo && $mapeoVendedor->activo;
+        $mensaje = 'Mapeo actualizado correctamente.';
+
+        if ($eraReemplazoActivo && ! $esReemplazoActivoAhora) {
+            $resultado = $this->reemplazoService->revertir($mapeoVendedor);
+            if ($resultado['clientes'] > 0) {
+                $mensaje .= " {$resultado['clientes']} cliente(s) devuelto(s) al titular.";
+            }
+            if ($resultado['negocios'] > 0) {
+                $mensaje .= " {$resultado['negocios']} negocio(s) devuelto(s) al titular.";
+            }
+        } elseif (! $eraReemplazoActivo && $esReemplazoActivoAhora) {
+            $movidos = $this->reemplazoService->activar($mapeoVendedor);
+            if ($movidos > 0) {
+                $mensaje .= " {$movidos} cliente(s) reasignado(s).";
+            }
+        }
+
         return redirect()->route('mapeo-vendedores.index')
-            ->with('success', 'Mapeo actualizado correctamente.');
+            ->with('success', $mensaje);
     }
 
     public function destroy(VendedorEquivalencia $mapeoVendedor): RedirectResponse
     {
+        if ($mapeoVendedor->es_reemplazo && $mapeoVendedor->activo) {
+            $this->reemplazoService->revertir($mapeoVendedor);
+        }
+
         $this->repo->eliminar($mapeoVendedor);
 
         return redirect()->route('mapeo-vendedores.index')

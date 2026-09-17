@@ -27,6 +27,7 @@ class CrearNegocioRequest extends FormRequest
             'probabilidad_cierre'  => ['nullable', 'integer', 'min:0', 'max:100'],
             'fecha_estimada_cierre' => ['nullable', 'date'],
             'compania'             => ['nullable', 'integer', 'in:1,2'],
+            'nro_solicitud_cotizacion' => ['nullable', 'string', 'max:20', 'unique:sf_negocios,nro_solicitud_cotizacion'],
         ];
     }
 }

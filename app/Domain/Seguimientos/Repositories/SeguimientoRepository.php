@@ -57,10 +57,16 @@ class SeguimientoRepository implements SeguimientoRepositoryInterface
 
     public function paginar(array $filtros = [], int $porPagina = 15): LengthAwarePaginator
     {
-        $query = Seguimiento::with(['cliente', 'asesor', 'contacto']);
+        $query = Seguimiento::with(['cliente', 'prospecto', 'negocio', 'asesor', 'contacto']);
 
         if (! empty($filtros['cliente_id'])) {
             $query->where('cliente_id', $filtros['cliente_id']);
+        }
+
+        if (($filtros['entidad'] ?? null) === 'prospecto') {
+            $query->whereNotNull('prospecto_id');
+        } elseif (($filtros['entidad'] ?? null) === 'negocio') {
+            $query->whereNotNull('negocio_id');
         }
 
         if (! empty($filtros['user_id'])) {
@@ -98,6 +104,15 @@ class SeguimientoRepository implements SeguimientoRepositoryInterface
     public function porProspecto(int $prospectoId, int $limite = 20): Collection
     {
         return Seguimiento::where('prospecto_id', $prospectoId)
+            ->with(['asesor', 'contacto'])
+            ->orderByDesc('fecha_seguimiento')
+            ->limit($limite)
+            ->get();
+    }
+
+    public function porNegocio(int $negocioId, int $limite = 20): Collection
+    {
+        return Seguimiento::where('negocio_id', $negocioId)
             ->with(['asesor', 'contacto'])
             ->orderByDesc('fecha_seguimiento')
             ->limit($limite)

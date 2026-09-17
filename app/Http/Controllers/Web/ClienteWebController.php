@@ -16,6 +16,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class ClienteWebController extends Controller
@@ -204,7 +205,9 @@ class ClienteWebController extends Controller
     {
         try {
             return $this->erp->isAvailable() ? $this->erp->clientePorNit($nit) : null;
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('clientes.consultarErp: fallo al consultar el ERP', ['nit' => $nit, 'exception' => $e->getMessage()]);
+
             return null;
         }
     }
@@ -213,7 +216,9 @@ class ClienteWebController extends Controller
     {
         try {
             return $this->erp->isAvailable() ? $this->erp->ventasMensualesPorNit($nit) : [];
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('clientes.consultarVentasSiesa: fallo al consultar el ERP', ['nit' => $nit, 'exception' => $e->getMessage()]);
+
             return [];
         }
     }
@@ -222,7 +227,9 @@ class ClienteWebController extends Controller
     {
         try {
             return $this->erp->isAvailable() ? $this->erp->comparativoAnualPorNit($nit) : [];
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('clientes.consultarComparativoAnual: fallo al consultar el ERP', ['nit' => $nit, 'exception' => $e->getMessage()]);
+
             return [];
         }
     }

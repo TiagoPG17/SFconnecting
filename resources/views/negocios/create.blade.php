@@ -11,7 +11,7 @@
                 <form
                     x-data="{
                         loading: false,
-                        tipoVinculo: 'prospecto',
+                        tipoVinculo: {{ request('cliente_id') ? '\'cliente\'' : '\'prospecto\'' }},
                         estadoId: null,
                         estadosPerdidos: @js($estadosPerdidoIds),
                         get esPerdido() { return this.estadosPerdidos.includes(parseInt(this.estadoId)); }
@@ -36,6 +36,14 @@
                     "
                     class="space-y-5"
                 >
+                    <input type="hidden" name="nro_solicitud_cotizacion" value="{{ request('nro_solicitud_cotizacion') }}">
+
+                    @if(request('nro_solicitud_cotizacion'))
+                    <p class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                        Prellenado desde la solicitud de cotización <span class="font-mono font-semibold">{{ request('nro_solicitud_cotizacion') }}</span> (SGP). Revisa el nombre, el valor y completa lo que falte.
+                    </p>
+                    @endif
+
                     {{-- Encabezado con título y toggle --}}
                     <div class="flex items-center justify-between mb-1">
                         <h2 class="text-base font-semibold text-slate-900">Datos del negocio</h2>
@@ -120,7 +128,9 @@
                         x-show="tipoVinculo === 'cliente'"
                         x-transition
                         x-data="{
-                            query: '', selectedId: null, results: [], open: false, loading: false, timer: null,
+                            query: {{ Illuminate\Support\Js::from(request('cliente_label', '')) }},
+                            selectedId: {{ request('cliente_id') ? (int) request('cliente_id') : 'null' }},
+                            results: [], open: false, loading: false, timer: null,
                             buscar() {
                                 clearTimeout(this.timer);
                                 if (this.query.length < 2) { this.results = []; this.open = false; return; }
@@ -175,7 +185,7 @@
                         </div>
                     </div>
 
-                    <x-ui.input name="nombre_negocio" label="Nombre del negocio" required placeholder="Ej: Implementación ERP Empresa X"/>
+                    <x-ui.input name="nombre_negocio" label="Nombre del negocio" required placeholder="Ej: Implementación ERP Empresa X" value="{{ request('nombre_negocio') }}"/>
 
                     @if(count($companiasAsesor) > 1)
                     <x-ui.select name="compania" label="Compañía" required>
@@ -231,7 +241,7 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div x-data="pesoInput()">
+                        <div x-data="pesoInput({{ (int) request('valor_estimado', 0) }})">
                             <label class="block text-sm font-medium text-slate-700 mb-1.5">Valor estimado ($)</label>
                             <div class="flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
                                 <span class="px-3 text-slate-400 text-sm shrink-0 border-r border-slate-300 bg-slate-50 py-2 select-none pointer-events-none">$</span>
@@ -254,7 +264,7 @@
                             rows="3"
                             placeholder="Descripción del negocio..."
                             class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                        ></textarea>
+                        >{{ request('descripcion') }}</textarea>
                     </div>
 
                     <div class="flex justify-end gap-3 pt-2">

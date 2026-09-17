@@ -8,6 +8,141 @@
         </x-ui.button>
     </x-slot>
 
+    @can('create', \App\Domain\Negocios\Models\Negocio::class)
+    <div class="mb-4" x-data="candidatosNegocioSgp()">
+        <button type="button" @click="abrir()"
+                class="inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-medium transition-colors">
+            <x-ui.icon name="bar-chart" class="w-3.5 h-3.5"/>
+            Cargar solicitudes de cotización (SGP)
+        </button>
+
+        <x-ui.modal title="Solicitudes de cotización con cliente asignado" size="xl">
+            {{-- Paso 1: lista de solicitudes --}}
+            <div class="space-y-3" x-show="!solicitudActual">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="relative flex-1">
+                        <x-ui.icon name="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
+                        <input type="text" x-model="buscar" @input.debounce.400ms="cargar()"
+                               placeholder="Buscar por NIT o nombre del cliente..."
+                               class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <span class="shrink-0 text-xs text-slate-400">Últimos 30 días</span>
+                </div>
+
+                <template x-if="cargando">
+                    <p class="text-sm text-slate-400 text-center py-8">Cargando...</p>
+                </template>
+                <template x-if="!cargando && error">
+                    <p class="text-sm text-red-600 text-center py-8" x-text="error"></p>
+                </template>
+                <template x-if="!cargando && !error && items.length === 0">
+                    <p class="text-sm text-slate-400 text-center py-8">No hay solicitudes pendientes por convertir.</p>
+                </template>
+
+                <div class="rounded-lg border border-slate-200 overflow-hidden" x-show="!cargando && !error && items.length > 0">
+                    <div class="max-h-96 overflow-y-auto">
+                        <table class="w-full text-sm">
+                            <thead class="sticky top-0 bg-slate-50 border-b border-slate-200">
+                                <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                    <th class="px-3 py-2.5">Cliente</th>
+                                    <th class="px-3 py-2.5">Solicitud</th>
+                                    <th class="px-3 py-2.5">Fecha</th>
+                                    <th class="px-3 py-2.5">Comercial</th>
+                                    <th class="px-3 py-2.5 text-right">Total cotizado</th>
+                                    <th class="px-3 py-2.5"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 bg-white">
+                                <template x-for="item in items" :key="item.nro_solicitud">
+                                    <tr class="hover:bg-slate-50 transition-colors">
+                                        <td class="px-3 py-2.5 max-w-[200px]">
+                                            <p class="font-medium text-slate-900 truncate" x-text="item.cliente"></p>
+                                            <p class="text-xs text-slate-400" x-text="'NIT: ' + (item.nit || '—')"></p>
+                                        </td>
+                                        <td class="px-3 py-2.5 font-mono text-xs text-slate-600 whitespace-nowrap" x-text="item.nro_solicitud"></td>
+                                        <td class="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap" x-text="item.fecha_solicitud"></td>
+                                        <td class="px-3 py-2.5 text-xs text-slate-500 max-w-[130px] truncate" x-text="item.comercial"></td>
+                                        <td class="px-3 py-2.5 text-right text-xs font-semibold text-slate-700 whitespace-nowrap"
+                                            x-text="'$' + Number(item.valor_estimado).toLocaleString('es-CO')"></td>
+                                        <td class="px-3 py-2.5 text-right">
+                                            <button type="button" @click="verEscalas(item)"
+                                                    class="text-xs font-semibold text-blue-700 hover:underline whitespace-nowrap">
+                                                Ver escalas →
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Paso 2: escalas de la solicitud elegida --}}
+            <div class="space-y-3" x-show="solicitudActual" x-cloak>
+                <template x-if="solicitudActual">
+                    <div class="flex items-center justify-between gap-3 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
+                        <div>
+                            <p class="text-sm font-medium text-slate-900" x-text="solicitudActual.cliente"></p>
+                            <p class="text-xs text-slate-500" x-text="'NIT: ' + (solicitudActual.nit || '—') + ' · Solicitud ' + solicitudActual.nro_solicitud"></p>
+                        </div>
+                        <button type="button" @click="volverALista()"
+                                class="shrink-0 text-xs font-medium text-slate-500 hover:text-slate-700">
+                            ← Volver a la lista
+                        </button>
+                    </div>
+                </template>
+
+                <template x-if="cargandoEscalas">
+                    <p class="text-sm text-slate-400 text-center py-8">Cargando escalas...</p>
+                </template>
+                <template x-if="!cargandoEscalas && errorEscalas">
+                    <p class="text-sm text-red-600 text-center py-8" x-text="errorEscalas"></p>
+                </template>
+                <template x-if="!cargandoEscalas && !errorEscalas && escalas.length === 0">
+                    <p class="text-sm text-slate-400 text-center py-8">Esta solicitud no tiene escalas activas.</p>
+                </template>
+
+                <div class="rounded-lg border border-slate-200 overflow-hidden" x-show="!cargandoEscalas && !errorEscalas && escalas.length > 0">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                <th class="px-3 py-2.5 text-right">Escala</th>
+                                <th class="px-3 py-2.5">Moneda</th>
+                                <th class="px-3 py-2.5 text-right">Precio unit.</th>
+                                <th class="px-3 py-2.5 text-right">Valor total</th>
+                                <th class="px-3 py-2.5">Situación</th>
+                                <th class="px-3 py-2.5"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <template x-for="esc in escalas" :key="esc.escala">
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-3 py-2.5 text-right font-semibold text-slate-800" x-text="esc.escala"></td>
+                                    <td class="px-3 py-2.5 text-slate-600" x-text="esc.moneda"></td>
+                                    <td class="px-3 py-2.5 text-right text-slate-700" x-text="Number(esc.precio_unitario).toLocaleString('es-CO', {minimumFractionDigits: 2})"></td>
+                                    <td class="px-3 py-2.5 text-right font-semibold text-slate-800" x-text="'$' + Number(esc.valor_total_escala).toLocaleString('es-CO')"></td>
+                                    <td class="px-3 py-2.5">
+                                        <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full border"
+                                              :class="esc.situacion_escala === 'CON PRECIO' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200'"
+                                              x-text="esc.situacion_escala"></span>
+                                    </td>
+                                    <td class="px-3 py-2.5 text-right">
+                                        <a :href="urlCrear(esc)"
+                                           class="text-xs font-semibold text-blue-700 hover:underline whitespace-nowrap">
+                                            Usar esta escala →
+                                        </a>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </x-ui.modal>
+    </div>
+    @endcan
+
     {{-- Filtros --}}
     <x-ui.card class="p-4 mb-4"
         x-data="{
@@ -137,4 +272,89 @@
         @endif
         @endif
     </x-ui.card>
+
+@push('scripts')
+<script>
+    function candidatosNegocioSgp() {
+        return {
+            open: false,
+            cargando: false,
+            error: null,
+            buscar: '',
+            items: [],
+            solicitudActual: null,
+            cargandoEscalas: false,
+            errorEscalas: null,
+            escalas: [],
+            abrir() {
+                this.open = true;
+                this.solicitudActual = null;
+                this.cargar();
+            },
+            authHeaders() {
+                const token = document.querySelector('meta[name="api-token"]')?.content;
+                return {
+                    'Accept': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                };
+            },
+            async cargar() {
+                this.cargando = true;
+                this.error = null;
+                try {
+                    const url = new URL('{{ route('api.negocios.candidatos-sgp') }}', window.location.origin);
+                    if (this.buscar) url.searchParams.set('buscar', this.buscar);
+                    const res = await fetch(url.toString(), { headers: this.authHeaders() });
+                    const r = await res.json();
+                    if (r.success) {
+                        this.items = r.data;
+                    } else {
+                        this.error = r.message || 'No se pudieron cargar las solicitudes.';
+                    }
+                } catch (e) {
+                    this.error = 'Error de conexión.';
+                } finally {
+                    this.cargando = false;
+                }
+            },
+            async verEscalas(item) {
+                this.solicitudActual = item;
+                this.cargandoEscalas = true;
+                this.errorEscalas = null;
+                this.escalas = [];
+                try {
+                    const url = '{{ url('/api/negocios/candidatos-sgp') }}/' + item.nro_solicitud + '/escalas';
+                    const res = await fetch(url, { headers: this.authHeaders() });
+                    const r = await res.json();
+                    if (r.success) {
+                        this.escalas = r.data;
+                    } else {
+                        this.errorEscalas = r.message || 'No se pudieron cargar las escalas.';
+                    }
+                } catch (e) {
+                    this.errorEscalas = 'Error de conexión.';
+                } finally {
+                    this.cargandoEscalas = false;
+                }
+            },
+            volverALista() {
+                this.solicitudActual = null;
+                this.escalas = [];
+            },
+            urlCrear(escala) {
+                const item = this.solicitudActual;
+                const params = new URLSearchParams({
+                    cliente_id: item.cliente_id,
+                    cliente_label: item.cliente + (item.nit ? ' — ' + item.nit : ''),
+                    nombre_negocio: item.cliente || '',
+                    valor_estimado: escala.valor_total_escala || 0,
+                    descripcion: `Escala ${escala.escala} · ${item.tipo_cotizacion || ''} ${item.descripcion || ''}`.trim(),
+                    nro_solicitud_cotizacion: item.nro_solicitud,
+                });
+                return '{{ route('negocios.create') }}?' + params.toString();
+            },
+        };
+    }
+</script>
+@endpush
 </x-layouts.app>

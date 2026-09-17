@@ -39,7 +39,8 @@ class CarteraWebController extends Controller
                 $total         = $resultado['total'];
                 $pendientes    = $this->erp->notificacionesCarteraPendientes($compania);
             }
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            Log::warning('gestion-cartera.index: ERP no disponible', ['exception' => $e->getMessage()]);
         }
 
         $totalPaginas = $total > 0 ? (int) ceil($total / $porPagina) : 1;
@@ -67,8 +68,9 @@ class CarteraWebController extends Controller
             return response()->json(['success' => true, 'insertados' => $insertados]);
         } catch (Throwable $e) {
             Log::error('gestion-cartera.notificar: fallo al insertar notificaciones', [
-                'data'      => $data,
-                'exception' => $e->getMessage(),
+                'pedidos_count'  => count($data['pedidos']),
+                'nros_documento' => array_column($data['pedidos'], 'nro_documento'),
+                'exception'      => $e->getMessage(),
             ]);
 
             return response()->json(['success' => false, 'message' => 'No se pudo registrar la notificación.'], 500);

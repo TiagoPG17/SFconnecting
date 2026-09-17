@@ -20,6 +20,7 @@ class CrearProspectoDTO
         public readonly ?string $fechaProximoContacto = null,
         public readonly ?string $observaciones = null,
         public readonly ?int $compania = null,
+        public readonly ?string $nroSolicitudCotizacion = null,
     ) {}
 
     public static function fromArray(array $data): self
@@ -38,6 +39,7 @@ class CrearProspectoDTO
             fechaProximoContacto: $data['fecha_proximo_contacto'] ?? null,
             observaciones:        $data['observaciones'] ?? null,
             compania:             isset($data['compania']) ? (int) $data['compania'] : null,
+            nroSolicitudCotizacion: $data['nro_solicitud_cotizacion'] ?? null,
         );
     }
 
@@ -57,6 +59,7 @@ class CrearProspectoDTO
             'fecha_proximo_contacto' => $this->fechaProximoContacto,
             'observaciones'         => $this->observaciones,
             'compania'              => $this->compania,
+            'nro_solicitud_cotizacion' => $this->nroSolicitudCotizacion,
         ];
     }
 }

@@ -23,6 +23,7 @@ Thumbs.db
 /storage/framework/cache/
 /storage/framework/sessions/
 /storage/framework/views/
+/storage/framework/phpstan/
 
 # Base de datos local
 /database/database.sqlite

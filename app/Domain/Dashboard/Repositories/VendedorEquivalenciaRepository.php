@@ -56,10 +56,13 @@ class VendedorEquivalenciaRepository implements VendedorEquivalenciaRepositoryIn
         return VendedorEquivalencia::with('asesor')->find($id);
     }
 
-    public function existe(int $asesorId, int $compania, ?int $exceptoId = null): bool
+    public function existeCodigo(string $cod, int $compania, ?int $exceptoId = null): bool
     {
-        return VendedorEquivalencia::where('asesor_id', $asesorId)
-            ->where('compania', $compania)
+        // Solo cuenta contra filas "dueñas" (es_reemplazo = false): un reemplazo
+        // temporal usa a propósito el mismo código que su titular.
+        return VendedorEquivalencia::where('compania', $compania)
+            ->where('cod_vendedor_siesa', trim($cod))
+            ->where('es_reemplazo', false)
             ->when($exceptoId, fn ($q) => $q->where('id', '!=', $exceptoId))
             ->exists();
     }

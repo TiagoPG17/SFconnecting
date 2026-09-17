@@ -37,7 +37,7 @@ class DashboardVendedorServiceTest extends TestCase
     public function test_retorna_error_cuando_vendedor_no_esta_mapeado_en_siesa(): void
     {
         $this->repo->method('presupuestoVendedor')->willReturn(null);
-        $this->repo->method('codVendedorSiesa')->willReturn(null);
+        $this->repo->method('codigosVendedorSiesa')->willReturn([]);
 
         $resultado = $this->servicio()->presupuestoVsLogrado();
 
@@ -48,7 +48,7 @@ class DashboardVendedorServiceTest extends TestCase
     {
         // Año 2025 completo: diasTrx = diasTotal = 365, presupuestoPer = presupuesto_anual
         $this->repo->method('presupuestoVendedor')->willReturn((object) ['presupuesto' => '1000000.00']);
-        $this->repo->method('codVendedorSiesa')->willReturn('V001');
+        $this->repo->method('codigosVendedorSiesa')->willReturn(['V001']);
         $this->repo->method('logradoYtd')->willReturn(1_000_000.0); // 100% del presupuesto
 
         $resultado = $this->servicio($this->meses2025(), anio: 2025)->presupuestoVsLogrado();
@@ -59,7 +59,7 @@ class DashboardVendedorServiceTest extends TestCase
     public function test_semaforo_es_amarillo_entre_80_y_99_pct(): void
     {
         $this->repo->method('presupuestoVendedor')->willReturn((object) ['presupuesto' => '1000000.00']);
-        $this->repo->method('codVendedorSiesa')->willReturn('V001');
+        $this->repo->method('codigosVendedorSiesa')->willReturn(['V001']);
         $this->repo->method('logradoYtd')->willReturn(850_000.0); // 85% del presupuesto
 
         $resultado = $this->servicio($this->meses2025(), anio: 2025)->presupuestoVsLogrado();
@@ -70,7 +70,7 @@ class DashboardVendedorServiceTest extends TestCase
     public function test_semaforo_es_rojo_cuando_ritmo_menor_80_pct(): void
     {
         $this->repo->method('presupuestoVendedor')->willReturn((object) ['presupuesto' => '1000000.00']);
-        $this->repo->method('codVendedorSiesa')->willReturn('V001');
+        $this->repo->method('codigosVendedorSiesa')->willReturn(['V001']);
         $this->repo->method('logradoYtd')->willReturn(500_000.0); // 50% del presupuesto
 
         $resultado = $this->servicio($this->meses2025(), anio: 2025)->presupuestoVsLogrado();
@@ -81,7 +81,7 @@ class DashboardVendedorServiceTest extends TestCase
     public function test_logrado_es_cero_cuando_erp_lanza_excepcion(): void
     {
         $this->repo->method('presupuestoVendedor')->willReturn((object) ['presupuesto' => '1000000.00']);
-        $this->repo->method('codVendedorSiesa')->willReturn('V001');
+        $this->repo->method('codigosVendedorSiesa')->willReturn(['V001']);
         $this->repo->method('logradoYtd')->willThrowException(new \RuntimeException('ERP caído'));
 
         $resultado = $this->servicio($this->meses2025(), anio: 2025)->presupuestoVsLogrado();
@@ -92,7 +92,7 @@ class DashboardVendedorServiceTest extends TestCase
     public function test_estructura_completa_cuando_vendedor_esta_mapeado(): void
     {
         $this->repo->method('presupuestoVendedor')->willReturn((object) ['presupuesto' => '1000000.00']);
-        $this->repo->method('codVendedorSiesa')->willReturn('V001');
+        $this->repo->method('codigosVendedorSiesa')->willReturn(['V001']);
         $this->repo->method('logradoYtd')->willReturn(700_000.0);
 
         $resultado = $this->servicio($this->meses2025(), anio: 2025)->presupuestoVsLogrado();
@@ -100,6 +100,20 @@ class DashboardVendedorServiceTest extends TestCase
         foreach (['ok', 'presupuesto_anual', 'logrado_ytd', 'avance_pct', 'esperado_pct', 'ritmo_pct', 'semaforo'] as $clave) {
             $this->assertArrayHasKey($clave, $resultado);
         }
+    }
+
+    public function test_logrado_suma_los_valores_de_varios_codigos_del_mismo_asesor(): void
+    {
+        $this->repo->method('presupuestoVendedor')->willReturn((object) ['presupuesto' => '1000000.00']);
+        $this->repo->method('codigosVendedorSiesa')->willReturn(['V001', 'V002']);
+        $this->repo->method('logradoYtd')->willReturnMap([
+            ['V001', 2, $this->meses2025(), 400_000.0],
+            ['V002', 2, $this->meses2025(), 300_000.0],
+        ]);
+
+        $resultado = $this->servicio($this->meses2025(), anio: 2025)->presupuestoVsLogrado();
+
+        $this->assertSame(700_000.0, $resultado['logrado_ytd']);
     }
 
     // ─── proximasActividades ─────────────────────────────────────────────────
@@ -247,7 +261,7 @@ class DashboardVendedorServiceTest extends TestCase
             (object) ['COD_VENDEDOR' => 'V003', 'logrado' => 10000],
         ]);
 
-        $this->repo->method('codVendedorSiesa')->willReturn('V002');
+        $this->repo->method('codigosVendedorSiesa')->willReturn(['V002']);
         $this->repo->method('rankingVendedores')->willReturn($ranking);
 
         $resultado = $this->servicio()->posicionEnEquipo();
@@ -255,9 +269,26 @@ class DashboardVendedorServiceTest extends TestCase
         $this->assertSame(2, $resultado['mi_puesto']);
     }
 
+    public function test_posicion_suma_mi_valor_cuando_el_asesor_tiene_dos_codigos(): void
+    {
+        $ranking = collect([
+            (object) ['COD_VENDEDOR' => 'V001', 'logrado' => 50000],
+            (object) ['COD_VENDEDOR' => 'V002', 'logrado' => 30000],
+            (object) ['COD_VENDEDOR' => 'V003', 'logrado' => 10000],
+        ]);
+
+        $this->repo->method('codigosVendedorSiesa')->willReturn(['V002', 'V003']);
+        $this->repo->method('rankingVendedores')->willReturn($ranking);
+
+        $resultado = $this->servicio()->posicionEnEquipo();
+
+        $this->assertSame(40000.0, $resultado['mi_valor']);
+        $this->assertSame(2, $resultado['mi_puesto']);
+    }
+
     public function test_posicion_retorna_null_cuando_vendedor_no_aparece_en_ranking(): void
     {
-        $this->repo->method('codVendedorSiesa')->willReturn(null);
+        $this->repo->method('codigosVendedorSiesa')->willReturn([]);
         $this->repo->method('rankingVendedores')->willReturn(collect());
 
         $resultado = $this->servicio()->posicionEnEquipo();
@@ -267,7 +298,7 @@ class DashboardVendedorServiceTest extends TestCase
 
     public function test_posicion_retorna_total_cero_cuando_erp_falla(): void
     {
-        $this->repo->method('codVendedorSiesa')->willReturn('V001');
+        $this->repo->method('codigosVendedorSiesa')->willReturn(['V001']);
         $this->repo->method('rankingVendedores')->willThrowException(new \RuntimeException('ERP caído'));
 
         $resultado = $this->servicio()->posicionEnEquipo();

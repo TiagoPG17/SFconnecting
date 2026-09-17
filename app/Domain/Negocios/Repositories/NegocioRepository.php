@@ -31,6 +31,17 @@ class NegocioRepository implements NegocioRepositoryInterface
         $negocio->delete();
     }
 
+    public function reasignarPorClientes(array $clienteIds, int $deUserId, int $aUserId): Collection
+    {
+        $negocios = Negocio::whereIn('cliente_id', $clienteIds)
+            ->where('asesor_id', $deUserId)
+            ->get();
+
+        Negocio::whereIn('id', $negocios->pluck('id'))->update(['asesor_id' => $aUserId]);
+
+        return $negocios;
+    }
+
     public function buscarPorId(int $id): ?Negocio
     {
         return Negocio::with(['pipelineEstado', 'tipoNegocio', 'sector', 'motivoPerdida', 'asesor', 'prospecto', 'cliente'])

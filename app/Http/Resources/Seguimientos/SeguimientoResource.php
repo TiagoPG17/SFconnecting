@@ -15,6 +15,7 @@ class SeguimientoResource extends JsonResource
             'id'                => $this->id,
             'cliente_id'        => $this->cliente_id,
             'prospecto_id'      => $this->prospecto_id,
+            'negocio_id'        => $this->negocio_id,
             'tipo'              => $this->tipo,
             'resultado'         => $this->resultado,
             'descripcion'       => $this->descripcion,

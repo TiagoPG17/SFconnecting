@@ -31,6 +31,10 @@ $sizeClass = $sizes[$size] ?? $sizes['md'];
 
     {{-- Panel --}}
     <div
+        role="dialog"
+        aria-modal="true"
+        @if($title) aria-labelledby="modal-title" @endif
+        x-trap="open"
         class="relative w-full {{ $sizeClass }} bg-white rounded-2xl shadow-2xl overflow-hidden"
         x-show="open"
         x-transition:enter="transition ease-out duration-200"
@@ -42,8 +46,8 @@ $sizeClass = $sizes[$size] ?? $sizes['md'];
     >
         @if($title)
         <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-            <h3 class="text-sm font-semibold text-slate-900">{{ $title }}</h3>
-            <button @click="open = false" class="text-slate-400 hover:text-slate-600 transition-colors">
+            <h3 id="modal-title" class="text-sm font-semibold text-slate-900">{{ $title }}</h3>
+            <button @click="open = false" aria-label="Cerrar" class="text-slate-400 hover:text-slate-600 transition-colors">
                 <x-ui.icon name="x" class="w-5 h-5"/>
             </button>
         </div>

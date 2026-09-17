@@ -14,6 +14,7 @@ use App\Domain\ERP\Contracts\ERPRepositoryInterface;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class ClientesHuerfanosWebController extends Controller
@@ -46,7 +47,9 @@ class ClientesHuerfanosWebController extends Controller
                 $offset         = ($pagina - 1) * $porPagina;
                 $huerfanos      = $this->erp->clientesHuerfanos($compania, $nitsEnCrm, $porPagina, $offset);
             }
-        } catch (\Throwable) {}
+        } catch (\Throwable $e) {
+            Log::warning('clientes-huerfanos.index: ERP no disponible', ['compania' => $compania, 'exception' => $e->getMessage()]);
+        }
 
         $totalPaginas = $totalHuerfanos > 0 ? (int) ceil($totalHuerfanos / $porPagina) : 1;
         $pagina       = min($pagina, $totalPaginas);

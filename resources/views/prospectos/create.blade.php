@@ -10,10 +10,21 @@
             empresa: '', contacto: '', email: '', telefono: '',
             estado_pipeline_id: '', origen_id: '', prioridad_id: '',
             valor_estimado: '', probabilidad_cierre: '',
-            fecha_proximo_contacto: '', observaciones: '', compania: ''
+            fecha_proximo_contacto: '', observaciones: '', compania: '',
+            nro_solicitud_cotizacion: ''
         },
         errors: {},
         loading: false,
+        init() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('empresa')) {
+                this.form.empresa = params.get('empresa');
+                // Los comerciales no tienen un contacto real desde SGP, así que
+                // por ahora repiten la empresa como contacto principal.
+                this.form.contacto = params.get('empresa');
+            }
+            if (params.get('nro_solicitud_cotizacion')) this.form.nro_solicitud_cotizacion = params.get('nro_solicitud_cotizacion');
+        },
         async guardar() {
             this.errors = {};
             this.loading = true;
@@ -43,7 +54,12 @@
     }">
         <x-ui.card>
             <div class="p-6">
-                <h2 class="text-base font-semibold text-slate-900 mb-6">Datos del prospecto</h2>
+                <h2 class="text-base font-semibold text-slate-900 mb-4">Datos del prospecto</h2>
+
+                <p x-show="form.nro_solicitud_cotizacion" x-cloak
+                   class="mb-4 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                    Prellenado desde la solicitud de cotización <span class="font-mono font-semibold" x-text="form.nro_solicitud_cotizacion"></span> (SGP). Completa el contacto, teléfono/email y demás datos.
+                </p>
 
                 <div class="space-y-5">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">

@@ -24,8 +24,11 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
 
     public function codsPorAsesor(int $compania): Collection
     {
+        // Los códigos de reemplazo no cuentan para el cumplimiento del que cubre;
+        // ese crédito se queda en el titular (dueño real del código).
         return VendedorEquivalencia::when($compania > 0, fn ($q) => $q->where('compania', $compania))
             ->where('activo', true)
+            ->where('es_reemplazo', false)
             ->get(['asesor_id', 'cod_vendedor_siesa']);
     }
 

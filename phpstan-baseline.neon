@@ -1,0 +1,805 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Domain/Clientes/Policies/ContactoPolicy.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$negocios_ganados\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Dashboard/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$valor_ganado\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Dashboard/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$color\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Dashboard/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Dashboard/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$empresa\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Dashboard/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Dashboard/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domain/Dashboard/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$razon_social\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Dashboard/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:role\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Domain/Dashboard/Repositories/PresupuestoRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$activo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Negocios/Models/Negocio.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$es_ganado\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Negocios/Models/Negocio.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$es_perdido\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Negocios/Models/Negocio.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$porcentaje_cierre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Negocios/Models/Negocio.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Negocios/Repositories/NegocioRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$es_ganado\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Negocios/Services/NegocioService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$es_perdido\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Negocios/Services/NegocioService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Domain/Negocios/Services/NegocioService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$porcentaje_cierre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Prospectos/Models/Prospecto.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Domain/Prospectos/Services/ProspectoService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domain\\Negocios\\Models\\Negocio\:\:\$estado\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Reportes/Repositories/ReporteRepository.php
+
+		-
+			message: '#^Access to an undefined property App\\Domain\\Negocios\\Models\\Negocio\:\:\$total\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Reportes/Repositories/ReporteRepository.php
+
+		-
+			message: '#^Access to an undefined property App\\Domain\\Negocios\\Models\\Negocio\:\:\$valor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Reportes/Repositories/ReporteRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/Reportes/Repositories/ReporteRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$es_final\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/SolicitudesCredito/Models/SolicitudCredito.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$es_ganado\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/SolicitudesCredito/Models/SolicitudCredito.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$es_perdido\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/SolicitudesCredito/Models/SolicitudCredito.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domain/SolicitudesCredito/Services/SolicitudCreditoService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$empresa\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/CalendarioWebController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Web/CalendarioWebController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$razon_social\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/CalendarioWebController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fecha_seguimiento\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/Web/ClienteWebController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$asesor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Web/PresupuestoWebController.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Clientes\\ClienteResource\:\:\$asesor\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Clientes/ClienteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Clientes\\ClienteResource\:\:\$ciudad\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Clientes/ClienteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Clientes\\ClienteResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Clientes/ClienteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Clientes\\ClienteResource\:\:\$direccion\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Clientes/ClienteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Clientes\\ClienteResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Clientes/ClienteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Clientes\\ClienteResource\:\:\$estado\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Clientes/ClienteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Clientes\\ClienteResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Clientes/ClienteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Clientes\\ClienteResource\:\:\$nit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Clientes/ClienteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Clientes\\ClienteResource\:\:\$notas\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Clientes/ClienteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Clientes\\ClienteResource\:\:\$razon_social\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Clientes/ClienteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Clientes\\ClienteResource\:\:\$telefono\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Clientes/ClienteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Clientes\\ClienteResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Clientes/ClienteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Contactos\\ContactoResource\:\:\$cargo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Contactos/ContactoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Contactos\\ContactoResource\:\:\$cliente_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Contactos/ContactoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Contactos\\ContactoResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Contactos/ContactoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Contactos\\ContactoResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Contactos/ContactoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Contactos\\ContactoResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Contactos/ContactoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Contactos\\ContactoResource\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Contactos/ContactoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Contactos\\ContactoResource\:\:\$principal\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Contactos/ContactoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Contactos\\ContactoResource\:\:\$telefono\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Contactos/ContactoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$activo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$asesor\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$cliente_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$descripcion\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$fecha_cierre_real\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$fecha_estimada_cierre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$motivoPerdida\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$nombre_negocio\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$pipelineEstado\.$#'
+			identifier: property.notFound
+			count: 6
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$probabilidad_cierre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$prospecto_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$sector\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$tipoNegocio\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Negocios\\NegocioResource\:\:\$valor_estimado\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Negocios\\NegocioResource\:\:estaGanado\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Negocios\\NegocioResource\:\:estaPerdido\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Negocios\\NegocioResource\:\:probabilidadEfectiva\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Negocios\\NegocioResource\:\:valorForecast\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Negocios/NegocioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$activo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$asesor\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$codigo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$compania\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$contacto\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$empresa\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$estadoPipeline\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$fecha_conversion\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$fecha_proximo_contacto\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$observaciones\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$origen\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$prioridad\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$probabilidad_cierre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$telefono\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:\$valor_estimado\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:companiaNombre\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:estaConvertido\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Prospectos\\ProspectoResource\:\:probabilidadEfectiva\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Prospectos/ProspectoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Seguimientos\\SeguimientoResource\:\:\$asesor\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Seguimientos/SeguimientoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Seguimientos\\SeguimientoResource\:\:\$cliente_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Seguimientos/SeguimientoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Seguimientos\\SeguimientoResource\:\:\$contacto\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Seguimientos/SeguimientoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Seguimientos\\SeguimientoResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Seguimientos/SeguimientoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Seguimientos\\SeguimientoResource\:\:\$descripcion\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Seguimientos/SeguimientoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Seguimientos\\SeguimientoResource\:\:\$fecha_seguimiento\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Seguimientos/SeguimientoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Seguimientos\\SeguimientoResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Seguimientos/SeguimientoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Seguimientos\\SeguimientoResource\:\:\$prospecto_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Seguimientos/SeguimientoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Seguimientos\\SeguimientoResource\:\:\$proxima_fecha\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Seguimientos/SeguimientoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Seguimientos\\SeguimientoResource\:\:\$resultado\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Seguimientos/SeguimientoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Seguimientos\\SeguimientoResource\:\:\$tipo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Seguimientos/SeguimientoResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Seguimientos\\SeguimientoResource\:\:tieneSeguimientoFuturo\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Seguimientos/SeguimientoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$asesor\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$cliente\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$comentario_revision\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$condiciones\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$dossier_erp\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$inventario_consignacion\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$justificacion\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$monto_solicitado\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$negocio\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$pipelineEstado\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$plazo_solicitado_dias\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$referencias_comerciales\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$revisado_en\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$revisor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:estaAprobada\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:estaFinalizada\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\SolicitudesCredito\\SolicitudCreditoResource\:\:estaRechazada\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/SolicitudesCredito/SolicitudCreditoResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Usuarios\\UsuarioResource\:\:\$activo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Usuarios/UsuarioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Usuarios\\UsuarioResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Usuarios/UsuarioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Usuarios\\UsuarioResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Usuarios/UsuarioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Usuarios\\UsuarioResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Usuarios/UsuarioResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Usuarios\\UsuarioResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Usuarios/UsuarioResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Usuarios\\UsuarioResource\:\:getRoleNames\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Usuarios/UsuarioResource.php

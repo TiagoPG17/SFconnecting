@@ -22,7 +22,7 @@ class VendedorEquivalenciaRepositoryTest extends TestCase
         $this->repo = new VendedorEquivalenciaRepository();
     }
 
-    private function mapeo(User $asesor, int $compania = 2, bool $activo = true, string $cod = 'V001'): VendedorEquivalencia
+    private function mapeo(User $asesor, int $compania = 2, bool $activo = true, string $cod = 'V001', bool $esReemplazo = false): VendedorEquivalencia
     {
         return VendedorEquivalencia::create([
             'asesor_id'           => $asesor->id,
@@ -31,6 +31,7 @@ class VendedorEquivalenciaRepositoryTest extends TestCase
             'rowid_vendedor_siesa' => 1,
             'nombre_vendedor'     => 'Vendedor Test',
             'activo'              => $activo,
+            'es_reemplazo'        => $esReemplazo,
         ]);
     }
 
@@ -146,36 +147,58 @@ class VendedorEquivalenciaRepositoryTest extends TestCase
         $this->assertNull($resultado);
     }
 
-    // ─── existe ──────────────────────────────────────────────────────────────
+    // ─── existeCodigo ────────────────────────────────────────────────────────
 
-    public function test_existe_retorna_true_cuando_asesor_ya_tiene_mapeo_en_la_compania(): void
+    public function test_existe_codigo_retorna_true_cuando_el_codigo_ya_esta_mapeado_en_la_compania(): void
     {
         $asesor = User::factory()->create();
-        $this->mapeo($asesor, 2);
+        $this->mapeo($asesor, 2, cod: 'V001');
 
-        $resultado = $this->repo->existe($asesor->id, 2);
+        $resultado = $this->repo->existeCodigo('V001', 2);
 
         $this->assertTrue($resultado);
     }
 
-    public function test_existe_retorna_false_para_compania_diferente(): void
+    public function test_existe_codigo_retorna_false_para_compania_diferente(): void
     {
         $asesor = User::factory()->create();
-        $this->mapeo($asesor, 2);
+        $this->mapeo($asesor, 2, cod: 'V001');
 
-        $resultado = $this->repo->existe($asesor->id, 3);
+        $resultado = $this->repo->existeCodigo('V001', 3);
 
         $this->assertFalse($resultado);
     }
 
-    public function test_existe_retorna_false_cuando_excepto_id_apunta_al_mismo_registro(): void
+    public function test_existe_codigo_retorna_false_cuando_excepto_id_apunta_al_mismo_registro(): void
     {
         $asesor = User::factory()->create();
-        $mapeo  = $this->mapeo($asesor, 2);
+        $mapeo  = $this->mapeo($asesor, 2, cod: 'V001');
 
-        $resultado = $this->repo->existe($asesor->id, 2, exceptoId: $mapeo->id);
+        $resultado = $this->repo->existeCodigo('V001', 2, exceptoId: $mapeo->id);
 
         $this->assertFalse($resultado);
+    }
+
+    public function test_existe_codigo_ignora_filas_marcadas_como_reemplazo(): void
+    {
+        $asesor = User::factory()->create();
+        $this->mapeo($asesor, 2, cod: 'V001', esReemplazo: true);
+
+        $resultado = $this->repo->existeCodigo('V001', 2);
+
+        $this->assertFalse($resultado);
+    }
+
+    public function test_existe_codigo_sigue_bloqueando_un_segundo_dueno_aunque_ya_haya_un_reemplazo(): void
+    {
+        $titular      = User::factory()->create();
+        $reemplazante = User::factory()->create();
+        $this->mapeo($reemplazante, 2, cod: 'V001', esReemplazo: true);
+        $this->mapeo($titular, 2, cod: 'V001');
+
+        $resultado = $this->repo->existeCodigo('V001', 2);
+
+        $this->assertTrue($resultado);
     }
 
     // ─── vendedoresSiesa ─────────────────────────────────────────────────────

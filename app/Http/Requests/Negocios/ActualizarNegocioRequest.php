@@ -19,9 +19,7 @@ class ActualizarNegocioRequest extends FormRequest
     public function rules(): array
     {
         $negocio = $this->route('negocio');
-        $requiereNuevoTipo = $negocio
-            && $negocio->tipo_negocio_id !== null
-            && ! $negocio->tipoNegocio?->activo;
+        $requiereNuevoTipo = $negocio && $negocio->requiereNuevoTipoNegocio();
 
         return [
             'nombre_negocio'       => ['sometimes', 'string', 'max:200'],

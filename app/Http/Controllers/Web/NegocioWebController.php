@@ -10,6 +10,7 @@ use App\Domain\Maestros\Repositories\MaestroRepositoryInterface;
 use App\Domain\Negocios\Models\Negocio;
 use App\Domain\Negocios\Repositories\NegocioRepositoryInterface;
 use App\Domain\Prospectos\Repositories\ProspectoRepositoryInterface;
+use App\Domain\Seguimientos\Repositories\SeguimientoRepositoryInterface;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -21,6 +22,7 @@ class NegocioWebController extends Controller
         private readonly MaestroRepositoryInterface $maestros,
         private readonly ClienteRepositoryInterface $clientes,
         private readonly ProspectoRepositoryInterface $prospectos,
+        private readonly SeguimientoRepositoryInterface $seguimientos,
     ) {}
 
     public function index(Request $request): View
@@ -44,8 +46,9 @@ class NegocioWebController extends Controller
         $this->authorize('view', $negocio);
 
         $negocio->load(['pipelineEstado', 'tipoNegocio', 'sector', 'motivoPerdida', 'asesor', 'prospecto', 'cliente', 'auditoria.usuario']);
+        $seguimientos = $this->seguimientos->porNegocio($negocio->id);
 
-        return view('negocios.show', compact('negocio'));
+        return view('negocios.show', compact('negocio', 'seguimientos'));
     }
 
     public function create(): View
@@ -77,7 +80,7 @@ class NegocioWebController extends Controller
         $sectores          = $this->maestros->porTipo('sector');
         $motivos           = $this->maestros->porTipo('motivo_perdida');
         $estadosPerdidoIds = $estados->where('es_perdido', true)->pluck('id')->values()->toArray();
-        $requiereNuevoTipo = $negocio->tipo_negocio_id !== null && ! $tipos->contains('id', $negocio->tipo_negocio_id);
+        $requiereNuevoTipo = $negocio->requiereNuevoTipoNegocio();
 
         return view('negocios.edit', compact('negocio', 'estados', 'tipos', 'sectores', 'motivos', 'estadosPerdidoIds', 'requiereNuevoTipo'));
     }

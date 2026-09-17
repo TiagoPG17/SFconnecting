@@ -54,11 +54,11 @@
     @endif
 
     {{-- ===== Aviso asesores sin mapeo ===== --}}
-    @if($asesores->isNotEmpty())
+    @if($asesoresSinMapear->isNotEmpty())
     <div class="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl text-sm flex items-center justify-between">
         <span>
-            <strong>{{ $asesores->count() }} asesor(es) sin mapear:</strong>
-            {{ $asesores->pluck('name')->implode(', ') }}
+            <strong>{{ $asesoresSinMapear->count() }} asesor(es) sin mapear:</strong>
+            {{ $asesoresSinMapear->pluck('name')->implode(', ') }}
         </span>
         <button @click="modalCrear = true"
                 class="text-blue-700 font-semibold underline text-xs hover:no-underline">
@@ -80,6 +80,7 @@
                     <th class="px-5 py-3">Asesor CRM</th>
                     <th class="px-5 py-3">Vendedor SIESA</th>
                     <th class="px-5 py-3 text-center">Código</th>
+                    <th class="px-5 py-3 text-center">Tipo</th>
                     <th class="px-5 py-3 text-center">Estado</th>
                     <th class="px-5 py-3"></th>
                 </tr>
@@ -103,6 +104,13 @@
                         <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 font-mono">
                             {{ $m->cod_vendedor_siesa }}
                         </span>
+                    </td>
+                    <td class="px-5 py-4 text-center">
+                        @if($m->es_reemplazo)
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Reemplazo temporal</span>
+                        @else
+                            <span class="text-xs text-slate-400">Titular</span>
+                        @endif
                     </td>
                     <td class="px-5 py-4 text-center">
                         @if($m->activo)
@@ -162,7 +170,7 @@
                     <select name="asesor_id" required
                             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Selecciona un asesor...</option>
-                        @foreach($asesores as $a)
+                        @foreach($todosLosAsesores as $a)
                             <option value="{{ $a->id }}">{{ $a->name }}</option>
                         @endforeach
                     </select>
@@ -207,6 +215,15 @@
                     </select>
                     <input type="hidden" name="cod_vendedor_siesa_2" :value="cod2"/>
                     <input type="hidden" name="nombre_vendedor_2" :value="nombre2"/>
+                </div>
+
+                <div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="hidden" name="es_reemplazo" value="0"/>
+                        <input type="checkbox" name="es_reemplazo" value="1"
+                               class="rounded border-slate-300 text-amber-600"/>
+                        <span class="text-sm text-slate-700">Es un reemplazo temporal (ej. cubre a un compañero de vacaciones)</span>
+                    </label>
                 </div>
 
                 <div class="flex gap-3 pt-2">
@@ -272,6 +289,14 @@
                             <input type="checkbox" name="activo" value="1" :checked="editando.activo"
                                    class="rounded border-slate-300 text-blue-600"/>
                             <span class="text-sm text-slate-700">Mapeo activo</span>
+                        </label>
+                    </div>
+                    <div>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="hidden" name="es_reemplazo" value="0"/>
+                            <input type="checkbox" name="es_reemplazo" value="1" :checked="editando.es_reemplazo"
+                                   class="rounded border-slate-300 text-amber-600"/>
+                            <span class="text-sm text-slate-700">Es un reemplazo temporal</span>
                         </label>
                     </div>
                     <div class="flex gap-3 pt-2">

@@ -25,47 +25,6 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
-    public function clientesPorNombre(string $nombre, int $limite = 20): array
-    {
-        try {
-            return DB::connection('erp_contiflex')
-                ->table('clientes')
-                ->where('nombre', 'like', "%{$nombre}%")
-                ->limit($limite)
-                ->get()
-                ->toArray();
-        } catch (Throwable $e) {
-            throw ERPConnectionException::queryFailed($e->getMessage());
-        }
-    }
-
-    public function documentosPorCliente(string $nit, int $limite = 50): array
-    {
-        try {
-            return DB::connection('erp_contiflex')
-                ->table('documentos')
-                ->where('nit_cliente', $nit)
-                ->orderByDesc('fecha')
-                ->limit($limite)
-                ->get()
-                ->toArray();
-        } catch (Throwable $e) {
-            throw ERPConnectionException::queryFailed($e->getMessage());
-        }
-    }
-
-    public function saldoPorCliente(string $nit): ?array
-    {
-        try {
-            return DB::connection('erp_contiflex')
-                ->table('saldos_clientes')
-                ->where('nit', $nit)
-                ->first()?->toArray();
-        } catch (Throwable $e) {
-            throw ERPConnectionException::queryFailed($e->getMessage());
-        }
-    }
-
     public function carteraPorNit(string $nit): array
     {
         try {
@@ -135,7 +94,8 @@ class ContiflexERPRepository implements ERPRepositoryInterface
     public function panoramaGerencial(int $compania = 0): array
     {
         try {
-            $whereCompania = $compania > 0 ? "WHERE COMPANIA = {$compania}" : '';
+            $whereCompania = $compania > 0 ? 'WHERE COMPANIA = ?' : '';
+            $bindings      = $compania > 0 ? [$compania] : [];
 
             $sql = "
                 SELECT
@@ -173,7 +133,7 @@ class ContiflexERPRepository implements ERPRepositoryInterface
                 ORDER BY COMPANIA, SUM(FACTURADO_ANIO_ACTUAL) DESC
             ";
 
-            return collect(DB::connection('erp_contiflex')->select($sql))
+            return collect(DB::connection('erp_contiflex')->select($sql, $bindings))
                 ->map(fn ($r) => (array) $r)
                 ->toArray();
         } catch (Throwable $e) {
@@ -407,8 +367,11 @@ class ContiflexERPRepository implements ERPRepositoryInterface
     public function panoramaPresupuestal(int $compania = 0): array
     {
         try {
-            $whereCompania       = $compania > 0 ? "AND COMPANIA = {$compania}" : '';
-            $whereCompaniaCartera = $compania > 0 ? "WHERE COMPANIA = {$compania}" : '';
+            $whereCompania        = $compania > 0 ? 'AND COMPANIA = ?' : '';
+            $whereCompaniaCartera = $compania > 0 ? 'WHERE COMPANIA = ?' : '';
+            // El mismo valor de $compania se usa una vez por cada placeholder, en el
+            // orden en que aparecen dentro del SQL final (ventas_reales, luego cartera).
+            $bindings = $compania > 0 ? [$compania, $compania] : [];
 
             $sql = "
                 WITH ventas_reales AS (
@@ -468,7 +431,7 @@ class ContiflexERPRepository implements ERPRepositoryInterface
                 ORDER BY v.COMPANIA, v.facturado_anio_actual DESC
             ";
 
-            return collect(DB::connection('erp_contiflex')->select($sql))
+            return collect(DB::connection('erp_contiflex')->select($sql, $bindings))
                 ->map(fn ($r) => (array) $r)
                 ->toArray();
         } catch (Throwable $e) {
@@ -479,17 +442,20 @@ class ContiflexERPRepository implements ERPRepositoryInterface
     public function countClientesHuerfanos(int $compania, array $nitsExcluir = []): int
     {
         try {
-            $excluir      = implode("','", array_map('addslashes', $nitsExcluir));
-            $whereExcluir = $excluir ? "AND NIT NOT IN ('{$excluir}')" : '';
+            // addslashes() escapa para MySQL, no para T-SQL (SQL Server escapa comillas
+            // duplicándolas) — con NITs interpolados así, un NIT con una comilla simple
+            // rompería la cadena. Se usan bindings reales en su lugar.
+            $whereExcluir = $nitsExcluir ? 'AND NIT NOT IN ('.implode(',', array_fill(0, count($nitsExcluir), '?')).')' : '';
+            $bindings     = [$compania, ...$nitsExcluir];
 
             return (int) DB::connection('erp_contiflex')->selectOne("
                 SELECT COUNT(*) AS total
                 FROM dbo.CRM_Consolidado_Ventas_cliente
-                WHERE COMPANIA = {$compania}
+                WHERE COMPANIA = ?
                   AND DIAS_DESDE_ULTIMA_COMPRA >= 365
                   AND VLR_NETO_FACTURADO > 0
                   {$whereExcluir}
-            ")->total ?? 0;
+            ", $bindings)->total ?? 0;
         } catch (Throwable $e) {
             return 0;
         }
@@ -498,8 +464,8 @@ class ContiflexERPRepository implements ERPRepositoryInterface
     public function clientesHuerfanos(int $compania, array $nitsExcluir = [], int $porPagina = 50, int $offset = 0): array
     {
         try {
-            $excluir      = implode("','", array_map('addslashes', $nitsExcluir));
-            $whereExcluir = $excluir ? "AND NIT NOT IN ('{$excluir}')" : '';
+            $whereExcluir = $nitsExcluir ? 'AND NIT NOT IN ('.implode(',', array_fill(0, count($nitsExcluir), '?')).')' : '';
+            $bindings     = [$compania, ...$nitsExcluir, $offset, $porPagina];
 
             return collect(DB::connection('erp_contiflex')->select("
                 SELECT
@@ -512,13 +478,13 @@ class ContiflexERPRepository implements ERPRepositoryInterface
                         ELSE 'Con vendedor'
                     END AS MOTIVO_HUERFANO
                 FROM dbo.CRM_Consolidado_Ventas_cliente
-                WHERE COMPANIA = {$compania}
+                WHERE COMPANIA = ?
                   AND DIAS_DESDE_ULTIMA_COMPRA >= 365
                   AND VLR_NETO_FACTURADO > 0
                   {$whereExcluir}
                 ORDER BY VLR_NETO_FACTURADO DESC
-                OFFSET {$offset} ROWS FETCH NEXT {$porPagina} ROWS ONLY
-            "))
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+            ", $bindings))
             ->map(fn ($r) => (array) $r)
             ->toArray();
         } catch (Throwable $e) {
@@ -990,13 +956,14 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
-    public function notificacionesCarteraPendientes(int $compania = 0): array
+    public function notificacionesCarteraPendientes(int $compania = 0, ?string $fechaCumplimiento = null): array
     {
         try {
             return DB::connection('erp_contiflex')
                 ->table('dbo.CRM_Notificaciones_Cartera')
                 ->where('Notificado', 0)
                 ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+                ->when($fechaCumplimiento, fn ($q) => $q->whereDate('FechaCumplimiento', $fechaCumplimiento))
                 ->orderByDesc('FechaRegistro')
                 ->get()
                 ->map(fn ($r) => (array) $r)

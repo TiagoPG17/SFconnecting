@@ -48,12 +48,19 @@ class DashboardVendedorRepository implements DashboardVendedorRepositoryInterfac
             ->first();
     }
 
-    public function codVendedorSiesa(int $asesorId, int $compania): ?string
+    public function codigosVendedorSiesa(int $asesorId, int $compania): array
     {
+        // Los códigos marcados como reemplazo no suman en el presupuesto/ranking
+        // personal de quien cubre: el crédito de esas ventas se queda en el titular.
         return VendedorEquivalencia::where('asesor_id', $asesorId)
             ->where('compania', $compania)
             ->where('activo', true)
-            ->value('cod_vendedor_siesa');
+            ->where('es_reemplazo', false)
+            ->pluck('cod_vendedor_siesa')
+            ->map(fn ($cod) => trim((string) $cod))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     public function logradoYtd(string $codVendedor, int $compania, array $meses): float
