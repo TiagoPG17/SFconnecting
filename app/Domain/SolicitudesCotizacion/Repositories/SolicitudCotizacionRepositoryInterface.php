@@ -19,8 +19,12 @@ interface SolicitudCotizacionRepositoryInterface
     /** Listado nivel escala con precio (consulta 3), paginado. */
     public function escalas(array $filtros = [], int $porPagina = 30): LengthAwarePaginator;
 
-    /** Detalle de una solicitud con sus escalas cargadas. */
-    public function buscarSolicitud(string $nroSolicitud): ?SolicitudCotizacion;
+    /**
+     * Detalle de una solicitud con sus escalas cargadas.
+     * $vendedorSgp restringe al código SGP de un comercial puntual (null = sin restricción):
+     * si la solicitud es de otro vendedor devuelve null, igual que si no existiera.
+     */
+    public function buscarSolicitud(string $nroSolicitud, ?string $vendedorSgp = null): ?SolicitudCotizacion;
 
     /** Pares vendedor/nombre_vendedor distintos, para poblar el filtro. */
     public function vendedoresDisponibles(): Collection;

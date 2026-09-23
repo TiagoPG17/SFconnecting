@@ -14,7 +14,9 @@ class SolicitudCotizacionRepository implements SolicitudCotizacionRepositoryInte
 {
     public function resumenPorComercial(array $filtros = []): Collection
     {
-        $query = SolicitudCotizacion::query()->activo();
+        $query = SolicitudCotizacion::query()
+            ->activo()
+            ->delVendedor($filtros['vendedor'] ?? null);
 
         $this->aplicarRangoFechas($query, $filtros);
 
@@ -64,10 +66,11 @@ class SolicitudCotizacionRepository implements SolicitudCotizacionRepositoryInte
             ->paginate($porPagina)->withQueryString();
     }
 
-    public function buscarSolicitud(string $nroSolicitud): ?SolicitudCotizacion
+    public function buscarSolicitud(string $nroSolicitud, ?string $vendedorSgp = null): ?SolicitudCotizacion
     {
         return SolicitudCotizacion::query()
             ->where('nro_solicitud', $nroSolicitud)
+            ->delVendedor($vendedorSgp)
             ->with(['escalasDetalle' => fn ($q) => $q->orderBy('escala')])
             ->first();
     }

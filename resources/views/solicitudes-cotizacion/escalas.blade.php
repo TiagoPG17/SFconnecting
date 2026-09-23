@@ -22,6 +22,7 @@
                    class="w-64 pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
         </div>
 
+        @if($verTodos)
         <select name="vendedor" onchange="this.form.submit()"
                 class="text-sm border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
             <option value="">Todos los comerciales</option>
@@ -29,6 +30,7 @@
                 <option value="{{ $v->vendedor }}" @selected(($filtros['vendedor'] ?? '') === $v->vendedor)>{{ $v->nombre_vendedor ?: $v->vendedor }}</option>
             @endforeach
         </select>
+        @endif
 
         <select name="situacion_escala" onchange="this.form.submit()"
                 class="text-sm border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
@@ -51,6 +53,10 @@
     @if(!$erpDisponible)
     <x-ui.card class="p-10 text-center">
         <p class="text-slate-500 text-sm">Sin conexión al ERP. No se pueden cargar las escalas en este momento.</p>
+    </x-ui.card>
+    @elseif($sinCodigoSgp)
+    <x-ui.card class="p-10 text-center">
+        <p class="text-slate-500 text-sm">Tu usuario no tiene un código de SGP asignado. Pídele a un administrador que te lo configure en Usuarios.</p>
     </x-ui.card>
     @elseif($escalas->isEmpty())
     <x-ui.card class="overflow-hidden">
