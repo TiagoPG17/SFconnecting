@@ -624,11 +624,9 @@
         <p class="text-2xl font-bold mt-1 tnum" style="color:var(--accent)" x-text="money(totalFacturado)"></p>
         <p class="text-[11px] text-slate-400 mt-0.5" x-text="totalDocumentosFacturados + ' facturas'"></p>
       </div>
-      <div class="dash-card p-4">
-        <p class="text-xs text-slate-500">Pendiente</p>
-        <p class="text-2xl font-bold mt-1 tnum text-slate-900" x-text="money(totalPendiente)"></p>
-        <p class="text-[11px] text-slate-400 mt-0.5" x-text="totalNumPedidos + ' pedidos · ' + (filtro.futuros ? 'mes seleccionado y siguientes' : 'mes seleccionado')"></p>
-      </div>
+      <template x-for="t in [tarjetasPendientes.total]" :key="t.clave">
+        @include('dashboards.partials.tarjeta-pendiente')
+      </template>
       <div class="dash-card p-4">
         <p class="text-xs text-slate-500">Cierra mañana</p>
         <p class="text-2xl font-bold mt-1 tnum" style="color:var(--amber)" x-text="cierreCant('MAÑANA')"></p>
@@ -642,18 +640,23 @@
     </div>
 
     {{-- Desglose por compañía (sólo cuando se ven "Todas") --}}
-    <div class="flex flex-wrap items-center gap-2 mb-5" x-show="filtro.cia === 0 && (facturadoMes.length > 1 || canastaPorCompania.length > 1)">
+    <div class="flex flex-wrap items-center gap-2 mb-5" x-show="filtro.cia === 0 && facturadoMes.length > 1">
       <template x-for="f in facturadoMes" :key="'fact-'+f.compania">
         <span class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1">
           <span class="font-semibold text-slate-700" x-text="ciaName(f.compania)"></span> facturado:
           <span class="tnum font-medium text-teal-700" x-text="money(f.subtotal_mes)"></span>
         </span>
       </template>
-      <template x-for="p in canastaPorCompania" :key="'pend-'+p.compania">
-        <span class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1">
-          <span class="font-semibold text-slate-700" x-text="ciaName(p.compania)"></span> pendiente:
-          <span class="tnum font-medium text-amber-700" x-text="money(p.total_comprometido)"></span>
-        </span>
+    </div>
+
+    {{-- Desglose de pendientes por facturar: saldo (ValorPendiente) por fecha de entrega, relativo a hoy. El total está en los KPIs de arriba. Solo depende del filtro de compañía. --}}
+    <div class="flex items-center gap-2 mb-2">
+      <h3 class="text-sm font-semibold text-slate-700">Desglose de pendientes</h3>
+      <span class="text-[11px] text-slate-400">· saldo por fecha de entrega, sin muestras ni servicios internos</span>
+    </div>
+    <div class="grid sm:grid-cols-2 gap-4 mb-5">
+      <template x-for="t in [tarjetasPendientes.atrasados, tarjetasPendientes.mes]" :key="t.clave">
+        @include('dashboards.partials.tarjeta-pendiente')
       </template>
     </div>
 
@@ -1100,6 +1103,10 @@ function informeComercial(datos){
     facturacionCliente:   datos.facturacionCliente ?? [],
     canastaResumen:       datos.canastaResumen ?? [],
     canastaDetalle:       datos.canastaDetalle ?? [],
+    mesEnCurso:           datos.mesEnCurso,
+    pendientesAtrasados:  datos.pendientesAtrasados ?? [],
+    pendientesMes:        datos.pendientesMes ?? [],
+    pendientesTotal:      datos.pendientesTotal ?? [],
     mesAbierto: null,
 
     nombresMes: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
@@ -1110,12 +1117,28 @@ function informeComercial(datos){
 
     get totalFacturado(){ return this.facturadoMes.reduce((s,f)=>s+Number(f.subtotal_mes||0),0); },
     get totalDocumentosFacturados(){ return this.facturadoMes.reduce((s,f)=>s+Number(f.documentos||0),0); },
-    get totalPendiente(){ return this.canastaResumen.reduce((s,m)=>s+Number(m.total_comprometido||0),0); },
-    get totalNumPedidos(){ return this.canastaResumen.reduce((s,m)=>s+Number(m.num_pedidos||0),0); },
-    get canastaPorCompania(){
-      const map = {};
-      this.canastaResumen.forEach(m => { map[m.compania] = (map[m.compania]||0) + Number(m.total_comprometido||0); });
-      return Object.keys(map).map(k => ({ compania: Number(k), total_comprometido: map[k] }));
+
+    // Tarjetas de pendientes por facturar. El total viene de su propia consulta (no de sumar las otras dos)
+    // porque un pedido con líneas atrasadas y del mes debe contarse una sola vez.
+    get tarjetasPendientes(){
+      const cias = this.filtro.cia === 0 ? [1, 2] : [this.filtro.cia];
+      const mes = this.nombresMes[this.mesEnCurso.mes - 1] + ' ' + this.mesEnCurso.anio;
+      const arma = (clave, titulo, color, detalle, filas) => {
+        const porCia = cias.map(cia => {
+          const f = filas.find(r => Number(r.compania) === cia);
+          return { compania: cia, valor: Number(f?.valor_pendiente || 0), pedidos: Number(f?.num_pedidos || 0) };
+        });
+        return {
+          clave, titulo, color, detalle, porCia,
+          valor:   porCia.reduce((s, r) => s + r.valor, 0),
+          pedidos: porCia.reduce((s, r) => s + r.pedidos, 0),
+        };
+      };
+      return {
+        atrasados: arma('atrasados', 'Pendientes atrasados',        'var(--red)',    'entrega anterior a ' + mes, this.pendientesAtrasados),
+        mes:       arma('mes',       'Pendientes del mes en curso', 'var(--amber)',  'entrega en ' + mes,         this.pendientesMes),
+        total:     arma('total',     'Total pendientes',            'var(--accent)', 'atrasados + ' + mes,        this.pendientesTotal),
+      };
     },
 
     get facturacionClienteOrdenado(){ return this.ordenar(this.facturacionCliente, this.sortFactura); },
@@ -1157,6 +1180,10 @@ function informeComercial(datos){
         this.facturacionCliente   = data.facturacionCliente ?? [];
         this.canastaResumen       = data.canastaResumen ?? [];
         this.canastaDetalle       = data.canastaDetalle ?? [];
+        this.mesEnCurso           = data.mesEnCurso ?? this.mesEnCurso;
+        this.pendientesAtrasados  = data.pendientesAtrasados ?? [];
+        this.pendientesMes        = data.pendientesMes ?? [];
+        this.pendientesTotal      = data.pendientesTotal ?? [];
         this.mesAbierto           = null;
         this.$nextTick(() => this.renderChart());
       } catch {

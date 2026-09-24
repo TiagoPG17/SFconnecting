@@ -148,6 +148,27 @@ La compañía activa se toma de `config('crm.compania')` en `.env` → clave `CR
 
 ---
 
+## Informe Comercial — Pendientes por facturar *(sección 3)*
+
+Tres tarjetas por compañía (Formacol / Contiflex; con el filtro en "Todas" se ven las dos desglosadas). Son siempre relativas a **hoy**: no dependen del filtro Año/Mes de la sección, solo del de compañía.
+
+- **Fuente:** vista ERP `vw_CRM_Pedidos_Pendientes` (SQL Server Contiflex), que ya trae `ValorPendiente` en COP (`CantPendiente × PrecioUnit`, con TRM en exportación) y solo pedidos vigentes (Estado 1 y 2)
+- **Fórmula:** `SUM(ValorPendiente)` — es el **saldo por facturar**: un pedido facturado parcialmente pesa solo lo que falta, no el pedido completo
+- **Clasificación:** por `FechaEntrega` (fecha de compromiso), no por fecha del pedido
+- **Se excluyen** documentos `PM` (muestras) y `PS` (servicios internos)
+
+| Tarjeta | Criterio sobre `FechaEntrega` |
+|---------|-------------------------------|
+| **Pendientes atrasados** | Anterior al primer día del mes actual |
+| **Pendientes del mes en curso** | Dentro del mes actual |
+| **Total pendientes** | Atrasados + mes en curso (consulta propia, no suma de las otras dos: un pedido con líneas en ambos grupos cuenta una sola vez en "Pedidos") |
+
+- **No cambia:** la tabla "Pedidos pendientes" (canasta por mes de compromiso, con "Incluir meses futuros") sigue como antes, con su propia fórmula (`ValorSubtotalLocal`, "Total comprometido").
+- **Ojo:** la canasta excluye al cliente FORMACOL S.A. bajo Contiflex (dato inconsistente en el ERP); las tarjetas de pendientes **no** lo excluyen. Por eso Contiflex no coincide entre ambos bloques.
+- **Código:** `pendientesAtrasados()`, `pendientesMesEnCurso()` y `pendientesTotal()` en `DashboardGerencialRepository`; viajan en el payload de `informeComercial()` (claves `pendientesAtrasados`, `pendientesMes`, `pendientesTotal`, `mesEnCurso`).
+
+---
+
 ## Archivos clave
 
 | Qué hace | Archivo |

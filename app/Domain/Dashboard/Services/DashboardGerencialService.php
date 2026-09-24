@@ -102,6 +102,11 @@ class DashboardGerencialService
             'facturacionVendedor'  => $safe(fn () => $this->repo->facturacionPorVendedor($compania, $anio, $mes)),
             'canastaResumen'       => $safe(fn () => $this->repo->canastaResumen($compania, $mes, $incluirFuturos)),
             'canastaDetalle'       => $safe(fn () => $this->repo->canastaDetalle($compania, $mes, $incluirFuturos)),
+            // Pendientes por facturar: siempre relativos a hoy (no dependen del filtro Año/Mes de este bloque).
+            'mesEnCurso'           => ['anio' => now()->year, 'mes' => now()->month],
+            'pendientesAtrasados'  => $safe(fn () => $this->repo->pendientesAtrasados($compania)),
+            'pendientesMes'        => $safe(fn () => $this->repo->pendientesMesEnCurso($compania)),
+            'pendientesTotal'      => $safe(fn () => $this->repo->pendientesTotal($compania)),
         ];
     }
 

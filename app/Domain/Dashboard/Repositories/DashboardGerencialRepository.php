@@ -336,6 +336,50 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->get();
     }
 
+    public function pendientesAtrasados(int $compania): Collection
+    {
+        return $this->pendientesPorCompania($compania, fn ($q) => $q->whereRaw(
+            'CAST(FechaEntrega AS date) < DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)'
+        ));
+    }
+
+    public function pendientesMesEnCurso(int $compania): Collection
+    {
+        return $this->pendientesPorCompania($compania, fn ($q) => $q->whereRaw(
+            'YEAR(FechaEntrega) = YEAR(GETDATE()) AND MONTH(FechaEntrega) = MONTH(GETDATE())'
+        ));
+    }
+
+    public function pendientesTotal(int $compania): Collection
+    {
+        return $this->pendientesPorCompania($compania, fn ($q) => $q->whereRaw(
+            'FechaEntrega < DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))'
+        ));
+    }
+
+    /**
+     * Saldo por facturar agrupado por compañía. La vista ya trae ValorPendiente (CantPendiente × PrecioUnit en COP)
+     * y solo pedidos vigentes (Estado 1,2); acá solo se aplica el corte por fecha de entrega y se descartan
+     * muestras (PM) y servicios internos (PS).
+     */
+    private function pendientesPorCompania(int $compania, callable $filtroFecha): Collection
+    {
+        return DB::connection('erp_contiflex')
+            ->table('dbo.vw_CRM_Pedidos_Pendientes')
+            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+            ->tap($filtroFecha)
+            ->whereRaw("LEFT(NroDocumento, 2) NOT IN ('PM', 'PS')")
+            ->selectRaw('
+                Compania                     AS compania,
+                COUNT(DISTINCT NroDocumento) AS num_pedidos,
+                SUM(CantPendiente)           AS cant_pendiente,
+                SUM(ValorPendiente)          AS valor_pendiente
+            ')
+            ->groupBy('Compania')
+            ->orderBy('Compania')
+            ->get();
+    }
+
     private function parsearMeses(array $meses): array
     {
         $anio     = (int) substr($meses[0], 0, 4);

@@ -214,4 +214,47 @@ class DashboardGerencialServiceTest extends TestCase
 
         $this->assertCount(1, $resultado);
     }
+
+    // ─── informeComercial · pendientes por facturar ──────────────────────────
+
+    public function test_informe_comercial_incluye_pendientes_atrasados_mes_y_total_por_compania(): void
+    {
+        $fila = fn (int $cia, string $valor) => (object) [
+            'compania' => $cia, 'num_pedidos' => 3, 'cant_pendiente' => '10.0000', 'valor_pendiente' => $valor,
+        ];
+
+        $this->repo->method('pendientesAtrasados')->with(0)->willReturn(collect([$fila(1, '25689349.23'), $fila(2, '9329100')]));
+        $this->repo->method('pendientesMesEnCurso')->with(0)->willReturn(collect([$fila(1, '960824705.79'), $fila(2, '213233070')]));
+        $this->repo->method('pendientesTotal')->with(0)->willReturn(collect([$fila(1, '986514055.03'), $fila(2, '222562170')]));
+
+        $informe = $this->servicio()->informeComercial(0, 2026, 9);
+
+        $this->assertCount(2, $informe['pendientesAtrasados']);
+        $this->assertCount(2, $informe['pendientesMes']);
+        $this->assertSame('222562170', $informe['pendientesTotal']->firstWhere('compania', 2)->valor_pendiente);
+        $this->assertSame(now()->month, $informe['mesEnCurso']['mes']);
+        $this->assertSame(now()->year, $informe['mesEnCurso']['anio']);
+    }
+
+    public function test_informe_comercial_pendientes_quedan_vacios_cuando_erp_falla(): void
+    {
+        $this->repo->method('pendientesAtrasados')->willThrowException(new \RuntimeException('ERP caído'));
+        $this->repo->method('pendientesMesEnCurso')->willThrowException(new \RuntimeException('ERP caído'));
+        $this->repo->method('pendientesTotal')->willThrowException(new \RuntimeException('ERP caído'));
+
+        $informe = $this->servicio()->informeComercial(0, 2026, 9);
+
+        $this->assertTrue($informe['pendientesAtrasados']->isEmpty());
+        $this->assertTrue($informe['pendientesMes']->isEmpty());
+        $this->assertTrue($informe['pendientesTotal']->isEmpty());
+    }
+
+    public function test_informe_comercial_pasa_la_compania_filtrada_a_los_pendientes(): void
+    {
+        $this->repo->expects($this->once())->method('pendientesAtrasados')->with(1)->willReturn(collect());
+        $this->repo->expects($this->once())->method('pendientesMesEnCurso')->with(1)->willReturn(collect());
+        $this->repo->expects($this->once())->method('pendientesTotal')->with(1)->willReturn(collect());
+
+        $this->servicio()->informeComercial(1, 2026, 9);
+    }
 }
