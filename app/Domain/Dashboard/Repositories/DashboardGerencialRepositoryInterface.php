@@ -48,12 +48,15 @@ interface DashboardGerencialRepositoryInterface
     /** Canasta (detalle): líneas de pedidos pendientes por fecha de compromiso, con el mismo criterio de rango que canastaResumen(). */
     public function canastaDetalle(int $compania, int $mes, bool $incluirFuturos, int $limite = 500): Collection;
 
-    /** Saldo por facturar (ValorPendiente) con FechaEntrega anterior al primer día del mes actual, por compañía. Excluye PM/PS. */
-    public function pendientesAtrasados(int $compania): Collection;
+    /**
+     * Saldo por facturar (ValorPendiente) con FechaEntrega anterior al primer día del año/mes dado, por compañía. Excluye PM/PS.
+     * La vista del ERP es una foto de lo pendiente hoy: para un mes pasado son las entregas de esa época que siguen sin facturarse.
+     */
+    public function pendientesAtrasados(int $compania, int $anio, int $mes): Collection;
 
-    /** Saldo por facturar (ValorPendiente) con FechaEntrega dentro del mes actual, por compañía. Excluye PM/PS. */
-    public function pendientesMesEnCurso(int $compania): Collection;
+    /** Saldo por facturar (ValorPendiente) con FechaEntrega dentro del año/mes dado, por compañía. Excluye PM/PS. */
+    public function pendientesMesEnCurso(int $compania, int $anio, int $mes): Collection;
 
-    /** Saldo por facturar (ValorPendiente) atrasado + mes actual, por compañía. Cuenta cada pedido una sola vez aunque tenga líneas en ambos grupos. Excluye PM/PS. */
-    public function pendientesTotal(int $compania): Collection;
+    /** Saldo por facturar (ValorPendiente) atrasado + mes dado, por compañía. Cuenta cada pedido una sola vez aunque tenga líneas en ambos grupos. Excluye PM/PS. */
+    public function pendientesTotal(int $compania, int $anio, int $mes): Collection;
 }

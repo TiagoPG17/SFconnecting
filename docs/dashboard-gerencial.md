@@ -150,7 +150,7 @@ La compañía activa se toma de `config('crm.compania')` en `.env` → clave `CR
 
 ## Informe Comercial — Pendientes por facturar *(sección 3)*
 
-Tres tarjetas por compañía (Formacol / Contiflex; con el filtro en "Todas" se ven las dos desglosadas). Son siempre relativas a **hoy**: no dependen del filtro Año/Mes de la sección, solo del de compañía.
+Tres tarjetas por compañía (Formacol / Contiflex; con el filtro en "Todas" se ven las dos desglosadas). Siguen los filtros **Mes, Año y Compañía** de la sección (por defecto, el mes actual).
 
 - **Fuente:** vista ERP `vw_CRM_Pedidos_Pendientes` (SQL Server Contiflex), que ya trae `ValorPendiente` en COP (`CantPendiente × PrecioUnit`, con TRM en exportación) y solo pedidos vigentes (Estado 1 y 2)
 - **Fórmula:** `SUM(ValorPendiente)` — es el **saldo por facturar**: un pedido facturado parcialmente pesa solo lo que falta, no el pedido completo
@@ -159,13 +159,14 @@ Tres tarjetas por compañía (Formacol / Contiflex; con el filtro en "Todas" se 
 
 | Tarjeta | Criterio sobre `FechaEntrega` |
 |---------|-------------------------------|
-| **Pendientes atrasados** | Anterior al primer día del mes actual |
-| **Pendientes del mes en curso** | Dentro del mes actual |
-| **Total pendientes** | Atrasados + mes en curso (consulta propia, no suma de las otras dos: un pedido con líneas en ambos grupos cuenta una sola vez en "Pedidos") |
+| **Pendientes atrasados** | Anterior al primer día del mes elegido |
+| **Pendientes del mes en curso** | Dentro del mes elegido |
+| **Total pendientes** | Atrasados + mes elegido, o sea hasta el último día de ese mes (consulta propia, no suma de las otras dos: un pedido con líneas en ambos grupos cuenta una sola vez en "Pedidos") |
 
+- **Ojo con meses pasados:** la vista del ERP es una foto de lo pendiente **hoy**, sin historia. Si eliges un mes pasado, "atrasados" y "mes" muestran lo de esas fechas que **sigue sin facturarse hoy**, no lo que estaba pendiente en aquel momento. Con un mes futuro, "atrasados" es todo lo pendiente acumulado hasta el día 1 de ese mes.
 - **No cambia:** la tabla "Pedidos pendientes" (canasta por mes de compromiso, con "Incluir meses futuros") sigue como antes, con su propia fórmula (`ValorSubtotalLocal`, "Total comprometido").
 - **Ojo:** la canasta excluye al cliente FORMACOL S.A. bajo Contiflex (dato inconsistente en el ERP); las tarjetas de pendientes **no** lo excluyen. Por eso Contiflex no coincide entre ambos bloques.
-- **Código:** `pendientesAtrasados()`, `pendientesMesEnCurso()` y `pendientesTotal()` en `DashboardGerencialRepository`; viajan en el payload de `informeComercial()` (claves `pendientesAtrasados`, `pendientesMes`, `pendientesTotal`, `mesEnCurso`).
+- **Código:** `pendientesAtrasados()`, `pendientesMesEnCurso()` y `pendientesTotal()` en `DashboardGerencialRepository`; viajan en el payload de `informeComercial()` (claves `pendientesAtrasados`, `pendientesMes`, `pendientesTotal`, `periodoPendientes`).
 
 ---
 

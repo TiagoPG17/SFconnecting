@@ -336,24 +336,34 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->get();
     }
 
-    public function pendientesAtrasados(int $compania): Collection
+    public function pendientesAtrasados(int $compania, int $anio, int $mes): Collection
     {
+        $inicio = \Carbon\Carbon::create($anio, $mes, 1);
+
         return $this->pendientesPorCompania($compania, fn ($q) => $q->whereRaw(
-            'CAST(FechaEntrega AS date) < DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)'
+            'CAST(FechaEntrega AS date) < CAST(? AS date)',
+            [$inicio->format('Ymd')]
         ));
     }
 
-    public function pendientesMesEnCurso(int $compania): Collection
+    public function pendientesMesEnCurso(int $compania, int $anio, int $mes): Collection
     {
+        $inicio    = \Carbon\Carbon::create($anio, $mes, 1);
+        $siguiente = $inicio->copy()->addMonth();
+
         return $this->pendientesPorCompania($compania, fn ($q) => $q->whereRaw(
-            'YEAR(FechaEntrega) = YEAR(GETDATE()) AND MONTH(FechaEntrega) = MONTH(GETDATE())'
+            'CAST(FechaEntrega AS date) >= CAST(? AS date) AND CAST(FechaEntrega AS date) < CAST(? AS date)',
+            [$inicio->format('Ymd'), $siguiente->format('Ymd')]
         ));
     }
 
-    public function pendientesTotal(int $compania): Collection
+    public function pendientesTotal(int $compania, int $anio, int $mes): Collection
     {
+        $siguiente = \Carbon\Carbon::create($anio, $mes, 1)->addMonth();
+
         return $this->pendientesPorCompania($compania, fn ($q) => $q->whereRaw(
-            'FechaEntrega < DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))'
+            'CAST(FechaEntrega AS date) < CAST(? AS date)',
+            [$siguiente->format('Ymd')]
         ));
     }
 

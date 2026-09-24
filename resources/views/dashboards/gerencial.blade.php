@@ -649,7 +649,7 @@
       </template>
     </div>
 
-    {{-- Desglose de pendientes por facturar: saldo (ValorPendiente) por fecha de entrega, relativo a hoy. El total está en los KPIs de arriba. Solo depende del filtro de compañía. --}}
+    {{-- Desglose de pendientes por facturar: saldo (ValorPendiente) por fecha de entrega, según el Mes/Año/Compañía elegidos. El total está en los KPIs de arriba. --}}
     <div class="flex items-center gap-2 mb-2">
       <h3 class="text-sm font-semibold text-slate-700">Desglose de pendientes</h3>
       <span class="text-[11px] text-slate-400">· saldo por fecha de entrega, sin muestras ni servicios internos</span>
@@ -1103,7 +1103,7 @@ function informeComercial(datos){
     facturacionCliente:   datos.facturacionCliente ?? [],
     canastaResumen:       datos.canastaResumen ?? [],
     canastaDetalle:       datos.canastaDetalle ?? [],
-    mesEnCurso:           datos.mesEnCurso,
+    periodoPendientes:    datos.periodoPendientes,
     pendientesAtrasados:  datos.pendientesAtrasados ?? [],
     pendientesMes:        datos.pendientesMes ?? [],
     pendientesTotal:      datos.pendientesTotal ?? [],
@@ -1122,7 +1122,8 @@ function informeComercial(datos){
     // porque un pedido con líneas atrasadas y del mes debe contarse una sola vez.
     get tarjetasPendientes(){
       const cias = this.filtro.cia === 0 ? [1, 2] : [this.filtro.cia];
-      const mes = this.nombresMes[this.mesEnCurso.mes - 1] + ' ' + this.mesEnCurso.anio;
+      // Mes/año con que se calcularon los datos (no el del filtro, que cambia antes de que llegue la respuesta).
+      const mes = this.nombresMes[this.periodoPendientes.mes - 1] + ' ' + this.periodoPendientes.anio;
       const arma = (clave, titulo, color, detalle, filas) => {
         const porCia = cias.map(cia => {
           const f = filas.find(r => Number(r.compania) === cia);
@@ -1180,7 +1181,7 @@ function informeComercial(datos){
         this.facturacionCliente   = data.facturacionCliente ?? [];
         this.canastaResumen       = data.canastaResumen ?? [];
         this.canastaDetalle       = data.canastaDetalle ?? [];
-        this.mesEnCurso           = data.mesEnCurso ?? this.mesEnCurso;
+        this.periodoPendientes    = data.periodoPendientes ?? this.periodoPendientes;
         this.pendientesAtrasados  = data.pendientesAtrasados ?? [];
         this.pendientesMes        = data.pendientesMes ?? [];
         this.pendientesTotal      = data.pendientesTotal ?? [];
