@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\SolicitudesCotizacion\Repositories;
 
 use App\Domain\SolicitudesCotizacion\Models\SolicitudCotizacion;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -33,12 +34,13 @@ interface SolicitudCotizacionRepositoryInterface
     public function bajas(int $porPagina = 20): LengthAwarePaginator;
 
     /**
-     * Solicitudes activas de los últimos 30 días, sin importar situacion_cliente.
-     * Prospectos y Negocios deciden a quién le toca cada una cruzándolas contra
-     * Cliente/Prospecto ya existentes en SFconnecting, no contra ese campo de SGP.
+     * Solicitudes activas desde $desde (por defecto, los últimos 30 días), sin importar
+     * situacion_cliente. Prospectos y Negocios deciden a quién le toca cada una
+     * cruzándolas contra Cliente/Prospecto ya existentes en SFconnecting, no contra
+     * ese campo de SGP.
      * $vendedorSgp restringe al código SGP de un comercial puntual (null = todos).
      */
-    public function candidatosVinculacion(?string $buscar = null, ?string $vendedorSgp = null, int $limite = 100): Collection;
+    public function candidatosVinculacion(?string $buscar = null, ?string $vendedorSgp = null, int $limite = 100, ?CarbonInterface $desde = null): Collection;
 
     /** Suma de valor_total_escala (escalas activas) por nro_solicitud, para prellenar valor_estimado. */
     public function valorTotalPorSolicitud(array $nrosSolicitud): Collection;

@@ -22,7 +22,7 @@
                                placeholder="Buscar por NIT o nombre del cliente..."
                                class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <span class="shrink-0 text-xs text-slate-400">Últimos 30 días</span>
+                    <span class="shrink-0 text-xs text-slate-400">Últimos 3 meses</span>
                 </div>
 
                 <template x-if="cargando">

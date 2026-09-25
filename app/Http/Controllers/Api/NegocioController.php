@@ -106,8 +106,8 @@ class NegocioController extends Controller
     }
 
     /**
-     * Solicitudes de cotización de SGP, para el modal "Cargar desde cotizaciones"
-     * de la pantalla de Negocios. No se filtra por situacion_cliente de SGP —
+     * Solicitudes de cotización de SGP de los últimos 3 meses, para el modal
+     * "Cargar desde cotizaciones" de la pantalla de Negocios. No se filtra por situacion_cliente de SGP —
      * se resuelve el vínculo contra lo que ya existe en SFconnecting: primero
      * por NIT contra Cliente (match exacto y confiable); si no hay Cliente, por
      * nombre normalizado contra Prospecto (la empresa puede ya estar en
@@ -134,7 +134,7 @@ class NegocioController extends Controller
                 ->pluck('nro_solicitud_cotizacion');
 
             $candidatos = $this->cotizaciones
-                ->candidatosVinculacion($request->query('buscar'), $vendedorSgp)
+                ->candidatosVinculacion($request->query('buscar'), $vendedorSgp, desde: now()->subMonthsNoOverflow(3))
                 ->reject(fn ($s) => $yaConvertidos->contains((string) $s->nro_solicitud));
 
             $nits = $candidatos->pluck('nit')->filter()->map(fn ($nit) => trim((string) $nit))->unique();

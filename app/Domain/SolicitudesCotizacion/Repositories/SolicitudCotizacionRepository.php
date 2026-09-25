@@ -6,6 +6,7 @@ namespace App\Domain\SolicitudesCotizacion\Repositories;
 
 use App\Domain\SolicitudesCotizacion\Models\SolicitudCotizacion;
 use App\Domain\SolicitudesCotizacion\Models\SolicitudCotizacionEscala;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -93,11 +94,11 @@ class SolicitudCotizacionRepository implements SolicitudCotizacionRepositoryInte
             ->paginate($porPagina);
     }
 
-    public function candidatosVinculacion(?string $buscar = null, ?string $vendedorSgp = null, int $limite = 100): Collection
+    public function candidatosVinculacion(?string $buscar = null, ?string $vendedorSgp = null, int $limite = 100, ?CarbonInterface $desde = null): Collection
     {
         return SolicitudCotizacion::query()
             ->activo()
-            ->ultimosDias(30)
+            ->desde($desde ?? now()->subDays(30))
             ->buscarCliente($buscar)
             ->delVendedor($vendedorSgp)
             ->orderByDesc('fecha_solicitud')

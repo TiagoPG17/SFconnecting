@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\SolicitudesCotizacion\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -87,11 +88,11 @@ class SolicitudCotizacion extends Model
             ->whereMonth('fecha_solicitud', now()->month);
     }
 
-    public function scopeUltimosDias($query, int $dias)
+    public function scopeDesde($query, CarbonInterface $fecha)
     {
         // "Ymd" (sin separadores) es el único formato que SQL Server interpreta sin
         // ambigüedad sin importar el idioma/DATEFORMAT de la sesión — pasar un Carbon
         // crudo o "Y-m-d H:i:s" revienta con "conversión de nvarchar a datetime".
-        return $query->where('fecha_solicitud', '>=', now()->subDays($dias)->format('Ymd'));
+        return $query->where('fecha_solicitud', '>=', $fecha->format('Ymd'));
     }
 }
