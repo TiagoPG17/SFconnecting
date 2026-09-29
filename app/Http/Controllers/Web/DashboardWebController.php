@@ -112,6 +112,7 @@ class DashboardWebController extends Controller
         $safe = fn (callable $fn) => rescue($fn, [], false);
 
         return view('dashboards.gerencial', [
+            'logradoTotal'         => $svc->logradoTotal(),
             'vendedores'           => $svc->presupuestoPorVendedor(),
             'ciclo'                => $svc->cicloDeVenta(),
             'motivos'              => $svc->motivosDePerdida(),

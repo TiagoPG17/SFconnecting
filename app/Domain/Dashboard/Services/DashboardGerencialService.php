@@ -57,6 +57,15 @@ class DashboardGerencialService
         })->values();
     }
 
+    public function logradoTotal(): float
+    {
+        try {
+            return $this->repo->logradoTotal($this->compania, $this->anio);
+        } catch (Throwable) {
+            return 0.0;
+        }
+    }
+
     public function cicloDeVenta(): Collection
     {
         return $this->repo->cicloDeVenta($this->meses);

@@ -1122,7 +1122,6 @@ function informeComercial(datos){
     // porque un pedido con líneas atrasadas y del mes debe contarse una sola vez.
     get tarjetasPendientes(){
       const cias = this.filtro.cia === 0 ? [1, 2] : [this.filtro.cia];
-      // Mes/año con que se calcularon los datos (no el del filtro, que cambia antes de que llegue la respuesta).
       const mes = this.nombresMes[this.periodoPendientes.mes - 1] + ' ' + this.periodoPendientes.anio;
       const arma = (clave, titulo, color, detalle, filas) => {
         const porCia = cias.map(cia => {
@@ -1136,9 +1135,9 @@ function informeComercial(datos){
         };
       };
       return {
-        atrasados: arma('atrasados', 'Pendientes atrasados',        'var(--red)',    'entrega anterior a ' + mes, this.pendientesAtrasados),
-        mes:       arma('mes',       'Pendientes del mes en curso', 'var(--amber)',  'entrega en ' + mes,         this.pendientesMes),
-        total:     arma('total',     'Total pendientes',            'var(--accent)', 'atrasados + ' + mes,        this.pendientesTotal),
+        atrasados: arma('atrasados', 'Pendientes atrasados',        'var(--red)',    'vencidos de ' + mes, this.pendientesAtrasados),
+        mes:       arma('mes',       'Pendientes por entregar',     'var(--amber)',  'por entregar en ' + mes,    this.pendientesMes),
+        total:     arma('total',     'Total pendientes',            'var(--accent)', 'entrega en ' + mes,         this.pendientesTotal),
       };
     },
 
@@ -1246,6 +1245,7 @@ function dashGerencial(){
   return {
     seccion: 1,
     vendedores: @json($vendedores),
+    logradoTotal: @json($logradoTotal),
     churn:      @json($churn),
     motivos:    @json($motivos),
     ciclo:      @json($ciclo),
@@ -1253,7 +1253,7 @@ function dashGerencial(){
 
     get totales(){
       const pr = this.vendedores.reduce((s,v)=>s+v.presupuesto_anual,0);
-      const lo = this.vendedores.reduce((s,v)=>s+v.logrado_ytd,0);
+      const lo = this.logradoTotal;
       const fc = this.vendedores.reduce((s,v)=>s+v.forecast_pipeline,0);
       return { presupuesto:pr, logrado:lo, cumplimiento: pr>0?parseFloat(Math.min(lo/pr*100,100).toFixed(1)):0, forecast:lo+fc };
     },

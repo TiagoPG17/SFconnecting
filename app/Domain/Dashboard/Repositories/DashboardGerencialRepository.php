@@ -338,11 +338,13 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
 
     public function pendientesAtrasados(int $compania, int $anio, int $mes): Collection
     {
-        $inicio = \Carbon\Carbon::create($anio, $mes, 1);
+        $inicio    = \Carbon\Carbon::create($anio, $mes, 1);
+        $siguiente = $inicio->copy()->addMonth();
+        $hoy       = \Carbon\Carbon::today();
 
         return $this->pendientesPorCompania($compania, fn ($q) => $q->whereRaw(
-            'CAST(FechaEntrega AS date) < CAST(? AS date)',
-            [$inicio->format('Ymd')]
+            'CAST(FechaEntrega AS date) >= CAST(? AS date) AND CAST(FechaEntrega AS date) < CAST(? AS date) AND CAST(FechaEntrega AS date) < CAST(? AS date)',
+            [$inicio->format('Ymd'), $siguiente->format('Ymd'), $hoy->format('Ymd')]
         ));
     }
 
@@ -350,20 +352,22 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
     {
         $inicio    = \Carbon\Carbon::create($anio, $mes, 1);
         $siguiente = $inicio->copy()->addMonth();
+        $hoy       = \Carbon\Carbon::today();
 
         return $this->pendientesPorCompania($compania, fn ($q) => $q->whereRaw(
-            'CAST(FechaEntrega AS date) >= CAST(? AS date) AND CAST(FechaEntrega AS date) < CAST(? AS date)',
-            [$inicio->format('Ymd'), $siguiente->format('Ymd')]
+            'CAST(FechaEntrega AS date) >= CAST(? AS date) AND CAST(FechaEntrega AS date) < CAST(? AS date) AND CAST(FechaEntrega AS date) >= CAST(? AS date)',
+            [$inicio->format('Ymd'), $siguiente->format('Ymd'), $hoy->format('Ymd')]
         ));
     }
 
     public function pendientesTotal(int $compania, int $anio, int $mes): Collection
     {
-        $siguiente = \Carbon\Carbon::create($anio, $mes, 1)->addMonth();
+        $inicio    = \Carbon\Carbon::create($anio, $mes, 1);
+        $siguiente = $inicio->copy()->addMonth();
 
         return $this->pendientesPorCompania($compania, fn ($q) => $q->whereRaw(
-            'CAST(FechaEntrega AS date) < CAST(? AS date)',
-            [$siguiente->format('Ymd')]
+            'CAST(FechaEntrega AS date) >= CAST(? AS date) AND CAST(FechaEntrega AS date) < CAST(? AS date)',
+            [$inicio->format('Ymd'), $siguiente->format('Ymd')]
         ));
     }
 
@@ -388,6 +392,18 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->groupBy('Compania')
             ->orderBy('Compania')
             ->get();
+    }
+
+    public function logradoTotal(int $compania, int $anio): float
+    {
+        $row = DB::connection('erp_contiflex')
+            ->table('vw_CRM_Ventas_Vendedor_Periodo')
+            ->when($compania > 0, fn ($q) => $q->where('COMPANIA', $compania))
+            ->where('ANIO', $anio)
+            ->selectRaw('SUM(VLR_NETO_FACTURADO) AS logrado')
+            ->first();
+
+        return (float) ($row->logrado ?? 0);
     }
 
     private function parsearMeses(array $meses): array
