@@ -13,6 +13,7 @@ use App\Domain\ERP\Contracts\ERPRepositoryInterface;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class DashboardWebController extends Controller
@@ -109,23 +110,17 @@ class DashboardWebController extends Controller
 
         $svc = new DashboardGerencialService($this->gerencialRepo, $compania, $anio, $meses);
 
-        $safe = fn (callable $fn) => rescue($fn, [], false);
-
         return view('dashboards.gerencial', [
-            'logradoTotal'         => $svc->logradoTotal(),
-            'vendedores'           => $svc->presupuestoPorVendedor(),
-            'ciclo'                => $svc->cicloDeVenta(),
-            'motivos'              => $svc->motivosDePerdida(),
-            'churn'                => $svc->retencionChurn(),
-            'actividad'            => $svc->actividadEquipo(),
-            'topAsesores'          => $this->service->topAsesores(),
-            'integrales'           => $safe(fn () => $this->erp->clientesIntegrales(50)),
-            'panoramaGerencial'    => $safe(fn () => $this->erp->panoramaGerencial($companiaErp)),
-            'panoramaPresupuestal' => $safe(fn () => $this->erp->panoramaPresupuestal($companiaErp)),
-            'informeComercial'     => $svc->informeComercial(),
-            'anio'                 => $anio,
-            'periodo'              => $periodo,
-            'cia'                  => $companiaErp,
+            'logradoTotal'              => $svc->logradoTotal(),
+            'vendedores'                => $svc->presupuestoPorVendedor(),
+            'ciclo'                     => $svc->cicloDeVenta(),
+            'motivos'                   => $svc->motivosDePerdida(),
+            'churn'                     => $svc->retencionChurn(),
+            'actividad'                 => $svc->actividadEquipo(),
+            'topAsesores'               => $this->service->topAsesores(),
+            'anio'                      => $anio,
+            'periodo'                   => $periodo,
+            'cia'                       => $companiaErp,
         ]);
     }
 
@@ -141,6 +136,31 @@ class DashboardWebController extends Controller
         $svc = new DashboardGerencialService($this->gerencialRepo, $compania, $anio, [sprintf('%d-%02d', $anio, $mes)]);
 
         return response()->json($svc->informeComercial($compania, $anio, $mes, $incluirFuturos));
+    }
+
+    public function inteligenciaComercial(): JsonResponse
+    {
+        $safe = fn (string $key, callable $fn) => rescue(
+            fn () => Cache::remember($key, now()->addHours(2), $fn),
+            [],
+            false
+        );
+
+        return response()->json([
+            'integrales'           => $safe('erp:integrales', fn () => $this->erp->clientesIntegrales(50)),
+            'panoramaGerencial'    => $safe('erp:panorama:0', fn () => $this->erp->panoramaGerencial(0)),
+            'panoramaPresupuestal' => $safe('erp:presupuestal:0', fn () => $this->erp->panoramaPresupuestal(0)),
+        ]);
+    }
+
+    public function cumplimientoPresupuestal(Request $request): JsonResponse
+    {
+        $compania = in_array((int) $request->input('cia'), [0, 1, 2]) ? (int) $request->input('cia') : 0;
+        $anio     = (int) $request->input('anio', now()->year);
+
+        $svc = new DashboardGerencialService($this->gerencialRepo, $compania, $anio, []);
+
+        return response()->json($svc->cumplimientoPresupuestal());
     }
 
     /** @return array{0: int, 1: int, 2: int} [compania, anio, mes] */

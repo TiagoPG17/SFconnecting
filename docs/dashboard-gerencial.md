@@ -159,11 +159,14 @@ Tres tarjetas por compañía (Formacol / Contiflex; con el filtro en "Todas" se 
 
 | Tarjeta | Criterio sobre `FechaEntrega` |
 |---------|-------------------------------|
-| **Pendientes atrasados** | Anterior al primer día del mes elegido |
-| **Pendientes del mes en curso** | Dentro del mes elegido |
-| **Total pendientes** | Atrasados + mes elegido, o sea hasta el último día de ese mes (consulta propia, no suma de las otras dos: un pedido con líneas en ambos grupos cuenta una sola vez en "Pedidos") |
+| **Pendientes atrasados** | Dentro del mes elegido, con `FechaEntrega` anterior a hoy (ya vencidos) |
+| **Pendientes por entregar** | Dentro del mes elegido, con `FechaEntrega` de hoy en adelante (aún por llegar) |
+| **Total pendientes** | Todo el mes elegido (atrasados + por entregar) |
 
-- **Ojo con meses pasados:** la vista del ERP es una foto de lo pendiente **hoy**, sin historia. Si eliges un mes pasado, "atrasados" y "mes" muestran lo de esas fechas que **sigue sin facturarse hoy**, no lo que estaba pendiente en aquel momento. Con un mes futuro, "atrasados" es todo lo pendiente acumulado hasta el día 1 de ese mes.
+- **Mes futuro:** atrasados = $0 (nada de ese mes está vencido aún), por entregar = todo el mes.
+- **Mes pasado:** atrasados = todo el mes (todo ya venció), por entregar = $0.
+- **Mes actual:** atrasados = días anteriores a hoy, por entregar = de hoy en adelante.
+- **Ojo:** la vista del ERP es una foto de lo pendiente **hoy**, sin historia. Si eliges un mes pasado, solo aparece lo que **sigue sin facturarse hoy**, no lo que estaba pendiente en aquel momento.
 - **No cambia:** la tabla "Pedidos pendientes" (canasta por mes de compromiso, con "Incluir meses futuros") sigue como antes, con su propia fórmula (`ValorSubtotalLocal`, "Total comprometido").
 - **Ojo:** la canasta excluye al cliente FORMACOL S.A. bajo Contiflex (dato inconsistente en el ERP); las tarjetas de pendientes **no** lo excluyen. Por eso Contiflex no coincide entre ambos bloques.
 - **Código:** `pendientesAtrasados()`, `pendientesMesEnCurso()` y `pendientesTotal()` en `DashboardGerencialRepository`; viajan en el payload de `informeComercial()` (claves `pendientesAtrasados`, `pendientesMes`, `pendientesTotal`, `periodoPendientes`).

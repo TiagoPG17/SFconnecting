@@ -103,6 +103,7 @@ window.pesoInput = function (initialValue) {
             this.display = fmt(digits);
         },
         onKeydown(e) {
+            if (e.ctrlKey || e.metaKey) return;
             const allowed = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
             if (allowed.includes(e.key)) return;
             if (!/^\d$/.test(e.key)) e.preventDefault();

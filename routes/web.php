@@ -61,6 +61,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/gerencial',    [DashboardWebController::class, 'gerencial'])->name('dash.gerencial')->middleware('role:gerente|admin');
     Route::get('/gerencial/clientes-panorama', [DashboardWebController::class, 'clientesPanorama'])->name('gerencial.clientes-panorama')->middleware('role:gerente|admin');
     Route::get('/gerencial/informe-comercial', [DashboardWebController::class, 'informeComercial'])->name('gerencial.informe-comercial')->middleware('role:gerente|admin');
+    Route::get('/gerencial/cumplimiento-presupuestal', [DashboardWebController::class, 'cumplimientoPresupuestal'])->name('gerencial.cumplimiento-presupuestal')->middleware('role:gerente|admin');
+    Route::get('/gerencial/inteligencia-comercial', [DashboardWebController::class, 'inteligenciaComercial'])->name('gerencial.inteligencia-comercial')->middleware('role:gerente|admin');
 
     Route::middleware("role:{$rolesCrmGeneral}")->group(function () {
         // Calendario

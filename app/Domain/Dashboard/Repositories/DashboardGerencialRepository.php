@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Dashboard\Repositories;
 
 use App\Domain\Dashboard\Models\Presupuesto;
+use App\Domain\Dashboard\Models\PresupuestoMensual;
 use App\Domain\Dashboard\Models\VendedorEquivalencia;
 use App\Domain\Negocios\Models\Negocio;
 use App\Domain\Seguimientos\Models\Seguimiento;
@@ -394,6 +395,54 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->get();
     }
 
+    public function pendientesDesglosados(int $compania, int $anio, int $mes): array
+    {
+        $inicio    = \Carbon\Carbon::create($anio, $mes, 1);
+        $siguiente = $inicio->copy()->addMonth();
+        $hoy       = \Carbon\Carbon::today();
+
+        $whereCompania = $compania > 0 ? 'AND Compania = ?' : '';
+        $bindings      = [$hoy->format('Ymd'), $inicio->format('Ymd'), $siguiente->format('Ymd')];
+        if ($compania > 0) {
+            $bindings[] = $compania;
+        }
+
+        $sql = "
+            SELECT
+                sub.Compania                    AS compania,
+                CASE
+                    WHEN GROUPING(sub.es_atrasado) = 1 THEN 'total'
+                    WHEN sub.es_atrasado = 1            THEN 'atrasados'
+                    ELSE 'mes'
+                END                             AS categoria,
+                COUNT(DISTINCT sub.NroDocumento) AS num_pedidos,
+                SUM(sub.CantPendiente)           AS cant_pendiente,
+                SUM(sub.ValorPendiente)           AS valor_pendiente
+            FROM (
+                SELECT Compania, NroDocumento, CantPendiente, ValorPendiente,
+                       CASE WHEN CAST(FechaEntrega AS date) < CAST(? AS date) THEN 1 ELSE 0 END AS es_atrasado
+                FROM dbo.vw_CRM_Pedidos_Pendientes
+                WHERE CAST(FechaEntrega AS date) >= CAST(? AS date)
+                  AND CAST(FechaEntrega AS date) < CAST(? AS date)
+                  AND LEFT(NroDocumento, 2) NOT IN ('PM', 'PS')
+                  {$whereCompania}
+            ) sub
+            GROUP BY GROUPING SETS (
+                (sub.Compania, sub.es_atrasado),
+                (sub.Compania)
+            )
+            ORDER BY sub.Compania
+        ";
+
+        $rows = collect(DB::connection('erp_contiflex')->select($sql, $bindings));
+
+        return [
+            'atrasados' => $rows->where('categoria', 'atrasados')->values(),
+            'mes'       => $rows->where('categoria', 'mes')->values(),
+            'total'     => $rows->where('categoria', 'total')->values(),
+        ];
+    }
+
     public function logradoTotal(int $compania, int $anio): float
     {
         $row = DB::connection('erp_contiflex')
@@ -404,6 +453,30 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->first();
 
         return (float) ($row->logrado ?? 0);
+    }
+
+    public function presupuestoMensualConsolidado(int $compania, int $anio): Collection
+    {
+        return PresupuestoMensual::query()
+            ->join('sf_presupuesto as p', 'p.id', '=', 'sf_presupuesto_mensual.presupuesto_id')
+            ->when($compania > 0, fn ($q) => $q->where('p.compania', $compania))
+            ->where('p.anio', $anio)
+            ->select('sf_presupuesto_mensual.mes', DB::raw('SUM(sf_presupuesto_mensual.valor) as presupuesto'))
+            ->groupBy('sf_presupuesto_mensual.mes')
+            ->orderBy('sf_presupuesto_mensual.mes')
+            ->get();
+    }
+
+    public function facturadoMensualAnio(int $compania, int $anio): Collection
+    {
+        return DB::connection('erp_contiflex')
+            ->table('dbo.vw_CRM_Facturacion_Mes')
+            ->when($compania > 0, fn ($q) => $q->where('Compania', $compania))
+            ->where('Anio', $anio)
+            ->selectRaw('Mes AS mes, SUM(ValorSubtotalLocal) AS facturado')
+            ->groupBy('Mes')
+            ->orderBy('Mes')
+            ->get();
     }
 
     private function parsearMeses(array $meses): array

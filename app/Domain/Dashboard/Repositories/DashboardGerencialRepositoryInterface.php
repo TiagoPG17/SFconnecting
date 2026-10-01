@@ -57,6 +57,15 @@ interface DashboardGerencialRepositoryInterface
     /** Saldo por facturar (ValorPendiente) de todo el mes dado (atrasados + por entregar), por compañía. Excluye PM/PS. */
     public function pendientesTotal(int $compania, int $anio, int $mes): Collection;
 
+    /** Pendientes atrasados, del mes en curso y total en una sola consulta (desglose por compañía). */
+    public function pendientesDesglosados(int $compania, int $anio, int $mes): array;
+
     /** Facturación total del año completo, sin filtrar por vendedores con presupuesto. */
     public function logradoTotal(int $compania, int $anio): float;
+
+    /** Presupuesto mensual consolidado de la compañía (suma de todos sus comerciales), meses 1–12. */
+    public function presupuestoMensualConsolidado(int $compania, int $anio): Collection;
+
+    /** Facturación real mensual de la compañía para un año completo (meses 1–12). */
+    public function facturadoMensualAnio(int $compania, int $anio): Collection;
 }

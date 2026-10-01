@@ -6,6 +6,7 @@ namespace App\Domain\Dashboard\Services;
 
 use App\Domain\Dashboard\Repositories\DashboardGerencialRepositoryInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 class DashboardGerencialService
@@ -60,7 +61,11 @@ class DashboardGerencialService
     public function logradoTotal(): float
     {
         try {
-            return $this->repo->logradoTotal($this->compania, $this->anio);
+            return Cache::remember(
+                "gerencial:logrado:{$this->compania}:{$this->anio}",
+                now()->addMinutes(30),
+                fn () => $this->repo->logradoTotal($this->compania, $this->anio)
+            );
         } catch (Throwable) {
             return 0.0;
         }
@@ -79,7 +84,11 @@ class DashboardGerencialService
     public function retencionChurn(): Collection
     {
         try {
-            return $this->repo->retencionChurn($this->compania);
+            return Cache::remember(
+                "gerencial:churn:{$this->compania}",
+                now()->addHours(1),
+                fn () => $this->repo->retencionChurn($this->compania)
+            );
         } catch (Throwable) {
             return collect();
         }
@@ -96,27 +105,71 @@ class DashboardGerencialService
         $anio     ??= $this->anio;
         $mes      ??= now()->month;
 
-        $safe = fn (callable $fn) => rescue($fn, collect(), false);
+        $cacheKey = "gerencial:informe:{$compania}:{$anio}:{$mes}:" . ($incluirFuturos ? '1' : '0');
 
-        return [
-            'compania'             => $compania,
-            'anio'                 => $anio,
-            'mes'                  => $mes,
-            'incluirFuturos'       => $incluirFuturos,
-            'facturadoMes'         => $safe(fn () => $this->repo->facturadoDelMes($compania, $anio, $mes)),
-            'cierresProximos'      => $safe(fn () => $this->repo->cierresProximos($compania)),
-            'pedidosPorCerrar'     => $safe(fn () => $this->repo->pedidosPorCerrarDetalle($compania)),
-            'facturacionTendencia' => $safe(fn () => $this->repo->facturacionMensualTendencia($compania, $anio, $mes)),
-            'facturacionCliente'   => $safe(fn () => $this->repo->facturacionPorCliente($compania, $anio, $mes)),
-            'facturacionVendedor'  => $safe(fn () => $this->repo->facturacionPorVendedor($compania, $anio, $mes)),
-            'canastaResumen'       => $safe(fn () => $this->repo->canastaResumen($compania, $mes, $incluirFuturos)),
-            'canastaDetalle'       => $safe(fn () => $this->repo->canastaDetalle($compania, $mes, $incluirFuturos)),
-            // Pendientes por facturar: siguen el Año/Mes elegidos (por defecto, el mes actual).
-            'periodoPendientes'    => ['anio' => $anio, 'mes' => $mes],
-            'pendientesAtrasados'  => $safe(fn () => $this->repo->pendientesAtrasados($compania, $anio, $mes)),
-            'pendientesMes'        => $safe(fn () => $this->repo->pendientesMesEnCurso($compania, $anio, $mes)),
-            'pendientesTotal'      => $safe(fn () => $this->repo->pendientesTotal($compania, $anio, $mes)),
-        ];
+        return Cache::remember($cacheKey, now()->addMinutes(15), function () use ($compania, $anio, $mes, $incluirFuturos) {
+            $safe = fn (callable $fn) => rescue($fn, collect(), false);
+
+            $pendientes = rescue(
+                fn () => $this->repo->pendientesDesglosados($compania, $anio, $mes),
+                ['atrasados' => collect(), 'mes' => collect(), 'total' => collect()],
+                false
+            );
+
+            return [
+                'compania'             => $compania,
+                'anio'                 => $anio,
+                'mes'                  => $mes,
+                'incluirFuturos'       => $incluirFuturos,
+                'facturadoMes'         => $safe(fn () => $this->repo->facturadoDelMes($compania, $anio, $mes)),
+                'cierresProximos'      => $safe(fn () => $this->repo->cierresProximos($compania)),
+                'pedidosPorCerrar'     => $safe(fn () => $this->repo->pedidosPorCerrarDetalle($compania)),
+                'facturacionTendencia' => $safe(fn () => $this->repo->facturacionMensualTendencia($compania, $anio, $mes)),
+                'facturacionCliente'   => $safe(fn () => $this->repo->facturacionPorCliente($compania, $anio, $mes)),
+                'facturacionVendedor'  => $safe(fn () => $this->repo->facturacionPorVendedor($compania, $anio, $mes)),
+                'canastaResumen'       => $safe(fn () => $this->repo->canastaResumen($compania, $mes, $incluirFuturos)),
+                'canastaDetalle'       => $safe(fn () => $this->repo->canastaDetalle($compania, $mes, $incluirFuturos)),
+                'periodoPendientes'    => ['anio' => $anio, 'mes' => $mes],
+                'pendientesAtrasados'  => $pendientes['atrasados'],
+                'pendientesMes'        => $pendientes['mes'],
+                'pendientesTotal'      => $pendientes['total'],
+            ];
+        });
+    }
+
+    public function cumplimientoPresupuestal(): array
+    {
+        return Cache::remember(
+            "gerencial:cumpl:{$this->compania}:{$this->anio}",
+            now()->addMinutes(30),
+            function () {
+                $presupuestos = $this->repo->presupuestoMensualConsolidado($this->compania, $this->anio)
+                    ->pluck('presupuesto', 'mes');
+
+                try {
+                    $facturado = $this->repo->facturadoMensualAnio($this->compania, $this->anio)
+                        ->pluck('facturado', 'mes');
+                } catch (Throwable) {
+                    $facturado = collect();
+                }
+
+                $nombres = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+                return collect(range(1, 12))->map(function (int $mes) use ($presupuestos, $facturado, $nombres) {
+                    $pres = (float) ($presupuestos[$mes] ?? 0);
+                    $fact = (float) ($facturado[$mes] ?? 0);
+
+                    return [
+                        'mes'          => $mes,
+                        'nombre_mes'   => $nombres[$mes - 1],
+                        'presupuesto'  => round($pres, 2),
+                        'facturado'    => round($fact, 2),
+                        'cumplimiento' => $pres > 0 ? round($fact / $pres * 100, 1) : null,
+                        'diferencia'   => round($fact - $pres, 2),
+                    ];
+                })->toArray();
+            }
+        );
     }
 
     public function actividadEquipo(): Collection
