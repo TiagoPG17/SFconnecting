@@ -395,14 +395,21 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
             ->get();
     }
 
+    /**
+     * Los atrasados se arrastran: incluyen todo lo vencido antes del corte (hoy, o el fin del mes elegido
+     * si ya pasó), sin importar en qué mes debía entregarse. "Por entregar" sigue limitado al mes elegido.
+     */
     public function pendientesDesglosados(int $compania, int $anio, int $mes): array
     {
         $inicio    = \Carbon\Carbon::create($anio, $mes, 1);
         $siguiente = $inicio->copy()->addMonth();
-        $hoy       = \Carbon\Carbon::today();
+        $corte     = \Carbon\Carbon::today()->min($siguiente);
 
         $whereCompania = $compania > 0 ? 'AND Compania = ?' : '';
-        $bindings      = [$hoy->format('Ymd'), $inicio->format('Ymd'), $siguiente->format('Ymd')];
+        $bindings      = [
+            $corte->format('Ymd'),
+            $corte->format('Ymd'), $inicio->format('Ymd'), $siguiente->format('Ymd'),
+        ];
         if ($compania > 0) {
             $bindings[] = $compania;
         }
@@ -422,8 +429,8 @@ class DashboardGerencialRepository implements DashboardGerencialRepositoryInterf
                 SELECT Compania, NroDocumento, CantPendiente, ValorPendiente,
                        CASE WHEN CAST(FechaEntrega AS date) < CAST(? AS date) THEN 1 ELSE 0 END AS es_atrasado
                 FROM dbo.vw_CRM_Pedidos_Pendientes
-                WHERE CAST(FechaEntrega AS date) >= CAST(? AS date)
-                  AND CAST(FechaEntrega AS date) < CAST(? AS date)
+                WHERE (CAST(FechaEntrega AS date) < CAST(? AS date)
+                       OR (CAST(FechaEntrega AS date) >= CAST(? AS date) AND CAST(FechaEntrega AS date) < CAST(? AS date)))
                   AND LEFT(NroDocumento, 2) NOT IN ('PM', 'PS')
                   {$whereCompania}
             ) sub

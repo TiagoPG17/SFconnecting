@@ -1097,9 +1097,9 @@ function informeComercial(datos){
         };
       };
       return {
-        atrasados: arma('atrasados', 'Pendientes atrasados',        'var(--red)',    'vencidos de ' + mes, this.pendientesAtrasados),
+        atrasados: arma('atrasados', 'Pendientes atrasados',        'var(--red)',    'vencidos acumulados a ' + mes, this.pendientesAtrasados),
         mes:       arma('mes',       'Pendientes por entregar',     'var(--amber)',  'por entregar en ' + mes,    this.pendientesMes),
-        total:     arma('total',     'Total pendientes',            'var(--accent)', 'entrega en ' + mes,         this.pendientesTotal),
+        total:     arma('total',     'Total pendientes',            'var(--accent)', 'atrasados + por entregar en ' + mes, this.pendientesTotal),
       };
     },
 
