@@ -82,6 +82,14 @@ class AppServiceProvider extends ServiceProvider
             return new \App\Domain\ERP\Repositories\ContiflexERPRepository();
         });
 
+        // En pruebas nunca se abre un socket a una Zebra real.
+        $this->app->singleton(
+            \App\Domain\RotulosMP\Contracts\ImpresoraZplInterface::class,
+            fn () => app()->environment('testing')
+                ? new \App\Domain\RotulosMP\Fakes\FakeImpresoraZpl()
+                : new \App\Domain\RotulosMP\Services\ImpresoraZplTcp()
+        );
+
         $this->app->bind('db.connector.sqlsrv', fn () => new ScopedTlsSqlServerConnector());
     }
 

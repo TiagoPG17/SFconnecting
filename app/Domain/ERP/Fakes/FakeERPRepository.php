@@ -16,6 +16,8 @@ class FakeERPRepository implements ERPRepositoryInterface
     private array $clientesVendedor = [];
     private array $facturas = [];
     private array $existenciasMP = [];
+    private array $salidasMP = [];
+    private array $impresorasSgp = [];
     private array $gestionCartera = [];
     private array $notificacionesCartera = [];
 
@@ -220,6 +222,30 @@ class FakeERPRepository implements ERPRepositoryInterface
     public function agregarExistenciasMP(array $filas): void
     {
         $this->existenciasMP = $filas;
+    }
+
+    public function renglonesSalidaMP(string $documento): array
+    {
+        $this->checkAvailability();
+
+        return $this->salidasMP[$documento] ?? [];
+    }
+
+    public function agregarSalidaMP(string $documento, array $renglones): void
+    {
+        $this->salidasMP[$documento] = $renglones;
+    }
+
+    public function impresoraSgpPorNombre(string $nombre): ?array
+    {
+        $this->checkAvailability();
+
+        return isset($this->impresorasSgp[$nombre]) ? ['nombre' => $nombre, 'ip' => $this->impresorasSgp[$nombre]] : null;
+    }
+
+    public function agregarImpresoraSgp(string $nombre, string $ip): void
+    {
+        $this->impresorasSgp[$nombre] = $ip;
     }
 
     public function gestionCartera(

@@ -990,6 +990,78 @@ class ContiflexERPRepository implements ERPRepositoryInterface
         }
     }
 
+    public function renglonesSalidaMP(string $documento): array
+    {
+        // Replica los datos del rótulo de salida de MP que imprime SGP
+        // (vista vwinv_mostrarimpr_saldoc). Validada contra SLI299428.
+        // La orden se liga por inv_movto.descrip = pcc_orden_produccion.nroorden.
+        $sql = <<<'SQL'
+            SELECT d.id_row,
+                   d.docref                 AS pedido,
+                   d.iddocto                AS documento,
+                   f.formula,
+                   c.razonsocial            AS cliente,
+                   o.colorpart              AS color,
+                   o.materialpart           AS material,
+                   op.descripcion           AS proceso,
+                   t.descriptipo            AS capa,
+                   d.articulo               AS ref,
+                   a.descripart             AS nombre_material,
+                   d.cantidad_art           AS cantidad,
+                   d.unidad,
+                   RIGHT(d.parte_lote, 10)  AS lote
+            FROM sgpforma.dbo.inv_movtodet d
+            JOIN sgpforma.dbo.inv_movto m                  ON m.nrodoc = d.iddocto
+            LEFT JOIN sgpforma.dbo.pcc_orden_produccion o  ON o.nroorden = m.descrip
+            LEFT JOIN sgpforma.dbo.vw_clientes c           ON c.id = o.nit
+            LEFT JOIN sgpforma.dbo.pcc_operaciones op      ON op.id_row = d.idproceso_ruta
+            LEFT JOIN sgpforma.dbo.ini_tipos_datos t       ON t.id_row = d.capa_id
+            LEFT JOIN sgpforma.dbo.inv_articulo a          ON a.codarticulo = d.articulo
+            OUTER APPLY (SELECT MAX(ff.codformula) AS formula
+                         FROM sgpforma.dbo.frm_formula ff
+                         WHERE ff.idparte = o.idparte
+                           AND ff.idproducto = o.idproducto
+                           AND ff.idestado = '2') f
+            WHERE d.iddocto = ?
+            ORDER BY d.capa_id DESC, d.articulo
+            SQL;
+
+        try {
+            return collect(DB::connection('erp_contiflex')->select($sql, [$documento]))
+                ->map(function ($r) {
+                    $fila = array_map(
+                        fn ($v) => is_string($v) ? (trim($v) === '' ? null : trim($v)) : $v,
+                        (array) $r
+                    );
+                    $fila['id_row']    = (int) $fila['id_row'];
+                    $fila['cantidad']  = (string) ($fila['cantidad'] ?? '0');
+                    $fila['formula']   = $fila['formula'] !== null ? (string) $fila['formula'] : null;
+                    $fila['documento'] = (string) $fila['documento'];
+                    $fila['ref']       = (string) $fila['ref'];
+
+                    return $fila;
+                })
+                ->values()
+                ->all();
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
+    public function impresoraSgpPorNombre(string $nombre): ?array
+    {
+        try {
+            $row = DB::connection('erp_contiflex')
+                ->table('sgpforma.dbo.ini_impresoras')
+                ->where('nomimpra', $nombre)
+                ->first(['nomimpra', 'dirip']);
+
+            return $row ? ['nombre' => trim((string) $row->nomimpra), 'ip' => trim((string) $row->dirip)] : null;
+        } catch (Throwable $e) {
+            throw ERPConnectionException::queryFailed($e->getMessage());
+        }
+    }
+
     public function isAvailable(): bool
     {
         try {

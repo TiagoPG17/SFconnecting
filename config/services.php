@@ -39,4 +39,12 @@ return [
         'token' => env('N8N_API_TOKEN'),
     ],
 
+    // Rótulos de costales de salida de MP (SLI de SGP). La IP se toma de
+    // sgpforma.dbo.ini_impresoras por el nombre, igual que hace SGP.
+    'rotulos_mp' => [
+        'impresora'     => env('ROTULOS_MP_IMPRESORA', 'ZTC-230-ZPL-INV'),
+        'puerto'        => (int) env('ROTULOS_MP_PUERTO', 9100),
+        'max_etiquetas' => (int) env('ROTULOS_MP_MAX_ETIQUETAS', 100),
+    ],
+
 ];

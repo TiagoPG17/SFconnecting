@@ -24,6 +24,128 @@
         }, 5000);
     }
 
+    // Rótulos de costales de salida de MP (SLI de SGP): buscar → pesos → confirmar → imprimir.
+    function rotulosCostales() {
+        const csrf = () => document.querySelector('meta[name="csrf-token"]').content;
+        const pedir = async (url, opciones = {}) => {
+            const res = await fetch(url, {
+                ...opciones,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrf(),
+                },
+            });
+            let data = {};
+            try { data = await res.json(); } catch (e) {}
+            if (!res.ok || !data.success) {
+                const errores = data.errors ? Object.values(data.errors).flat() : [];
+                throw new Error(data.message && !errores.length ? data.message : (errores[0] || data.message || 'No se pudo completar la operación.'));
+            }
+            return data;
+        };
+
+        return {
+            open: false,
+            paso: 'buscar',
+            documento: '',
+            cargando: false,
+            enviando: false,
+            error: '',
+            consulta: null,
+            renglones: [],
+            plan: null,
+
+            abrir() {
+                this.open = true;
+                this.$nextTick(() => this.$refs.inputDocumento?.focus());
+            },
+            cerrar() {
+                if (this.enviando) return;
+                this.open = false;
+            },
+            reiniciar() {
+                this.paso = 'buscar';
+                this.documento = '';
+                this.error = '';
+                this.consulta = null;
+                this.renglones = [];
+                this.plan = null;
+                this.$nextTick(() => this.$refs.inputDocumento?.focus());
+            },
+            numero(v) {
+                const n = parseFloat(v);
+                return isNaN(n) ? v : n.toLocaleString('es-CO', { maximumFractionDigits: 5 });
+            },
+            pesos() {
+                const pesos = {};
+                this.renglones.forEach(r => { pesos[r.id_row] = r.peso === '' || r.peso === null ? null : String(r.peso); });
+                return pesos;
+            },
+            cambioPeso() {
+                if (this.paso === 'confirmar') {
+                    this.paso = 'pesos';
+                    this.plan = null;
+                }
+                this.error = '';
+            },
+
+            async buscar() {
+                if (!this.documento.trim() || this.cargando) return;
+                this.cargando = true;
+                this.error = '';
+                try {
+                    const url = '{{ route('rotulos-mp.consultar') }}?documento=' + encodeURIComponent(this.documento.trim());
+                    const data = await pedir(url);
+                    this.consulta = data;
+                    this.documento = data.documento;
+                    this.renglones = data.renglones.map(r => ({ ...r, peso: '' }));
+                    this.paso = 'pesos';
+                    this.$nextTick(() => this.$el.querySelector('[data-peso]')?.focus());
+                } catch (e) {
+                    this.error = e.message;
+                } finally {
+                    this.cargando = false;
+                }
+            },
+
+            async calcular() {
+                if (this.cargando) return;
+                this.cargando = true;
+                this.error = '';
+                try {
+                    this.plan = await pedir('{{ route('rotulos-mp.previsualizar') }}', {
+                        method: 'POST',
+                        body: JSON.stringify({ documento: this.consulta.documento, pesos: this.pesos() }),
+                    });
+                    this.paso = 'confirmar';
+                } catch (e) {
+                    this.error = e.message;
+                } finally {
+                    this.cargando = false;
+                }
+            },
+
+            async imprimir() {
+                if (this.enviando || this.paso !== 'confirmar') return;
+                this.enviando = true;
+                this.error = '';
+                try {
+                    const data = await pedir('{{ route('rotulos-mp.imprimir') }}', {
+                        method: 'POST',
+                        body: JSON.stringify({ documento: this.consulta.documento, pesos: this.pesos() }),
+                    });
+                    Alpine.store('toast').success(`Se enviaron ${data.total_rotulos} rótulos del ${data.documento} a ${data.impresora.nombre}.`);
+                    this.enviando = false;
+                    this.reiniciar();
+                } catch (e) {
+                    this.error = e.message;
+                    this.enviando = false;
+                }
+            },
+        };
+    }
+
     function existenciasGrid(items) {
         return {
             items,
@@ -106,6 +228,165 @@
             </div>
         </div>
         <div class="flex items-center gap-4">
+            {{-- Rótulos de costales (salida de MP a producción, SLI de SGP) --}}
+            <div x-data="rotulosCostales()">
+                <button type="button" @click="abrir()"
+                        class="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-semibold border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/>
+                    </svg>
+                    Rótulos Material
+                </button>
+
+                <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" @keydown.escape.window="cerrar()">
+                    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="cerrar()"
+                         x-show="open" x-transition.opacity></div>
+
+                    <div role="dialog" aria-modal="true" aria-labelledby="rotulos-titulo" x-trap.noscroll="open"
+                         class="relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden"
+                         x-show="open"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100">
+
+                        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                            <div>
+                                <h3 id="rotulos-titulo" class="text-sm font-semibold text-slate-900">Rótulos de costales · Salida de MP</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Un rótulo por costal, con el peso de ese costal.</p>
+                            </div>
+                            <button type="button" @click="cerrar()" :disabled="enviando" aria-label="Cerrar"
+                                    class="text-slate-400 hover:text-slate-600 disabled:opacity-40 transition-colors">
+                                <x-ui.icon name="x" class="w-5 h-5"/>
+                            </button>
+                        </div>
+
+                        <div class="px-6 py-5 overflow-y-auto space-y-5">
+                            {{-- Paso 1: documento --}}
+                            <form @submit.prevent="buscar()" class="flex items-end gap-3">
+                                <label class="flex-1 max-w-xs">
+                                    <span class="block text-xs font-semibold text-slate-600 mb-1">Documento de salida (SLI)</span>
+                                    <input type="text" x-model="documento" x-ref="inputDocumento" :disabled="paso !== 'buscar'"
+                                           placeholder="Ej: SLI299428" autocomplete="off"
+                                           class="w-full px-3 py-2 text-sm font-mono uppercase border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-slate-50 disabled:text-slate-500">
+                                </label>
+                                <template x-if="paso === 'buscar'">
+                                    <x-ui.button type="submit" size="sm" x-bind:disabled="cargando || !documento.trim()">
+                                        <span x-text="cargando ? 'Buscando…' : 'Buscar'"></span>
+                                    </x-ui.button>
+                                </template>
+                                <template x-if="paso !== 'buscar'">
+                                    <x-ui.button type="button" variant="ghost" size="sm" @click="reiniciar()" x-bind:disabled="enviando">
+                                        Otro documento
+                                    </x-ui.button>
+                                </template>
+                            </form>
+
+                            {{-- Paso 2: datos del documento y peso por costal --}}
+                            <template x-if="consulta">
+                                <div class="space-y-4">
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                        <div class="sm:col-span-2">
+                                            <p class="text-slate-400">Cliente</p>
+                                            <p class="font-semibold text-slate-800" x-text="renglones[0]?.cliente || '—'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-slate-400">Pedido</p>
+                                            <p class="font-mono text-slate-700 break-all" x-text="renglones[0]?.pedido || '—'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-slate-400">Fórmula</p>
+                                            <p class="font-mono text-slate-700" x-text="renglones[0]?.formula || '—'"></p>
+                                        </div>
+                                    </div>
+
+                                    <div class="border border-slate-200 rounded-xl overflow-hidden">
+                                        <table class="w-full text-sm">
+                                            <thead class="bg-slate-50 border-b border-slate-200">
+                                                <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                                    <th class="px-3 py-2">Material</th>
+                                                    <th class="px-3 py-2">Lote</th>
+                                                    <th class="px-3 py-2 text-right">Cantidad</th>
+                                                    <th class="px-3 py-2 w-48">Peso por costal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                <template x-for="r in renglones" :key="r.id_row">
+                                                    <tr>
+                                                        <td class="px-3 py-2">
+                                                            <p class="font-medium text-slate-900" x-text="r.nombre_material || r.ref"></p>
+                                                            <p class="text-xs text-slate-400">
+                                                                <span class="font-mono" x-text="r.ref"></span>
+                                                                <span x-show="r.capa" x-text="' · ' + r.capa"></span>
+                                                            </p>
+                                                        </td>
+                                                        <td class="px-3 py-2 font-mono text-xs text-slate-500" x-text="r.lote || '—'"></td>
+                                                        <td class="px-3 py-2 text-right font-semibold text-slate-800 whitespace-nowrap"
+                                                            x-text="numero(r.cantidad) + ' ' + (r.unidad || '')"></td>
+                                                        <td class="px-3 py-2">
+                                                            <div class="flex items-center gap-1.5">
+                                                                <input type="number" min="0" step="any" inputmode="decimal" data-peso
+                                                                       x-model="r.peso" @input="cambioPeso()" :disabled="enviando"
+                                                                       @keydown.enter.prevent="calcular()"
+                                                                       class="w-full px-2 py-1.5 text-sm text-right border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                                                <span class="text-xs font-semibold text-slate-500 w-10" x-text="r.unidad || ''"></span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <p class="text-xs text-slate-400">
+                                        Escribe el peso en la <strong class="text-slate-600">misma unidad</strong> del material (si es GRS, 25 kg = 25000).
+                                        Deja vacío un material para no imprimirle rótulos.
+                                    </p>
+                                </div>
+                            </template>
+
+                            {{-- Paso 3: resumen antes de imprimir --}}
+                            <template x-if="paso === 'confirmar' && plan">
+                                <div class="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900 space-y-1.5">
+                                    <p class="font-semibold">
+                                        Se imprimirán <span x-text="plan.total_rotulos"></span> rótulos
+                                        en <span x-text="consulta.impresora.nombre"></span>:
+                                    </p>
+                                    <template x-for="m in plan.materiales" :key="m.id_row">
+                                        <p class="text-xs">
+                                            <span class="font-mono" x-text="m.ref"></span> →
+                                            <span x-text="m.resumen"></span>
+                                            (<span x-text="m.num_rotulos"></span> rótulos)
+                                        </p>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <template x-if="error">
+                                <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" x-text="error"></div>
+                            </template>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/60" x-show="consulta">
+                            <p class="text-xs text-slate-400">
+                                Impresora: <span class="font-semibold text-slate-600" x-text="consulta?.impresora?.nombre"></span>
+                                <span x-text="'(' + (consulta?.impresora?.ip || '') + ')'"></span>
+                            </p>
+                            <div class="flex items-center gap-2">
+                                <template x-if="paso === 'pesos'">
+                                    <x-ui.button type="button" size="sm" @click="calcular()" x-bind:disabled="cargando">
+                                        <span x-text="cargando ? 'Calculando…' : 'Calcular rótulos'"></span>
+                                    </x-ui.button>
+                                </template>
+                                <template x-if="paso === 'confirmar'">
+                                    <x-ui.button type="button" size="sm" @click="imprimir()" x-bind:disabled="enviando">
+                                        <span x-text="enviando ? 'Imprimiendo…' : 'Imprimir ' + plan.total_rotulos + ' rótulos'"></span>
+                                    </x-ui.button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="hidden sm:block w-px h-6 bg-slate-200"></div>
             <div class="hidden sm:flex items-center gap-2.5">
                 <div class="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-white text-xs font-semibold shrink-0">
                     {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}

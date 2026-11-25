@@ -13,6 +13,7 @@ use App\Http\Controllers\Web\MaestroWebController;
 use App\Http\Controllers\Web\NegocioWebController;
 use App\Http\Controllers\Web\ProspectoWebController;
 use App\Http\Controllers\Web\ReporteWebController;
+use App\Http\Controllers\Web\RotuloCostalWebController;
 use App\Http\Controllers\Web\SeguimientoWebController;
 use App\Http\Controllers\Web\SolicitudCotizacionWebController;
 use App\Http\Controllers\Web\SolicitudCreditoWebController;
@@ -105,6 +106,13 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/consultas-lotes', [ExistenciasMPWebController::class, 'index'])->name('existencias-mp.index')->middleware('role:produccion|admin');
     Route::patch('/consultas-lotes/actualizar', [ExistenciasMPWebController::class, 'actualizarCampo'])->name('existencias-mp.actualizar')->middleware('role:produccion|admin');
+
+    // Rótulos de costales de salida de MP (SLI de SGP) — se imprimen directo en la Zebra sin pasar por SGP.
+    Route::middleware('role:produccion|admin')->prefix('consultas-lotes/rotulos')->name('rotulos-mp.')->group(function () {
+        Route::get('/consultar',      [RotuloCostalWebController::class, 'consultar'])->name('consultar');
+        Route::post('/previsualizar', [RotuloCostalWebController::class, 'previsualizar'])->name('previsualizar');
+        Route::post('/imprimir',      [RotuloCostalWebController::class, 'imprimir'])->name('imprimir')->middleware('throttle:10,1');
+    });
 
     // Gestión de Cartera (independiente del CRM) — cartera/admin editan, gerencia solo ve
     Route::get('/gestion-cartera', [CarteraWebController::class, 'index'])->name('gestion-cartera.index')->middleware('role:cartera|admin|gerente');

@@ -148,5 +148,22 @@ interface ERPRepositoryInterface
      */
     public function marcarNotificacionCarteraResuelta(int $compania, string $nroDocumento): bool;
 
+    /**
+     * Renglones de un documento de salida de materia prima de SGP (SLI) con los datos
+     * del rótulo de bodega (BD sgpforma, solo lectura). Lista vacía si no existe.
+     *
+     * @return list<array{id_row: int, pedido: ?string, documento: string, formula: ?string, cliente: ?string,
+     *     color: ?string, material: ?string, proceso: ?string, capa: ?string, ref: string,
+     *     nombre_material: ?string, cantidad: string, unidad: ?string, lote: ?string}>
+     */
+    public function renglonesSalidaMP(string $documento): array;
+
+    /**
+     * Impresora de SGP (sgpforma.dbo.ini_impresoras) por su nombre exacto.
+     *
+     * @return array{nombre: string, ip: string}|null
+     */
+    public function impresoraSgpPorNombre(string $nombre): ?array;
+
     public function isAvailable(): bool;
 }
